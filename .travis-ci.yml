@@ -1,0 +1,9 @@
+notifications:
+  email: false
+ 
+language: python
+python:
+  - "2.7"
+
+install: echo "Install."
+script: echo "Build."
