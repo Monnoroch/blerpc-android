@@ -1,0 +1,75 @@
+{
+	"end-line-check": {
+		"ci_section": "linux",
+		"slow": false,
+		"script": "run/end-line-check.sh"
+	},
+	"shellcheck": {
+		"ci_section": "linux",
+		"slow": false,
+		"script": "run/shellcheck.sh",
+		"install_script": "install/shellcheck.sh",
+		"extensions": ["sh"]
+	},
+	"yamllint": {
+		"ci_section": "linux",
+		"slow": false,
+		"script": "run/yamllint.sh",
+		"install_script": "install/yamllint.sh",
+		"extensions": ["yml", "yaml"]
+	},
+	"dockerfile-check": {
+		"ci_section": "linux",
+		"slow": false,
+		"script": "run/dockerfile-check.sh",
+		"install_script": "install/dockerfile-check.sh",
+		"extensions": ["Dockerfile"]
+	},
+	"google-java-format": {
+		"ci_section": "linux",
+		"slow": false,
+		"script": "run/google-java-format.sh",
+		"install_script": "install/google-java-format.sh",
+		"extensions": ["java"]
+	},
+	"protoclint": {
+		"ci_section": "linux",
+		"slow": false,
+		"script": "run/protoclint.sh",
+		"install_script": "install/protoclint.sh",
+		"extensions": ["proto"]
+	},
+	"xmllint": {
+		"ci_section": "linux",
+		"slow": false,
+		"script": "run/xmllint.sh",
+		"install_script": "install/xmllint.sh",
+		"extensions": ["xml"]
+	},
+	"findbugs": {
+		"ci_section": "linux",
+		"slow": false,
+		"script": "run/findbugs.sh"
+	},
+	"checkstyle": {
+		"ci_section": "linux",
+		"slow": false,
+		"script": "run/checkstyle.sh"
+	},
+	"android-lint": {
+		"ci_section": "linux",
+		"slow": false,
+		"script": "run/android-lint.sh"
+	},
+	"android": {
+		"group": true,
+		"tags": [
+			"basic",
+			"xmllint",
+			"findbugs",
+			"checkstyle",
+			"android-lint",
+			"google-java-format"
+		]
+	}
+}
