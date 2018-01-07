@@ -28,15 +28,11 @@ task clean(type: Delete) {
     delete rootProject.buildDir
 }
 
-def androidLibraries = ['testlib'].collect { project(it) }
-
-subprojects {
-    if (project in androidLibraries) {
-        apply plugin: 'com.android.library'
-    }
+project(':testlib') {
+    apply plugin: 'com.android.library'
 }
 
-apply from: "${lintersDir}/configs/android-lint.build.gradle"
-apply from: "${lintersDir}/configs/checkstyle.build.gradle"
-apply from: "${lintersDir}/configs/findbugs.build.gradle"
-apply from: "${lintersDir}/configs/error-prone.build.gradle"
+apply from: "linters/configs/android-lint.build.gradle"
+apply from: "linters/configs/checkstyle.build.gradle"
+apply from: "linters/configs/findbugs.build.gradle"
+apply from: "linters/configs/error-prone.build.gradle"

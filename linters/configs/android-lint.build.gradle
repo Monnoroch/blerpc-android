@@ -8,7 +8,7 @@ subprojects {
                 quiet false
                 abortOnError false
                 ignoreWarnings false
-                lintConfig file("${lintersDir}/configs/android-lint.xml")
+                lintConfig file("linters/configs/android-lint.xml")
                 xmlReport true
                 xmlOutput file("${rootProject.buildDir}/linters/${project.name}.androidlint.xml")
                 htmlReport false

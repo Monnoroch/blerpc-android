@@ -1,6 +1,0 @@
-{
-	"linux": {
-		"stage_name": "lint",
-		"script": "run-linux.sh"
-	}
-}

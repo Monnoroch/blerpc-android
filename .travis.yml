@@ -14,11 +14,10 @@ licenses:
   - android-sdk-license-.+
   - google-gdk-license-.+
 before_install:
-  - linters/linters-generator -config $(pwd)/linters -tags android, protoclint
-  - linters/generated/install-linux.sh
+  - linters/install-linters.sh
 script:
-  - gradle -PlintersDir=$(pwd)/linters assembleRelease --stacktrace --no-daemon
-  - gradle -PlintersDir=$(pwd)/linters testReleaseUnitTest --info
-  - linters/generated/run-linux.sh
+  - gradle assembleRelease --stacktrace --no-daemon
+  - gradle testReleaseUnitTest --info
+  - linters/run-linters.sh
 notifications:
   email: false
