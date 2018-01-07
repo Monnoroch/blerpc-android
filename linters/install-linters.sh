@@ -5,6 +5,13 @@ echo "Running $0..."
 set -e
 
 
+echo "Install dependencies"
+
+sudo apt-get update
+sudo apt-get install -y --force-yes --no-install-recommends apt-utils=1.0.* unzip=6.0-* python3-pip=1.5.* git=1:2.1.* wget=1.16-*
+sudo apt-get clean
+sudo rm -rf /var/lib/apt/lists/*
+
 echo "Install google-java-format"
 
 GOOGLE_JAVA_FORMAT_HOME=linters/bin/google-java-format
@@ -30,13 +37,4 @@ sudo rm -rf /var/lib/apt/lists/*
 
 echo "Install yamllint"
 
-sudo apt-get update
-sudo apt-get install -y --no-install-recommends yamllint=1.6
-sudo apt-get clean
-sudo rm -rf /var/lib/apt/lists/*
-
-
-
-
-
-
+sudo pip3 install yamllint==1.6
