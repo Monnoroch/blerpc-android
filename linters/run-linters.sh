@@ -44,23 +44,23 @@ function extension_in_diff {
 
 exitcode=0
 
-$(pwd)/linters/run/android-lint.sh
+./linters/run/android-lint.sh
 if [[ $? -ne 0 ]]; then
     exitcode=1
 fi
 
 
-$(pwd)/linters/run/checkstyle.sh
+./linters/run/checkstyle.sh
 if [[ $? -ne 0 ]]; then
     exitcode=1
 fi
 
-$(pwd)/linters/run/end-line-check.sh
+./linters/run/end-line-check.sh
 if [[ $? -ne 0 ]]; then
     exitcode=1
 fi
 
-$(pwd)/linters/run/findbugs.sh
+./linters/run/findbugs.sh
 if [[ $? -ne 0 ]]; then
     exitcode=1
 fi
@@ -68,7 +68,7 @@ fi
 
 extension_in_diff java
 if [[ $? -eq 0 ]]; then
-    $(pwd)/linters/run/google-java-format.sh
+    ./linters/run/google-java-format.sh
     if [[ $? -ne 0 ]]; then
         exitcode=1
     fi
@@ -77,7 +77,7 @@ fi
 
 extension_in_diff xml
 if [[ $? -eq 0 ]]; then
-    $(pwd)/linters/run/xmllint.sh
+    ./linters/run/xmllint.sh
     if [[ $? -ne 0 ]]; then
         exitcode=1
     fi

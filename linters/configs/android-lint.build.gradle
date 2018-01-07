@@ -1,5 +1,4 @@
 subprojects {
-    def isApplication = project.getPlugins().hasPlugin('com.android.application')
     def isAndroidLibrary = project.getPlugins().hasPlugin('com.android.library')
 
     if (isApplication || isAndroidLibrary) {
