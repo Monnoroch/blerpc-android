@@ -13,7 +13,7 @@ wget --output-document="${file_path}" --quiet https://github.com/google/google-j
 echo "ffee10177bc7b58aeef61466c4f962ea  ${file_path}" | md5sum -c
 
 
-echo "Running install/xmllint.sh"
+echo "Install xmllint"
 
 sudo apt-get update
 sudo apt-get install -y --no-install-recommends libxml2-utils=2.9.*

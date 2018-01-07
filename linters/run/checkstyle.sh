@@ -7,7 +7,7 @@ exitcode=0
 DIR=$(dirname "$0")
 DIR=$(dirname "$DIR")
 
-output=$(gradle -PlintersDir="${DIR}" runCheckstyle)
+output=$(gradle runCheckstyle)
 if [ $? -ne 0 ]
 then
     echo "${output}"

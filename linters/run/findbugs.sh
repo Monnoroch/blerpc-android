@@ -7,7 +7,7 @@ exitcode=0
 DIR=$(dirname "$0")
 DIR=$(dirname "$DIR")
 
-output=$(gradle -PlintersDir="${DIR}" runFindbugs --stacktrace --info)
+output=$(gradle runFindbugs --stacktrace --info)
 if [ $? -ne 0 ]
 then
     echo "${output}"
