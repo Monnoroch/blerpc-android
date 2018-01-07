@@ -1,5 +1,4 @@
 subprojects {
-    def isApplication = project.getPlugins().hasPlugin('com.android.application')
     def isAndroidLibrary = project.getPlugins().hasPlugin('com.android.library')
 
     apply plugin: 'findbugs'
@@ -8,7 +7,7 @@ subprojects {
         ignoreFailures = true
         effort = "max"
         reportLevel = "medium"
-        if (isApplication || isAndroidLibrary) {
+        if (isAndroidLibrary) {
             classes = files("${project.buildDir}/intermediates/classes")
         } else {
             classes = files("${project.buildDir}/classes")
