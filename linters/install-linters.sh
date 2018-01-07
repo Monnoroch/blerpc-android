@@ -8,7 +8,7 @@ set -e
 echo "Install dependencies"
 
 sudo apt-get update
-sudo apt-get install -y --force-yes --no-install-recommends apt-utils=1.0.* unzip=6.0-* python3-pip=1.5.* git=1:2.1.* wget=1.16-*
+sudo apt-get install -y --force-yes --no-install-recommends apt-utils=1.0.* unzip=6.0-* python3-pip=1.5.*
 sudo apt-get clean
 sudo rm -rf /var/lib/apt/lists/*
 
