@@ -1,0 +1,85 @@
+syntax = "proto3";
+
+option java_package = "com.blerpc.device.test.proto";
+option java_multiple_files = true;
+option optimize_for = CODE_SIZE;
+option java_generic_services = true;
+
+package com.device.test;
+
+import "blerpc.proto";
+
+message TestBleWriteRequest {
+    string value = 1;
+}
+
+message TestBleWriteResponse {
+    string value = 1;
+}
+
+message TestBleReadRequest {
+    string value = 1;
+}
+
+message TestBleReadResponse {
+    string value = 1;
+}
+
+message TestBleSubscribeRequest {
+    string value = 1;
+}
+
+message TestBleSubscribeResponse {
+    string value = 1;
+}
+
+service TestBleService {
+    option (com.blerpc.service) = {
+        uuid: "F0CDAA70-0451-4000-B000-000000000000"
+    };
+
+    rpc TestWriteChar (TestBleWriteRequest) returns (TestBleWriteResponse) {
+        option (com.blerpc.characteristic) = {
+            uuid: "F0CDAA72-0451-4000-B000-000000000000"
+            type: WRITE
+        };
+    }
+
+    rpc TestSubscribeChar (TestBleSubscribeRequest) returns (stream TestBleSubscribeResponse) {
+        option (com.blerpc.characteristic) = {
+            uuid: "F0CDAA72-0451-4000-B000-000000000000"
+            descriptor_uuid: "F0CDBB72-0451-4000-B000-000000000000"
+            type: SUBSCRIBE
+        };
+    }
+
+    rpc TestSubscribeCharCopy (TestBleSubscribeRequest) returns (stream TestBleSubscribeResponse) {
+        option (com.blerpc.characteristic) = {
+            uuid: "F0CDAA72-0451-4000-B000-000000000000"
+            descriptor_uuid: "F0CDBB72-0451-4000-B000-000000000000"
+            type: SUBSCRIBE
+        };
+    }
+
+    rpc TestReadChar (TestBleReadRequest) returns (TestBleReadResponse) {
+        option (com.blerpc.characteristic) = {
+            uuid: "F0CDAA72-0451-4000-B000-000000000000"
+            type: READ
+        };
+    }
+
+    rpc TestWriteChar2 (TestBleReadRequest) returns (TestBleReadResponse) {
+        option (com.blerpc.characteristic) = {
+            uuid: "F0CDBA74-0451-4000-B000-000000000000"
+            type: WRITE
+        };
+    }
+
+    rpc TestSubscribeChar2 (TestBleSubscribeRequest) returns (stream TestBleSubscribeResponse) {
+        option (com.blerpc.characteristic) = {
+            uuid: "F0CDBA74-0451-4000-B000-000000000000"
+            descriptor_uuid: "F0CDBB74-0451-4000-B000-000000000000"
+            type: SUBSCRIBE
+        };
+    }
+}

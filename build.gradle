@@ -28,7 +28,7 @@ task clean(type: Delete) {
     delete rootProject.buildDir
 }
 
-project(':testlib') {
+project(':blerpc') {
     apply plugin: 'com.android.library'
 }
 
