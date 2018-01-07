@@ -1,7 +1,7 @@
 subprojects {
     def isAndroidLibrary = project.getPlugins().hasPlugin('com.android.library')
 
-    if (isApplication || isAndroidLibrary) {
+    if (isAndroidLibrary) {
         android {
             lintOptions {
                 quiet false
