@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+option java_package = "com.blerpc.proto";
+option java_multiple_files = true;
+option optimize_for = CODE_SIZE;
+option java_generic_services = true;
+
+// A proto part of the BLE RPC library.
+package com.blerpc;
+
+import "google/protobuf/descriptor.proto";
+
+// An interaction type with the characteristic.
+// A method can interact with a characteristic in three ways: it can write to it, read from it and
+// subscribe to it's updates.
+enum MethodType {
+    // Unknown method type.
+    UNKNOWN = 0;
+    // A method with this type is allowed to write to a characteristic.
+    WRITE = 1;
+    // A method with this type is allowed to read the value of a characteristic.
+    READ = 2;
+    // A method with this type is allowed to subscribe to a characteristic's updates.
+    SUBSCRIBE = 3;
+}
+
+// BLE characteristic data.
+message BleCharacteristicRule {
+    // Characteristic UUID.
+    string uuid = 1;
+    // Descriptor UUID.
+    string descriptor_uuid = 3;
+    // The method's interaction type with the characteristic.
+    MethodType type = 2;
+}
+
+message BleServiceRule {
+    // Service UUID.
+    string uuid = 1;
+}
+
+// Add `characteristic` method option for attaching the method to a BLE characteristic.
+extend google.protobuf.MethodOptions {
+    BleCharacteristicRule characteristic = 82595724;
+}
+
+// Add `service` service option for attaching the service to a BLE service.
+extend google.protobuf.ServiceOptions {
+    BleServiceRule service = 82595725;
+}

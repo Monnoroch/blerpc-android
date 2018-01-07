@@ -1,1 +1,2 @@
-include ':testlib'
+include ':blerpc'
+include ':blerpcproto'

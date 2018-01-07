@@ -1,0 +1,84 @@
+apply plugin: 'java'
+apply plugin: 'com.google.protobuf'
+apply plugin: 'net.ltgt.errorprone'
+
+repositories {
+    maven { url "https://plugins.gradle.org/m2/" }
+}
+
+sourceCompatibility = JavaVersion.VERSION_1_7
+targetCompatibility = JavaVersion.VERSION_1_7
+
+configurations {
+    grpcCompile
+}
+
+sourceSets {
+    grpc {
+        compileClasspath += configurations.grpcCompile
+    }
+    test {
+        compileClasspath += grpc.output
+        runtimeClasspath += grpc.output
+    }
+    main {
+        java {
+            srcDirs 'build/generated/source/proto/main/grpc'
+            srcDirs 'build/generated/source/proto/main/java'
+        }
+    }
+}
+
+configurations.all {
+    resolutionStrategy {
+        force 'com.google.code.findbugs:jsr305:3.0.0'
+    }
+}
+
+dependencies {
+    compile group: 'findbugs', name: 'annotations', version: '1.0.0'
+    compile 'com.google.protobuf:protobuf-java:3.2.0'
+    compile 'io.grpc:grpc-okhttp:1.0.3'
+    compile 'io.grpc:grpc-protobuf:1.0.3'
+    compile 'io.grpc:grpc-stub:1.0.3'
+    grpcCompile 'io.grpc:grpc-stub:1.0.0-pre2'
+    grpcCompile 'io.grpc:grpc-protobuf:1.0.0-pre2'
+}
+
+protobuf {
+    protoc {
+        artifact = 'com.google.protobuf:protoc:3.0.0'
+    }
+    plugins {
+        grpc {
+            artifact = 'io.grpc:protoc-gen-grpc-java:1.0.0-pre2'
+        }
+    }
+    generateProtoTasks {
+        ofSourceSet('grpc').each { task ->
+            task.plugins {
+                grpc {
+                    outputSubDir = 'grpc_output'
+                }
+            }
+            task.generateDescriptorSet = true
+        }
+    }
+}
+
+task generateSources {
+    doLast {
+        ant.replaceregexp(match: 'public', replace: '@javax.annotation.Generated("protoc")\npublic') {
+            fileset(dir: "$projectDir/build/generated/source/proto", includes: "**/*.java", excludes: "*/grpc/")
+        }
+    }
+}
+
+project.afterEvaluate { compileJava.dependsOn generateSources }
+
+jar {
+    sourceSets.all { sourceSet ->
+        from sourceSet.output
+        dependsOn sourceSet.getCompileTaskName('java')
+    }
+}
