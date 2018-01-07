@@ -6,7 +6,7 @@ subprojects {
 
     task customCheckstyle(type: Checkstyle) {
         ignoreFailures = true
-        configFile file("linters/configs/checkstyle.xml")
+        configFile file("${rootProject.projectDir}/linters/configs/checkstyle.xml")
         source = fileTree('src')
         classpath = files()
         reports {

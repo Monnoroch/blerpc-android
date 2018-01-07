@@ -13,7 +13,7 @@ subprojects {
         } else {
             classes = files("${project.buildDir}/classes")
         }
-        excludeFilter = file("linters/configs/findbugs.xml")
+        excludeFilter = file("${rootProject.projectDir}/linters/configs/findbugs.xml")
         source = fileTree('src')
         classpath = files()
         reports {
