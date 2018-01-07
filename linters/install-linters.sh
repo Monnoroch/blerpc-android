@@ -30,7 +30,7 @@ sudo rm -rf /var/lib/apt/lists/*
 
 echo "Install yamllint"
 
-sudo pip3 install yamllint==1.6
+sudo apt-get install yamllint
 
 
 
