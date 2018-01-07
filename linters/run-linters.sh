@@ -95,15 +95,3 @@ fi
 if [[ $exitcode -ne 0 ]]; then
     exit $exitcode
 fi
-
-extension_in_diff yml
-if [[ $? -eq 0 ]]; then
-    /home/travis/build/Monnoroch/blerpc-android/linters/run/xmllint.sh
-    if [[ $? -ne 0 ]]; then
-        exitcode=1
-    fi
-fi
-
-if [[ $exitcode -ne 0 ]]; then
-    exit $exitcode
-fi
