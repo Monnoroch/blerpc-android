@@ -44,10 +44,6 @@ function extension_in_diff {
 
 exitcode=0
 
-
-
-
-
 /home/travis/build/Monnoroch/blerpc-android/linters/run/android-lint.sh
 if [[ $? -ne 0 ]]; then
     exitcode=1
@@ -59,17 +55,12 @@ if [[ $? -ne 0 ]]; then
     exitcode=1
 fi
 
-/home/travis/build/Monnoroch/blerpc-android/linters/run/end_line_check.sh
+/home/travis/build/Monnoroch/blerpc-android/linters/run/end-line-check.sh
 if [[ $? -ne 0 ]]; then
     exitcode=1
 fi
 
 /home/travis/build/Monnoroch/blerpc-android/linters/run/findbugs.sh
-if [[ $? -ne 0 ]]; then
-    exitcode=1
-fi
-
-/home/travis/build/Monnoroch/blerpc-android/linters/run/shellcheck.sh
 if [[ $? -ne 0 ]]; then
     exitcode=1
 fi
