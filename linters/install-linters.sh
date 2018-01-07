@@ -30,7 +30,10 @@ sudo rm -rf /var/lib/apt/lists/*
 
 echo "Install yamllint"
 
-sudo apt-get install yamllint
+sudo apt-get update
+sudo apt-get install -y --no-install-recommends yamllint=1.6
+sudo apt-get clean
+sudo rm -rf /var/lib/apt/lists/*
 
 
 
