@@ -1,6 +1,7 @@
 apply plugin: 'java'
 apply plugin: 'com.google.protobuf'
 apply plugin: 'net.ltgt.errorprone'
+apply plugin: 'com.novoda.bintray-release'
 
 repositories {
     maven { url "https://plugins.gradle.org/m2/" }
@@ -81,4 +82,14 @@ jar {
         from sourceSet.output
         dependsOn sourceSet.getCompileTaskName('java')
     }
+}
+
+publish {
+    groupId = 'com.github.monnoroch'
+    repoName = 'blerpc-android'
+    artifactId = 'blerpcproto-android'
+    publishVersion = '0.0.3'
+    desc = 'Protobuf files for BleRpc-android library.'
+    licences = ['MIT']
+    website = 'https://github.com/monnoroch/blerpc-android'
 }
