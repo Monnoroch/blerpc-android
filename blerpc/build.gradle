@@ -2,6 +2,7 @@ apply plugin: 'com.android.library'
 apply plugin: 'me.tatarka.retrolambda'
 apply plugin: 'com.google.protobuf'
 apply plugin: 'net.ltgt.errorprone'
+apply plugin: 'com.novoda.bintray-release'
 
 android {
     compileSdkVersion 26
@@ -33,7 +34,7 @@ configurations.all {
 
 dependencies {
     compile group: 'findbugs', name: 'annotations', version: '1.0.0'
-    compile project(':blerpcproto')
+    compile files('libs/blerpcproto.jar')
     compile 'com.google.guava:guava:20.0'
     compile 'com.google.protobuf:protobuf-java:3.2.0'
     compile 'com.google.protobuf:protoc:3.0.0'
@@ -47,4 +48,14 @@ dependencies {
     testCompile 'junit:junit:4.12'
     testCompile "org.mockito:mockito-inline:2.7.22"
     testCompile 'com.google.truth:truth:0.34'
+}
+
+publish {
+    groupId = 'com.github.monnoroch'
+    repoName = 'blerpc-android'
+    artifactId = 'blerpc-android'
+    publishVersion = '0.0.6'
+    desc = 'A library for simplifying working with blutooth low energy devices.'
+    licences = ['MIT']
+    website = 'https://github.com/monnoroch/blerpc-android'
 }

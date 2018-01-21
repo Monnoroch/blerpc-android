@@ -15,9 +15,15 @@ licenses:
   - google-gdk-license-.+
 before_install:
   - linters/install-linters.sh
+  - mkdir blerpc/libs
 script:
+  - gradle blerpcproto:assemble
+  - cp blerpcproto/build/libs/blerpcproto.jar blerpc/libs/blerpcproto.jar
   - gradle assembleRelease --stacktrace --no-daemon
   - gradle testReleaseUnitTest --info
   - linters/run-linters.sh
+  - if [ "$TRAVIS_BRANCH" == "master" ]; then
+          gradle bintrayUpload -PbintrayUser=monnoroch -PbintrayKey="$BINTRAY_API_KEY" -PdryRun=false;
+    fi
 notifications:
   email: false
