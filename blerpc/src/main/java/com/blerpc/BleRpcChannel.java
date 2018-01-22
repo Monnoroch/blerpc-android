@@ -97,13 +97,12 @@ public class BleRpcChannel implements RpcChannel {
         RpcCallback<Message> done
     ) {
         workHandler.post(() -> {
-            RpcCall rpcCall = new RpcCall(method, controller, request, responsePrototype, done);
-            if (!checkMethodType(rpcCall)) {
+            if (!checkMethodType(method)) {
                 return;
             }
 
-            addCall(rpcCall);
-            switch(connectionStatus) {
+            addCall(new RpcCall(method, controller, request, responsePrototype, done));
+            switch (connectionStatus) {
                 case DISCONNECTED:
                     startConnection();
                     break;
@@ -133,8 +132,8 @@ public class BleRpcChannel implements RpcChannel {
         subscription.calls.add(rpcCall);
     }
 
-    private boolean checkMethodType(RpcCall rpcCall) {
-        MethodType methodType = rpcCall.getMethodType();
+    private boolean checkMethodType(MethodDescriptor method) {
+        MethodType methodType = getMethodType(method);
         switch (methodType) {
             case READ:
             case WRITE:
@@ -369,7 +368,8 @@ public class BleRpcChannel implements RpcChannel {
 
     private static boolean skipFailedCall(RpcCall rpcCall) {
         if (rpcCall.controller.failed()) {
-            checkArgument(rpcCall.getMethodType() == MethodType.SUBSCRIBE, "Unexpectedly failed call.");
+            checkArgument(rpcCall.getMethodType() == MethodType.SUBSCRIBE,
+                "Only SUBSCRIBE method calls can be failed while in the call queue.");
             return true;
         }
         return false;
@@ -395,10 +395,7 @@ public class BleRpcChannel implements RpcChannel {
             return true;
         }
         subscription.clearCanceled();
-        if (!subscription.hasAnySubscriber()) {
-            return true;
-        }
-        return false;
+        return !subscription.hasAnySubscriber();
     }
 
     private boolean checkRpcCallMethod(BluetoothGatt bluetoothGatt, RpcCall rpcCall) {
@@ -409,11 +406,13 @@ public class BleRpcChannel implements RpcChannel {
             notifyCallFailed(rpcCall, "Device does not have service %s.", serviceId);
             return false;
         }
+
         BluetoothGattCharacteristic characteristic = service.getCharacteristic(characteristicId);
         if (characteristic == null) {
             notifyCallFailed(rpcCall, "Service %s does not have characteristic %s.", serviceId, characteristicId);
             return false;
         }
+
         if (rpcCall.getMethodType() == MethodType.SUBSCRIBE) {
             BluetoothGattDescriptor descriptor = characteristic.getDescriptor(rpcCall.getDescriptor());
             if (descriptor == null) {
@@ -455,10 +454,6 @@ public class BleRpcChannel implements RpcChannel {
                     return false;
                 }
                 break;
-            }
-            default: {
-                notifyCallFailed(rpcCall, "Unsupported method type %s.", methodType);
-                return false;
             }
         }
         return true;
@@ -813,8 +808,12 @@ public class BleRpcChannel implements RpcChannel {
             if (isUnsubscribeCall) {
                 return MethodType.SUBSCRIBE;
             }
-            return method.getOptions().getExtension(Blerpc.characteristic).getType();
+            return getMethodType(method);
         }
+    }
+
+    private static MethodType getMethodType(MethodDescriptor method) {
+        return method.getOptions().getExtension(Blerpc.characteristic).getType();
     }
 
     private static class SubscriptionCallsGroup {
