@@ -6,9 +6,9 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -570,7 +570,7 @@ public class BleRpcChannelTest {
 
     @Test
     public void testSubscribeCalled_onSubscribeSuccessCalled() throws Exception {
-        BleRpcController bleRpcController = mock(BleRpcController.class);
+        BleRpcController bleRpcController = spy(controller);
         callSubscribeMethod(bleRpcController, callback);
         finishSubscribing(descriptor);
         verifyOnSubscribeSuccessCalled(bleRpcController);
@@ -578,7 +578,7 @@ public class BleRpcChannelTest {
 
     @Test
     public void testSubscribeCalled_onSubscribeSuccessCalled_notBleRpcController() throws Exception {
-        RpcController bleRpcController = mock(RpcController.class);
+        RpcController bleRpcController = spy(controller);
         callSubscribeMethod(bleRpcController, callback);
         // If test fail it will throw ClassCastException: RpcController cannot be cast to BleRpcController.
         finishSubscribing(descriptor);
@@ -589,14 +589,14 @@ public class BleRpcChannelTest {
         callSubscribeMethod(controller, callback);
         finishSubscribing(descriptor);
 
-        BleRpcController bleRpcController = mock(BleRpcController.class);
+        BleRpcController bleRpcController = spy(controller2);
         callSubscribeMethod(bleRpcController, callback);
         verifyOnSubscribeSuccessCalled(bleRpcController);
     }
 
     @Test
-    public void testSubscribeCalled_subscriptionNotExists_onSubscribeSuccessCalled() throws Exception {
-        BleRpcController bleRpcController = mock(BleRpcController.class);
+    public void testSubscribeCalled_subscriptionNotExists_callSubscribeMethod_onSubscribeSuccessNotCalled() throws Exception {
+        BleRpcController bleRpcController = spy(controller);
         callSubscribeMethod(bleRpcController, callback);
         verifyOnSubscribeSuccessNotCalled(bleRpcController);
     }
@@ -606,7 +606,7 @@ public class BleRpcChannelTest {
         callSubscribeMethod(controller, callback);
         finishSubscribing(descriptor);
 
-        RpcController secondBleRpcController = mock(RpcController.class);
+        RpcController secondBleRpcController = spy(controller2);
         // If test fail it will throw ClassCastException: RpcController cannot be cast to BleRpcController.
         callSubscribeMethod(secondBleRpcController, callback);
     }

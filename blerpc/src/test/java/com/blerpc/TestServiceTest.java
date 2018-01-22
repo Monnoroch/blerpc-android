@@ -239,16 +239,10 @@ public class TestServiceTest {
         testService.testSubscribeChar(bleRpcController, TEST_SUBSCRIBE_REQUEST, callbackSubscribe);
         connectAndRun();
         verify(bleRpcController).onSubscribeSuccess();
-    }
 
-    @Test
-    public void testSubscribe_subscriptionAlreadyExists_onSubscribeSuccess() throws Exception {
-        testService.testSubscribeChar(controller, TEST_SUBSCRIBE_REQUEST, callbackSubscribe);
-        connectAndRun();
-
-        BleRpcController bleRpcController = mock(BleRpcController.class);
-        testService.testSubscribeChar(bleRpcController, TEST_SUBSCRIBE_REQUEST, callbackSubscribe);
-        verify(bleRpcController).onSubscribeSuccess();
+        BleRpcController secondBleRpcController = mock(BleRpcController.class);
+        testService.testSubscribeChar(secondBleRpcController, TEST_SUBSCRIBE_REQUEST, callbackSubscribe);
+        verify(secondBleRpcController).onSubscribeSuccess();
     }
 
     @Test

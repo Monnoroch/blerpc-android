@@ -189,9 +189,7 @@ public class BleRpcChannel implements RpcChannel {
             SubscriptionCallsGroup subscription = getSubscribingSubscription(characteristicUuid);
             subscription.subscribing = false;
             subscription.subscribed = true;
-            if (isBleRpcController(rpcCall.controller)) {
-                ((BleRpcController) rpcCall.controller).onSubscribeSuccess();
-            }
+            callOnSubscribeSuccess(rpcCall.controller);
         } else if (Arrays.equals(value, DISABLE_NOTIFICATION_VALUE)) {
             SubscriptionCallsGroup subscription = getUnsubscribingSubscription(characteristicUuid);
             subscription.unsubscribing = false;
@@ -407,9 +405,7 @@ public class BleRpcChannel implements RpcChannel {
 
         SubscriptionCallsGroup subscription = getSubscription(rpcCall.getCharacteristic());
         if (subscription.subscribing || subscription.subscribed || subscription.unsubscribing) {
-            if (isBleRpcController(rpcCall.controller)) {
-                ((BleRpcController) rpcCall.controller).onSubscribeSuccess();
-            }
+            callOnSubscribeSuccess(rpcCall.controller);
             return true;
         }
         subscription.clearCanceled();
@@ -419,8 +415,10 @@ public class BleRpcChannel implements RpcChannel {
         return false;
     }
 
-    private boolean isBleRpcController(RpcController controller) {
-        return controller instanceof BleRpcController;
+    private void callOnSubscribeSuccess(RpcController controller) {
+        if (controller instanceof BleRpcController) {
+            ((BleRpcController) controller).onSubscribeSuccess();
+        }
     }
 
     private boolean checkRpcCallMethod(BluetoothGatt bluetoothGatt, RpcCall rpcCall) {
