@@ -97,11 +97,12 @@ public class BleRpcChannel implements RpcChannel {
         RpcCallback<Message> done
     ) {
         workHandler.post(() -> {
-            if (!checkMethodType(method)) {
+            RpcCall rpcCall = new RpcCall(method, controller, request, responsePrototype, done);
+            if (!checkMethodType(rpcCall)) {
                 return;
             }
 
-            addCall(new RpcCall(method, controller, request, responsePrototype, done));
+            addCall(rpcCall);
             switch (connectionStatus) {
                 case DISCONNECTED:
                     startConnection();
@@ -132,8 +133,8 @@ public class BleRpcChannel implements RpcChannel {
         subscription.calls.add(rpcCall);
     }
 
-    private boolean checkMethodType(MethodDescriptor method) {
-        MethodType methodType = getMethodType(method);
+    private boolean checkMethodType(RpcCall rpcCall) {
+        MethodType methodType = rpcCall.getMethodType();
         switch (methodType) {
             case READ:
             case WRITE:
@@ -175,11 +176,10 @@ public class BleRpcChannel implements RpcChannel {
         UUID characteristicUuid = characteristic.getUuid();
         if (Arrays.equals(value, ENABLE_NOTIFICATION_VALUE)) {
             SubscriptionCallsGroup subscription = getSubscribingSubscription(characteristicUuid);
-            subscription.subscribing = false;
-            subscription.subscribed = true;
+            subscription.status = SubscriptionStatus.SUBSCRIBED;
         } else if (Arrays.equals(value, DISABLE_NOTIFICATION_VALUE)) {
             SubscriptionCallsGroup subscription = getUnsubscribingSubscription(characteristicUuid);
-            subscription.unsubscribing = false;
+            subscription.status = SubscriptionStatus.UNSUBSCRIBED;
             // New rpc calls might have been added while unsubscription.
             // If this is the case, start a new subscription. If there are not any, just clean up, which is exactly
             // what startNextCall will do.
@@ -210,11 +210,15 @@ public class BleRpcChannel implements RpcChannel {
 
     private void handleValueChange(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
         UUID characteristicUuid = characteristic.getUuid();
-        if (!subscriptions.containsKey(characteristicUuid)
-                || getSubscription(characteristicUuid).unsubscribing
-                || getSubscription(characteristicUuid).subscribing) {
+        if (!subscriptions.containsKey(characteristicUuid)) {
             return;
         }
+
+        SubscriptionStatus subscriptionStatus = getSubscription(characteristicUuid).status;
+        if (subscriptionStatus == UNSUBSCRIBING || subscriptionStatus == SUBSCRIBING) {
+            return;
+        }
+
         SubscriptionCallsGroup subscription = getSubscribedSubscription(characteristicUuid);
         BluetoothGattDescriptor descriptor = getDescriptor(characteristic, subscription.descriptorUuid);
         // If all calls were cancelled, abandon the subscription.
@@ -239,19 +243,19 @@ public class BleRpcChannel implements RpcChannel {
 
     private SubscriptionCallsGroup getSubscribingSubscription(UUID characteristicUuid) {
         SubscriptionCallsGroup subscription = getSubscriptionWithSubscribers(characteristicUuid);
-        checkArgument(subscription.subscribing, "The characteristic %s is not subscribing.", characteristicUuid);
+        checkArgument(subscription.status == SubscriptionStatus.SUBSCRIBING, "The characteristic %s is not subscribing.", characteristicUuid);
         return subscription;
     }
 
     private SubscriptionCallsGroup getSubscribedSubscription(UUID characteristicUuid) {
         SubscriptionCallsGroup subscription = getSubscriptionWithSubscribers(characteristicUuid);
-        checkArgument(subscription.subscribed, "The characteristic %s is not subscribed.", characteristicUuid);
+        checkArgument(subscription.status == SubscriptionStatus.SUBSCRIBED, "The characteristic %s is not subscribed.", characteristicUuid);
         return subscription;
     }
 
     private SubscriptionCallsGroup getUnsubscribingSubscription(UUID characteristicUuid) {
         SubscriptionCallsGroup subscription = getSubscription(characteristicUuid);
-        checkArgument(subscription.unsubscribing, "The characteristic %s is not unsubscribing.", characteristicUuid);
+        checkArgument(subscription.status == SubscriptionStatus.UNSUBSCRIBING, "The characteristic %s is not unsubscribing.", characteristicUuid);
         return subscription;
     }
 
@@ -265,12 +269,7 @@ public class BleRpcChannel implements RpcChannel {
     private SubscriptionCallsGroup getSubscription(UUID characteristicUuid) {
         checkArgument(subscriptions.containsKey(characteristicUuid),
             "There is no subscription calls group for characteristic %s", characteristicUuid);
-        SubscriptionCallsGroup subscription = subscriptions.get(characteristicUuid);
-        checkArgument(toNumber(subscription.subscribed) + toNumber(subscription.subscribing)
-            + toNumber(subscription.unsubscribing) <= 1, // only one flag is allowed to be true at any time.
-            "Incorrect subscription state: subscribed=%s, subscribing=%s, unsubscribing=%s.",
-            subscription.subscribed, subscription.subscribing, subscription.unsubscribing);
-        return subscription;
+        return subscriptions.get(characteristicUuid);
     }
 
     private static long toNumber(boolean value) {
@@ -385,7 +384,7 @@ public class BleRpcChannel implements RpcChannel {
         }
 
         SubscriptionCallsGroup subscription = getSubscription(rpcCall.getCharacteristic());
-        if (subscription.subscribing || subscription.subscribed || subscription.unsubscribing) {
+        if (subscription.status != SubscriptionStatus.UNSUBSCRIBED) {
             return true;
         }
         subscription.clearCanceled();
@@ -482,13 +481,13 @@ public class BleRpcChannel implements RpcChannel {
     private boolean startNextSubscribeCall(BluetoothGatt bluetoothGatt, RpcCall rpcCall) {
         SubscriptionCallsGroup subscription = getSubscription(rpcCall.getCharacteristic());
         callInProgress = true;
-        subscription.subscribing = true;
+        subscription.status != SubscriptionStatus.SUBSCRIBING;
         try {
             makeSubscribeRequest(bluetoothGatt, rpcCall);
             return true;
         } catch (MakeRequestException exception) {
             calls.poll();
-            subscription.subscribing = false;
+            subscription.status != SubscriptionStatus.UNSUBSCRIBED;
             callInProgress = false;
             failAllSubscribersAndClear(subscription, exception.getMessage());
             return false;
@@ -550,8 +549,7 @@ public class BleRpcChannel implements RpcChannel {
     }
 
     private void startUnsubscribing(SubscriptionCallsGroup subscription) {
-        subscription.subscribed = false;
-        subscription.unsubscribing = true;
+        subscription.status = SubscriptionStatus.UNSUBSCRIBING;
         calls.add(RpcCall.unsubscribeCall(subscription.serviceUuid, subscription.characteristicUuid,
             subscription.descriptorUuid));
         startNextCallIfNotInProgress();
@@ -802,12 +800,8 @@ public class BleRpcChannel implements RpcChannel {
             if (isUnsubscribeCall) {
                 return MethodType.SUBSCRIBE;
             }
-            return BleRpcChannel.getMethodType(method);
+            return method.getOptions().getExtension(Blerpc.characteristic).getType();
         }
-    }
-
-    private static MethodType getMethodType(MethodDescriptor method) {
-        return method.getOptions().getExtension(Blerpc.characteristic).getType();
     }
 
     private static class SubscriptionCallsGroup {
@@ -815,9 +809,7 @@ public class BleRpcChannel implements RpcChannel {
         private final UUID characteristicUuid;
         private final UUID descriptorUuid;
         private final Set<RpcCall> calls = new HashSet<>();
-        private boolean subscribing = false;
-        private boolean unsubscribing = false;
-        private boolean subscribed = false;
+        private SubscriptionStatus status = SubscriptionStatus.UNSUBSCRIBED;
 
         private SubscriptionCallsGroup(UUID serviceUuid, UUID characteristicUuid, UUID descriptorUuid) {
             this.serviceUuid = serviceUuid;
@@ -858,5 +850,12 @@ public class BleRpcChannel implements RpcChannel {
         DISCONNECTED,
         CONNECTING,
         CONNECTED
+    }
+
+    private enum SubscriptionStatus {
+        UNSUBSCRIBED,
+        SUBSCRIBING,
+        SUBSCRIBED,
+        UNSUBSCRIBING
     }
 }
