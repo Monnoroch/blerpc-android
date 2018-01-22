@@ -14,6 +14,7 @@ import android.content.Context;
 import android.os.Handler;
 import com.blerpc.proto.Blerpc;
 import com.blerpc.proto.MethodType;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Optional;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableSet;
@@ -96,24 +97,29 @@ public class BleRpcChannel implements RpcChannel {
         RpcCallback<Message> done
     ) {
         workHandler.post(() -> {
-            if (!checkAndAddCall(new RpcCall(method, controller, request, responsePrototype, done))) {
+            RpcCall rpcCall = new RpcCall(method, controller, request, responsePrototype, done);
+            if (!checkMethodType(rpcCall)) {
                 return;
             }
-            if (startConnection()) {
-                return;
+
+            addCall(rpcCall);
+            switch(connectionStatus) {
+                case DISCONNECTED:
+                    startConnection();
+                    break;
+                case CONNECTING:
+                    break;
+                case CONNECTED:
+                    startNextCallIfNotInProgress();
+                    break;
             }
-            startNextCallIfNotInProgress();
         });
     }
 
-    private boolean checkAndAddCall(RpcCall rpcCall) {
-        if (!checkMethodType(rpcCall)) {
-            return false;
-        }
-
+    private void addCall(RpcCall rpcCall) {
         calls.add(rpcCall);
         if (rpcCall.getMethodType() != MethodType.SUBSCRIBE) {
-            return true;
+            return;
         }
 
         UUID characteristic = rpcCall.getCharacteristic();
@@ -125,7 +131,6 @@ public class BleRpcChannel implements RpcChannel {
             subscriptions.put(characteristic, subscription);
         }
         subscription.calls.add(rpcCall);
-        return true;
     }
 
     private boolean checkMethodType(RpcCall rpcCall) {
@@ -143,17 +148,9 @@ public class BleRpcChannel implements RpcChannel {
         }
     }
 
-    private boolean startConnection() {
-        switch(connectionStatus) {
-            case CONNECTED:
-                return false;
-            case CONNECTING:
-                return true;
-            case DISCONNECTED:
-                connectionStatus = ConnectionStatus.CONNECTING;
-                bluetoothGatt = Optional.of(bluetoothDevice.connectGatt(context, true, gattCallback));
-                return true;
-        }
+    private void startConnection() {
+        connectionStatus = ConnectionStatus.CONNECTING;
+        bluetoothGatt = Optional.of(bluetoothDevice.connectGatt(context, true, gattCallback));
     }
 
     private void handleResult(byte[] value) {
@@ -580,7 +577,7 @@ public class BleRpcChannel implements RpcChannel {
         return (characteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_NOTIFY) != 0;
     }
 
-    private BluetoothGattCallback gattCallback = new BluetoothGattCallback() {
+    private final BluetoothGattCallback gattCallback = new BluetoothGattCallback() {
         // TODO(andrew): Check the parameters that will be passed after turning off Bluetooth or disconnecting the
         // remote device. Currently, we assume that for these actions this callback will be called with the DISCONNECTED
         // status.
