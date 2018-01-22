@@ -6,8 +6,8 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -235,12 +235,12 @@ public class TestServiceTest {
 
     @Test
     public void testSubscribe_onSubscribeSuccess() throws Exception {
-        BleRpcController bleRpcController = mock(BleRpcController.class);
+        BleRpcController bleRpcController = spy(controller);
         testService.testSubscribeChar(bleRpcController, TEST_SUBSCRIBE_REQUEST, callbackSubscribe);
         connectAndRun();
         verify(bleRpcController).onSubscribeSuccess();
 
-        BleRpcController secondBleRpcController = mock(BleRpcController.class);
+        BleRpcController secondBleRpcController = spy(new BleRpcController());
         testService.testSubscribeChar(secondBleRpcController, TEST_SUBSCRIBE_REQUEST, callbackSubscribe);
         verify(secondBleRpcController).onSubscribeSuccess();
     }
