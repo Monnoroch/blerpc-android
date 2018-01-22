@@ -45,17 +45,19 @@ public class BleRpcChannel implements RpcChannel {
     private final Handler listenerHandler;
     private final Logger logger;
 
-    private boolean isConnecting = false;
-    private boolean isConnected = false;
+    private ConnectionStatus connectionStatus = ConnectionStatus.DISCONNECTED;
     private Optional<BluetoothGatt> bluetoothGatt = Optional.absent();
-    private final LinkedList<RpcCall> calls = new LinkedList<RpcCall>();
+
     private boolean callInProgress = false;
+    private final LinkedList<RpcCall> calls = new LinkedList<RpcCall>();
     private final Map<UUID, SubscriptionCallsGroup> subscriptions = new HashMap<>();
 
-    // BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE is null in tests, these variables are here for the purpuse of
-    // setting them in tests to real values.
+    // BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE and BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE are null in tests,
+    // these variables are here for the purpuse of setting them in tests to real values.
     @SuppressWarnings("ConstantField")
+    @VisibleForTesting
     static byte[] ENABLE_NOTIFICATION_VALUE = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE;
+    @VisibleForTesting
     @SuppressWarnings("ConstantField")
     static byte[] DISABLE_NOTIFICATION_VALUE = BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE;
 
@@ -110,29 +112,19 @@ public class BleRpcChannel implements RpcChannel {
         }
 
         calls.add(rpcCall);
-        MethodType methodType = rpcCall.getMethodType();
-        UUID characteristic = rpcCall.getCharacteristic();
-        switch (methodType) {
-            case READ:
-            case WRITE: {
-                break;
-            }
-            case SUBSCRIBE: {
-                if (subscriptions.containsKey(characteristic)) {
-                    subscriptions.get(characteristic).calls.add(rpcCall);
-                } else {
-                    SubscriptionCallsGroup subscription =
-                        new SubscriptionCallsGroup(rpcCall.getService(), characteristic, rpcCall.getDescriptor());
-                    subscription.calls.add(rpcCall);
-                    subscriptions.put(characteristic, subscription);
-                }
-                break;
-
-            }
-            default: {
-                checkArgument(false, "Unsupported method type %s.", methodType);
-            }
+        if (rpcCall.getMethodType() != MethodType.SUBSCRIBE) {
+            return true;
         }
+
+        UUID characteristic = rpcCall.getCharacteristic();
+        SubscriptionCallsGroup subscription;
+        if (subscriptions.containsKey(characteristic)) {
+            subscription = subscriptions.get(characteristic);
+        } else {
+            subscription = new SubscriptionCallsGroup(rpcCall.getService(), characteristic, rpcCall.getDescriptor());
+            subscriptions.put(characteristic, subscription);
+        }
+        subscription.calls.add(rpcCall);
         return true;
     }
 
@@ -142,26 +134,26 @@ public class BleRpcChannel implements RpcChannel {
             case READ:
             case WRITE:
             case SUBSCRIBE: {
-                break;
+                return true;
             }
             default: {
                 notifyCallFailed(rpcCall, "Unsupported method type %s.", methodType);
                 return false;
             }
         }
-        return true;
     }
 
     private boolean startConnection() {
-        if (isConnecting) {
-            return true;
+        switch(connectionStatus) {
+            case CONNECTED:
+                return false;
+            case CONNECTING:
+                return true;
+            case DISCONNECTED:
+                connectionStatus = ConnectionStatus.CONNECTING;
+                bluetoothGatt = Optional.of(bluetoothDevice.connectGatt(context, true, gattCallback));
+                return true;
         }
-        if (!isConnected) {
-            isConnecting = true;
-            bluetoothGatt = Optional.of(bluetoothDevice.connectGatt(context, true, gattCallback));
-            return true;
-        }
-        return false;
     }
 
     private void handleResult(byte[] value) {
@@ -325,8 +317,7 @@ public class BleRpcChannel implements RpcChannel {
     }
 
     protected void reset() {
-        isConnecting = false;
-        isConnected = false;
+        connectionStatus = ConnectionStatus.DISCONNECTED;
         callInProgress = false;
         calls.clear();
         subscriptions.clear();
@@ -624,8 +615,7 @@ public class BleRpcChannel implements RpcChannel {
                     return;
                 }
 
-                isConnecting = false;
-                isConnected = true;
+                connectionStatus = ConnectionStatus.CONNECTED;
                 startNextCall();
             });
         }
@@ -872,5 +862,11 @@ public class BleRpcChannel implements RpcChannel {
         public MakeRequestException(String format, Object ... args) {
             super(String.format(format, args));
         }
+    }
+
+    private enum ConnectionStatus {
+        DISCONNECTED,
+        CONNECTING,
+        CONNECTED
     }
 }
