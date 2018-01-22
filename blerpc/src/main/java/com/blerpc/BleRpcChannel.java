@@ -481,13 +481,13 @@ public class BleRpcChannel implements RpcChannel {
     private boolean startNextSubscribeCall(BluetoothGatt bluetoothGatt, RpcCall rpcCall) {
         SubscriptionCallsGroup subscription = getSubscription(rpcCall.getCharacteristic());
         callInProgress = true;
-        subscription.status != SubscriptionStatus.SUBSCRIBING;
+        subscription.status = SubscriptionStatus.SUBSCRIBING;
         try {
             makeSubscribeRequest(bluetoothGatt, rpcCall);
             return true;
         } catch (MakeRequestException exception) {
             calls.poll();
-            subscription.status != SubscriptionStatus.UNSUBSCRIBED;
+            subscription.status = SubscriptionStatus.UNSUBSCRIBED;
             callInProgress = false;
             failAllSubscribersAndClear(subscription, exception.getMessage());
             return false;
