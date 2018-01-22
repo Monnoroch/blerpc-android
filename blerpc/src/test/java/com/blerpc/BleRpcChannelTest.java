@@ -573,7 +573,7 @@ public class BleRpcChannelTest {
         BleRpcController bleRpcController = spy(controller);
         callSubscribeMethod(bleRpcController, callback);
         finishSubscribing(descriptor);
-        verifyOnSubscribeSuccessCalled(bleRpcController);
+        verify(bleRpcController).onSubscribeSuccess();
     }
 
     @Test
@@ -591,14 +591,14 @@ public class BleRpcChannelTest {
 
         BleRpcController bleRpcController = spy(controller2);
         callSubscribeMethod(bleRpcController, callback);
-        verifyOnSubscribeSuccessCalled(bleRpcController);
+        verify(bleRpcController).onSubscribeSuccess();
     }
 
     @Test
     public void testSubscribeCalled_subscriptionNotExists_callSubscribeMethod_onSubscribeSuccessNotCalled() throws Exception {
         BleRpcController bleRpcController = spy(controller);
         callSubscribeMethod(bleRpcController, callback);
-        verifyOnSubscribeSuccessNotCalled(bleRpcController);
+        verify(bleRpcController, never()).onSubscribeSuccess();
     }
 
     @Test
@@ -817,14 +817,6 @@ public class BleRpcChannelTest {
     void verifySubscribe(BluetoothGattDescriptor descriptor) {
         verify(descriptor).setValue(TEST_ENABLE_NOTIFICATION_VALUE);
         verify(bluetoothGatt).writeDescriptor(descriptor);
-    }
-
-    void verifyOnSubscribeSuccessCalled(BleRpcController controller) {
-        verify(controller).onSubscribeSuccess();
-    }
-
-    void verifyOnSubscribeSuccessNotCalled(BleRpcController controller) {
-        verify(controller, never()).onSubscribeSuccess();
     }
 
     void verifySubscribeSecondTime(BluetoothGattDescriptor descriptor) {
