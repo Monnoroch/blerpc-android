@@ -127,7 +127,8 @@ public class BleRpcChannel implements RpcChannel {
         if (subscriptions.containsKey(characteristic)) {
             subscription = subscriptions.get(characteristic);
         } else {
-            subscription = new SubscriptionCallsGroup(rpcCall.getService(), characteristic, rpcCall.getDescriptor());
+            subscription = new SubscriptionCallsGroup(rpcCall.getService(), characteristic, rpcCall.getDescriptor(),
+                rpcCall.method);
             subscriptions.put(characteristic, subscription);
         }
         subscription.calls.add(rpcCall);
@@ -187,7 +188,6 @@ public class BleRpcChannel implements RpcChannel {
 
     private void handleSubscribeError(BluetoothGattCharacteristic characteristic, UUID descriptorUuid, byte[] value,
         String format, Object ... args) {
-        logger.info(String.format(format, args));
         finishRpcCall();
         UUID characteristicUuid = characteristic.getUuid();
         if (Arrays.equals(value, ENABLE_NOTIFICATION_VALUE)) {
@@ -220,15 +220,13 @@ public class BleRpcChannel implements RpcChannel {
         BluetoothGattDescriptor descriptor = getDescriptor(characteristic, subscription.descriptorUuid);
         // If all calls were cancelled, abandon the subscription.
         subscription.clearCanceled();
-        Optional<RpcCall> optionalRpcCall = subscription.getAnySubscriber();
-        if (!optionalRpcCall.isPresent()) {
+        if (!subscription.hasAnySubscriber()) {
             startUnsubscribing(subscription);
             return;
         }
 
-        RpcCall rpcCall = optionalRpcCall.get();
         try {
-            Message response = messageConverter.deserializeResponse(rpcCall.method, characteristic.getValue());
+            Message response = messageConverter.deserializeResponse(subscription.method, characteristic.getValue());
             for (RpcCall call : subscription.calls) {
                 notifyResultForCall(call, response);
             }
@@ -352,6 +350,7 @@ public class BleRpcChannel implements RpcChannel {
                         ? startNextUnsubscribeCall(gatt, rpcCall)
                         : startNextSubscribeCall(gatt, rpcCall);
                     break;
+                default:
             }
         }
     }
@@ -445,6 +444,7 @@ public class BleRpcChannel implements RpcChannel {
                 }
                 break;
             }
+            default:
         }
         return true;
     }
@@ -804,11 +804,14 @@ public class BleRpcChannel implements RpcChannel {
         private final UUID descriptorUuid;
         private final Set<RpcCall> calls = new HashSet<>();
         private SubscriptionStatus status = SubscriptionStatus.UNSUBSCRIBED;
+        private final MethodDescriptor method;
 
-        private SubscriptionCallsGroup(UUID serviceUuid, UUID characteristicUuid, UUID descriptorUuid) {
+        private SubscriptionCallsGroup(UUID serviceUuid, UUID characteristicUuid, UUID descriptorUuid,
+            MethodDescriptor method) {
             this.serviceUuid = serviceUuid;
             this.characteristicUuid = characteristicUuid;
             this.descriptorUuid = descriptorUuid;
+            this.method = method;
         }
 
         void clearCanceled() {
@@ -817,11 +820,6 @@ public class BleRpcChannel implements RpcChannel {
 
         boolean hasAnySubscriber() {
             return !calls.isEmpty();
-        }
-
-        Optional<RpcCall> getAnySubscriber() {
-            return FluentIterable.from(calls)
-                .first();
         }
 
         private Set<RpcCall> canceledSubscribers() {
