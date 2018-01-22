@@ -189,7 +189,7 @@ public class BleRpcChannel implements RpcChannel {
             SubscriptionCallsGroup subscription = getSubscribingSubscription(characteristicUuid);
             subscription.subscribing = false;
             subscription.subscribed = true;
-            if (rpcCall.controller instanceof BleRpcController) {
+            if (isBleRpcController(rpcCall.controller)) {
                 ((BleRpcController) rpcCall.controller).onSubscribeSuccess();
             }
         } else if (Arrays.equals(value, DISABLE_NOTIFICATION_VALUE)) {
@@ -349,11 +349,6 @@ public class BleRpcChannel implements RpcChannel {
     private void startNextCall() {
         while (!calls.isEmpty()) {
             RpcCall rpcCall = calls.peek();
-            if (rpcCall.getMethodType().equals(MethodType.SUBSCRIBE)
-                    && rpcCall.controller instanceof BleRpcController
-                    && getSubscription(rpcCall.getCharacteristic()).subscribed) {
-                 ((BleRpcController) rpcCall.controller).onSubscribeSuccess();
-            }
             BluetoothGatt gatt = bluetoothGatt.get();
             if (!rpcCall.isUnsubscribeCall) {
                 if (skipFailedCall(rpcCall)
@@ -412,6 +407,9 @@ public class BleRpcChannel implements RpcChannel {
 
         SubscriptionCallsGroup subscription = getSubscription(rpcCall.getCharacteristic());
         if (subscription.subscribing || subscription.subscribed || subscription.unsubscribing) {
+            if (isBleRpcController(rpcCall.controller)) {
+                ((BleRpcController) rpcCall.controller).onSubscribeSuccess();
+            }
             return true;
         }
         subscription.clearCanceled();
@@ -419,6 +417,10 @@ public class BleRpcChannel implements RpcChannel {
             return true;
         }
         return false;
+    }
+
+    private boolean isBleRpcController(RpcController controller) {
+        return controller instanceof BleRpcController;
     }
 
     private boolean checkRpcCallMethod(BluetoothGatt bluetoothGatt, RpcCall rpcCall) {
