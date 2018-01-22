@@ -331,7 +331,8 @@ public class BleRpcChannel implements RpcChannel {
     }
 
     private void startNextCall() {
-        while (!calls.isEmpty()) {
+        boolean callStarted = false;
+        while (!calls.isEmpty() && !callStarted) {
             RpcCall rpcCall = calls.peek();
             BluetoothGatt gatt = bluetoothGatt.get();
             if (!rpcCall.isUnsubscribeCall) {
@@ -345,9 +346,7 @@ public class BleRpcChannel implements RpcChannel {
                 }
             }
 
-            MethodType methodType = rpcCall.getMethodType();
-            boolean callStarted = false;
-            switch (methodType) {
+            switch (rpcCall.getMethodType()) {
                 case READ:
                 case WRITE:
                     callStarted = startNextReadWriteCall(gatt, rpcCall);
@@ -357,11 +356,6 @@ public class BleRpcChannel implements RpcChannel {
                         ? startNextUnsubscribeCall(gatt, rpcCall)
                         : startNextSubscribeCall(gatt, rpcCall);
                     break;
-                default:
-                    checkArgument(false, "Unsupported method type %s.", methodType);
-            }
-            if (callStarted) {
-                break;
             }
         }
     }
@@ -457,6 +451,19 @@ public class BleRpcChannel implements RpcChannel {
             }
         }
         return true;
+    }
+
+    private static boolean isReadable(BluetoothGattCharacteristic characteristic) {
+        return (characteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_READ) != 0;
+    }
+
+    private static boolean isWritable(BluetoothGattCharacteristic characteristic) {
+        return (characteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_WRITE) != 0
+            || (characteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE) != 0;
+    }
+
+    private static boolean isNotifiable(BluetoothGattCharacteristic characteristic) {
+        return (characteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_NOTIFY) != 0;
     }
 
     private boolean startNextReadWriteCall(BluetoothGatt bluetoothGatt, RpcCall rpcCall) {
@@ -557,19 +564,6 @@ public class BleRpcChannel implements RpcChannel {
             failAllAndReset("Failed unsubscribing from characteristic %s, descriptor %s.",
                 characteristicUuid, descriptor.getUuid());
         }
-    }
-
-    private static boolean isReadable(BluetoothGattCharacteristic characteristic) {
-        return (characteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_READ) != 0;
-    }
-
-    private static boolean isWritable(BluetoothGattCharacteristic characteristic) {
-        return (characteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_WRITE) != 0
-            || (characteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE) != 0;
-    }
-
-    private static boolean isNotifiable(BluetoothGattCharacteristic characteristic) {
-        return (characteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_NOTIFY) != 0;
     }
 
     private final BluetoothGattCallback gattCallback = new BluetoothGattCallback() {
@@ -808,7 +802,7 @@ public class BleRpcChannel implements RpcChannel {
             if (isUnsubscribeCall) {
                 return MethodType.SUBSCRIBE;
             }
-            return getMethodType(method);
+            return BleRpcChannel.getMethodType(method);
         }
     }
 
