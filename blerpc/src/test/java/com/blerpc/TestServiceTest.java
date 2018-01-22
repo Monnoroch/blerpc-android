@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -230,6 +231,14 @@ public class TestServiceTest {
         sendUpdate(TEST_SUBSCRIBE_RESPONSE2);
         assertCallSucceeded(controller);
         verify(callbackSubscribe, times(1)).run(TEST_SUBSCRIBE_RESPONSE2);
+    }
+
+    @Test
+    public void testSubscribe_onSubscribeSuccess() throws Exception {
+        BleRpcController bleRpcController = mock(BleRpcController.class);
+        testService.testSubscribeChar(bleRpcController, TEST_SUBSCRIBE_REQUEST, callbackSubscribe);
+        connectAndRun();
+        verify(bleRpcController).onSubscribeSuccess();
     }
 
     @Test

@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
@@ -35,6 +36,7 @@ import com.google.protobuf.DescriptorProtos.MethodOptions;
 import com.google.protobuf.Descriptors.MethodDescriptor;
 import com.google.protobuf.Message;
 import com.google.protobuf.RpcCallback;
+import com.google.protobuf.RpcController;
 import java.util.UUID;
 import java.util.logging.Logger;
 import org.junit.Before;
@@ -567,6 +569,22 @@ public class BleRpcChannelTest {
     }
 
     @Test
+    public void testSubscribeCalled_onSubscribeSuccessCalled() throws Exception {
+        BleRpcController bleRpcController = mock(BleRpcController.class);
+        callSubscribeMethod(bleRpcController, callback);
+        finishSubscribing(descriptor);
+        verifyOnSubscribeSuccessCalled(bleRpcController);
+    }
+
+    @Test
+    public void testSubscribeCalled_onSubscribeSuccessCalled_notBleRpcController() throws Exception {
+        RpcController bleRpcController = mock(RpcController.class);
+        callSubscribeMethod(bleRpcController, callback);
+        // If test fail it will throw ClassCastException: RpcController cannot be cast to BleRpcController.
+        finishSubscribing(descriptor);
+    }
+
+    @Test
     public void testSubscribeUnsubscribeWhenNoSubscribers() throws Exception {
         callSubscribeMethod(controller, callback);
         finishSubscribing(descriptor);
@@ -774,6 +792,10 @@ public class BleRpcChannelTest {
         verify(bluetoothGatt).writeDescriptor(descriptor);
     }
 
+    void verifyOnSubscribeSuccessCalled(BleRpcController controller) {
+        verify(controller).onSubscribeSuccess();
+    }
+
     void verifySubscribeSecondTime(BluetoothGattDescriptor descriptor) {
         verify(descriptor).setValue(TEST_ENABLE_NOTIFICATION_VALUE);
         verify(bluetoothGatt, times(2)).writeDescriptor(descriptor);
@@ -864,7 +886,7 @@ public class BleRpcChannelTest {
         channel.callMethod(method, controller, request, TestBleWriteResponse.getDefaultInstance(), callback);
     }
 
-    void callSubscribeMethod(BleRpcController controller) {
+    void callSubscribeMethod(RpcController controller) {
         callSubscribeMethod(controller, callback);
     }
 
@@ -872,15 +894,15 @@ public class BleRpcChannelTest {
         callSubscribeMethod(method, controller, callback);
     }
 
-    void callSubscribeMethod(BleRpcController controller, RpcCallback<Message> callback) {
+    void callSubscribeMethod(RpcController controller, RpcCallback<Message> callback) {
         callSubscribeMethod(methodSubscribeChar, controller, callback);
     }
 
-    void callSubscribeMethod(MethodDescriptor method, BleRpcController controller) {
+    void callSubscribeMethod(MethodDescriptor method, RpcController controller) {
         callSubscribeMethod(method, controller, callback);
     }
 
-    void callSubscribeMethod(MethodDescriptor method, BleRpcController controller, RpcCallback<Message> callback) {
+    void callSubscribeMethod(MethodDescriptor method, RpcController controller, RpcCallback<Message> callback) {
         channel.callMethod(method, controller, TestBleSubscribeRequest.getDefaultInstance(),
             TestBleSubscribeResponse.getDefaultInstance(), callback);
     }

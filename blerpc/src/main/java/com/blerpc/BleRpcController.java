@@ -58,4 +58,11 @@ public class BleRpcController implements RpcController {
     public void notifyOnCancel(RpcCallback<Object> callback) {
         throw new UnsupportedOperationException("Not implemented.");
     }
+
+    /**
+     * Asks that the given callback be called when the subscription was succeed. The callback will
+     *     always be called exactly once and only if {@link com.blerpc.proto.MethodType} is
+     *     equals {@link com.blerpc.proto.MethodType#SUBSCRIBE}.
+     */
+    public void onSubscribeSuccess() {}
 }
