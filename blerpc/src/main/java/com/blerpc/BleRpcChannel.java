@@ -183,15 +183,15 @@ public class BleRpcChannel implements RpcChannel {
     }
 
     private void handleSubscribe(BluetoothGattCharacteristic characteristic, byte[] value) {
-        RpcController subscriptionCallController = finishRpcCall().controller;
-        if (subscriptionCallController instanceof BleRpcController) {
-            ((BleRpcController) subscriptionCallController).onSubscribeSuccess();
-        }
+        RpcCall rpcCall = finishRpcCall();
         UUID characteristicUuid = characteristic.getUuid();
         if (Arrays.equals(value, ENABLE_NOTIFICATION_VALUE)) {
             SubscriptionCallsGroup subscription = getSubscribingSubscription(characteristicUuid);
             subscription.subscribing = false;
             subscription.subscribed = true;
+            if (rpcCall.controller instanceof BleRpcController) {
+                ((BleRpcController) rpcCall.controller).onSubscribeSuccess();
+            }
         } else if (Arrays.equals(value, DISABLE_NOTIFICATION_VALUE)) {
             SubscriptionCallsGroup subscription = getUnsubscribingSubscription(characteristicUuid);
             subscription.unsubscribing = false;

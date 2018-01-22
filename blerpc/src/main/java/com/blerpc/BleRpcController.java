@@ -60,9 +60,8 @@ public class BleRpcController implements RpcController {
     }
 
     /**
-     * Asks that the given callback be called when the subscription was succeed. The callback will
-     *     always be called exactly once and only if {@link com.blerpc.proto.MethodType} is
-     *     equals {@link com.blerpc.proto.MethodType#SUBSCRIBE}.
+     * A callback that is called when a subscription process finished successfully.
+     * It will always be called exactly once for {@link com.blerpc.proto.MethodType#SUBSCRIBE} methods.
      */
     public void onSubscribeSuccess() {}
 }
