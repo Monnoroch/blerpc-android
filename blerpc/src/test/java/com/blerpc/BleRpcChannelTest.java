@@ -585,6 +585,33 @@ public class BleRpcChannelTest {
     }
 
     @Test
+    public void testSubscribeCalled_subscriptionAlreadyExists_onSubscribeSuccessCalled() throws Exception {
+        callSubscribeMethod(controller, callback);
+        finishSubscribing(descriptor);
+
+        BleRpcController bleRpcController = mock(BleRpcController.class);
+        callSubscribeMethod(bleRpcController, callback);
+        verifyOnSubscribeSuccessCalled(bleRpcController);
+    }
+
+    @Test
+    public void testSubscribeCalled_subscriptionNotExists_onSubscribeSuccessCalled() throws Exception {
+        BleRpcController bleRpcController = mock(BleRpcController.class);
+        callSubscribeMethod(bleRpcController, callback);
+        verifyOnSubscribeSuccessNotCalled(bleRpcController);
+    }
+
+    @Test
+    public void testSubscribeCalled_subscriptionAlreadyExists_onSubscribeSuccessCalled_notBleRpcCallback() throws Exception {
+        callSubscribeMethod(controller, callback);
+        finishSubscribing(descriptor);
+
+        RpcController secondBleRpcController = mock(RpcController.class);
+        // If test fail it will throw ClassCastException: RpcController cannot be cast to BleRpcController.
+        callSubscribeMethod(secondBleRpcController, callback);
+    }
+
+    @Test
     public void testSubscribeUnsubscribeWhenNoSubscribers() throws Exception {
         callSubscribeMethod(controller, callback);
         finishSubscribing(descriptor);
@@ -794,6 +821,10 @@ public class BleRpcChannelTest {
 
     void verifyOnSubscribeSuccessCalled(BleRpcController controller) {
         verify(controller).onSubscribeSuccess();
+    }
+
+    void verifyOnSubscribeSuccessNotCalled(BleRpcController controller) {
+        verify(controller, never()).onSubscribeSuccess();
     }
 
     void verifySubscribeSecondTime(BluetoothGattDescriptor descriptor) {

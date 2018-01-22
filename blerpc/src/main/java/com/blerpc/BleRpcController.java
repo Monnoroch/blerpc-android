@@ -60,7 +60,7 @@ public class BleRpcController implements RpcController {
     }
 
     /**
-     * A callback that is called when a subscription process finished successfully.
+     * A callback that is called when a subscription to BLE characteristic process finished successfully.
      * It will always be called exactly once for {@link com.blerpc.proto.MethodType#SUBSCRIBE} methods.
      */
     public void onSubscribeSuccess() {}

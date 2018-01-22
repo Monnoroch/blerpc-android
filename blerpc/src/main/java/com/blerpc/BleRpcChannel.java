@@ -349,6 +349,11 @@ public class BleRpcChannel implements RpcChannel {
     private void startNextCall() {
         while (!calls.isEmpty()) {
             RpcCall rpcCall = calls.peek();
+            if (rpcCall.getMethodType().equals(MethodType.SUBSCRIBE)
+                    && rpcCall.controller instanceof BleRpcController
+                    && getSubscription(rpcCall.getCharacteristic()).subscribed) {
+                 ((BleRpcController) rpcCall.controller).onSubscribeSuccess();
+            }
             BluetoothGatt gatt = bluetoothGatt.get();
             if (!rpcCall.isUnsubscribeCall) {
                 if (skipFailedCall(rpcCall)

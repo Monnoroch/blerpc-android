@@ -242,6 +242,16 @@ public class TestServiceTest {
     }
 
     @Test
+    public void testSubscribe_subscriptionAlreadyExists_onSubscribeSuccess() throws Exception {
+        testService.testSubscribeChar(controller, TEST_SUBSCRIBE_REQUEST, callbackSubscribe);
+        connectAndRun();
+
+        BleRpcController bleRpcController = mock(BleRpcController.class);
+        testService.testSubscribeChar(bleRpcController, TEST_SUBSCRIBE_REQUEST, callbackSubscribe);
+        verify(bleRpcController).onSubscribeSuccess();
+    }
+
+    @Test
     public void testValueChangedBeforeOnDescriptorWriteSubscribe() throws Exception {
         doAnswer(invocation -> true).when(bluetoothGatt).writeDescriptor(any(BluetoothGattDescriptor.class));
         testService.testSubscribeChar(controller, TEST_SUBSCRIBE_REQUEST, callbackSubscribe);
