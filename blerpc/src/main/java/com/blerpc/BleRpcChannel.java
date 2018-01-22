@@ -215,7 +215,8 @@ public class BleRpcChannel implements RpcChannel {
         }
 
         SubscriptionStatus subscriptionStatus = getSubscription(characteristicUuid).status;
-        if (subscriptionStatus == UNSUBSCRIBING || subscriptionStatus == SUBSCRIBING) {
+        if (subscriptionStatus == ConnectionStatus.UNSUBSCRIBING
+            || subscriptionStatus == ConnectionStatus.SUBSCRIBING) {
             return;
         }
 
@@ -565,9 +566,6 @@ public class BleRpcChannel implements RpcChannel {
     }
 
     private final BluetoothGattCallback gattCallback = new BluetoothGattCallback() {
-        // TODO(andrew): Check the parameters that will be passed after turning off Bluetooth or disconnecting the
-        // remote device. Currently, we assume that for these actions this callback will be called with the DISCONNECTED
-        // status.
         @Override
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int state) {
             workHandler.post(() -> {
