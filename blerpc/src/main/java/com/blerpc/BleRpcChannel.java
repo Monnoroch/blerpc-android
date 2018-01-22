@@ -165,7 +165,6 @@ public class BleRpcChannel implements RpcChannel {
     }
 
     private void handleError(String format, Object ... args) {
-        logger.info(String.format(format, args));
         RpcCall currentCall = finishRpcCall();
         notifyCallFailed(currentCall, format, args);
         startNextCall();
@@ -180,9 +179,6 @@ public class BleRpcChannel implements RpcChannel {
         } else if (Arrays.equals(value, DISABLE_NOTIFICATION_VALUE)) {
             SubscriptionCallsGroup subscription = getUnsubscribingSubscription(characteristicUuid);
             subscription.status = SubscriptionStatus.UNSUBSCRIBED;
-            // New rpc calls might have been added while unsubscription.
-            // If this is the case, start a new subscription. If there are not any, just clean up, which is exactly
-            // what startNextCall will do.
         } else {
             checkArgument(false, "Unexpected value \"%s\" of the subscription state.", Arrays.toString(value));
         }
@@ -215,8 +211,8 @@ public class BleRpcChannel implements RpcChannel {
         }
 
         SubscriptionStatus subscriptionStatus = getSubscription(characteristicUuid).status;
-        if (subscriptionStatus == ConnectionStatus.UNSUBSCRIBING
-            || subscriptionStatus == ConnectionStatus.SUBSCRIBING) {
+        if (subscriptionStatus == SubscriptionStatus.UNSUBSCRIBING
+            || subscriptionStatus == SubscriptionStatus.SUBSCRIBING) {
             return;
         }
 
