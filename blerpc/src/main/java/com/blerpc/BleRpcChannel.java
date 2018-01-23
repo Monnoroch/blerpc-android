@@ -210,13 +210,11 @@ public class BleRpcChannel implements RpcChannel {
             return;
         }
 
-        SubscriptionStatus subscriptionStatus = getSubscription(characteristicUuid).status;
-        if (subscriptionStatus == SubscriptionStatus.UNSUBSCRIBING
-            || subscriptionStatus == SubscriptionStatus.SUBSCRIBING) {
+        SubscriptionCallsGroup subscription = getSubscription(characteristicUuid);
+        if (subscription.status != SubscriptionStatus.SUBSCRIBED) {
             return;
         }
 
-        SubscriptionCallsGroup subscription = getSubscribedSubscription(characteristicUuid);
         BluetoothGattDescriptor descriptor = getDescriptor(characteristic, subscription.descriptorUuid);
         // If all calls were cancelled, abandon the subscription.
         subscription.clearCanceled();
@@ -239,12 +237,6 @@ public class BleRpcChannel implements RpcChannel {
     private SubscriptionCallsGroup getSubscribingSubscription(UUID characteristicUuid) {
         SubscriptionCallsGroup subscription = getSubscriptionWithSubscribers(characteristicUuid);
         checkArgument(subscription.status == SubscriptionStatus.SUBSCRIBING, "The characteristic %s is not subscribing.", characteristicUuid);
-        return subscription;
-    }
-
-    private SubscriptionCallsGroup getSubscribedSubscription(UUID characteristicUuid) {
-        SubscriptionCallsGroup subscription = getSubscriptionWithSubscribers(characteristicUuid);
-        checkArgument(subscription.status == SubscriptionStatus.SUBSCRIBED, "The characteristic %s is not subscribed.", characteristicUuid);
         return subscription;
     }
 
