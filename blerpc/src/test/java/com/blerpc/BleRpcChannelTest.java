@@ -573,8 +573,8 @@ public class BleRpcChannelTest {
 
     @Test
     public void testSubscribeCalled_onSubscribeSuccessCalled_notBleRpcController() throws Exception {
-        RpcController bleRpcController = spy(controller);
-        callSubscribeMethod(bleRpcController, callback);
+        RpcController rpcController = spy(controller);
+        callSubscribeMethod(rpcController, callback);
         // If test fail it will throw ClassCastException: RpcController cannot be cast to BleRpcController.
         finishSubscribing(descriptor);
     }
