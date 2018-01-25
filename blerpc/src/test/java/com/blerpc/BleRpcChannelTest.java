@@ -594,9 +594,9 @@ public class BleRpcChannelTest {
         callSubscribeMethod(controller, callback);
         finishSubscribing(descriptor);
 
-        RpcController secondBleRpcController = spy(controller2);
+        RpcController secondRpcController = spy(controller2);
         // If test fail it will throw ClassCastException: RpcController cannot be cast to BleRpcController.
-        callSubscribeMethod(secondBleRpcController, callback);
+        callSubscribeMethod(secondRpcController, callback);
     }
 
     @Test
