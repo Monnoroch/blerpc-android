@@ -8,6 +8,7 @@ import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -35,6 +36,7 @@ import com.google.protobuf.DescriptorProtos.MethodOptions;
 import com.google.protobuf.Descriptors.MethodDescriptor;
 import com.google.protobuf.Message;
 import com.google.protobuf.RpcCallback;
+import com.google.protobuf.RpcController;
 import java.util.UUID;
 import java.util.logging.Logger;
 import org.junit.Before;
@@ -561,9 +563,40 @@ public class BleRpcChannelTest {
 
     @Test
     public void testSubscribeSuccess() throws Exception {
+        BleRpcController bleRpcController = spy(controller);
+        callSubscribeMethod(bleRpcController, callback);
+        verify(bleRpcController, never()).onSubscribeSuccess();
+        finishSubscribing(descriptor);
+        verify(bleRpcController).onSubscribeSuccess();
+        verifyNoCalls(callback);
+    }
+
+    @Test
+    public void testSubscribeCalled_onSubscribeSuccessCalled_notBleRpcController() throws Exception {
+        RpcController rpcController = spy(controller);
+        callSubscribeMethod(rpcController, callback);
+        // If test fail it will throw ClassCastException: RpcController cannot be cast to BleRpcController.
+        finishSubscribing(descriptor);
+    }
+
+    @Test
+    public void testSubscribeCalled_afterActiveSubscriptionAlreadyExists_onSubscribeSuccessCalled() throws Exception {
         callSubscribeMethod(controller, callback);
         finishSubscribing(descriptor);
-        verifyNoCalls(callback);
+
+        BleRpcController bleRpcController = spy(controller2);
+        callSubscribeMethod(bleRpcController, callback);
+        verify(bleRpcController).onSubscribeSuccess();
+    }
+
+    @Test
+    public void testSubscribeCalled_subscriptionAlreadyExists_onSubscribeSuccessCalled_notBleRpcCallback() throws Exception {
+        callSubscribeMethod(controller, callback);
+        finishSubscribing(descriptor);
+
+        RpcController secondRpcController = spy(controller2);
+        // If test fail it will throw ClassCastException: RpcController cannot be cast to BleRpcController.
+        callSubscribeMethod(secondRpcController, callback);
     }
 
     @Test
@@ -864,7 +897,7 @@ public class BleRpcChannelTest {
         channel.callMethod(method, controller, request, TestBleWriteResponse.getDefaultInstance(), callback);
     }
 
-    void callSubscribeMethod(BleRpcController controller) {
+    void callSubscribeMethod(RpcController controller) {
         callSubscribeMethod(controller, callback);
     }
 
@@ -872,15 +905,15 @@ public class BleRpcChannelTest {
         callSubscribeMethod(method, controller, callback);
     }
 
-    void callSubscribeMethod(BleRpcController controller, RpcCallback<Message> callback) {
+    void callSubscribeMethod(RpcController controller, RpcCallback<Message> callback) {
         callSubscribeMethod(methodSubscribeChar, controller, callback);
     }
 
-    void callSubscribeMethod(MethodDescriptor method, BleRpcController controller) {
+    void callSubscribeMethod(MethodDescriptor method, RpcController controller) {
         callSubscribeMethod(method, controller, callback);
     }
 
-    void callSubscribeMethod(MethodDescriptor method, BleRpcController controller, RpcCallback<Message> callback) {
+    void callSubscribeMethod(MethodDescriptor method, RpcController controller, RpcCallback<Message> callback) {
         channel.callMethod(method, controller, TestBleSubscribeRequest.getDefaultInstance(),
             TestBleSubscribeResponse.getDefaultInstance(), callback);
     }

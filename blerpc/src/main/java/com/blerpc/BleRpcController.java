@@ -58,4 +58,10 @@ public class BleRpcController implements RpcController {
     public void notifyOnCancel(RpcCallback<Object> callback) {
         throw new UnsupportedOperationException("Not implemented.");
     }
+
+    /**
+     * A callback that is called when a subscription to BLE characteristic process finished successfully.
+     * It will always be called exactly once for {@link com.blerpc.proto.MethodType#SUBSCRIBE} methods.
+     */
+    public void onSubscribeSuccess() {}
 }
