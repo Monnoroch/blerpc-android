@@ -373,7 +373,7 @@ public class BleRpcChannel implements RpcChannel {
         }
 
         SubscriptionCallsGroup subscription = getSubscription(rpcCall.getCharacteristic());
-        if (subscription.status.equals(SubscriptionStatus.SUBSCRIBED)) {
+        if (subscription.status == SubscriptionStatus.SUBSCRIBED) {
             callOnSubscribeSuccess(rpcCall.controller);
         }
         if (subscription.status != SubscriptionStatus.UNSUBSCRIBED) {

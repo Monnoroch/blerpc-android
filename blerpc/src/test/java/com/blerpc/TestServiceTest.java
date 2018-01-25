@@ -222,8 +222,10 @@ public class TestServiceTest {
 
     @Test
     public void testSubscribe() throws Exception {
-        testService.testSubscribeChar(controller, TEST_SUBSCRIBE_REQUEST, callbackSubscribe);
+        BleRpcController bleRpcController = spy(controller);
+        testService.testSubscribeChar(bleRpcController, TEST_SUBSCRIBE_REQUEST, callbackSubscribe);
         connectAndRun();
+        verify(bleRpcController).onSubscribeSuccess();
         verify(callbackSubscribe, never()).run(any());
         sendUpdate(TEST_SUBSCRIBE_RESPONSE1);
         assertCallSucceeded(controller);
@@ -231,14 +233,6 @@ public class TestServiceTest {
         sendUpdate(TEST_SUBSCRIBE_RESPONSE2);
         assertCallSucceeded(controller);
         verify(callbackSubscribe, times(1)).run(TEST_SUBSCRIBE_RESPONSE2);
-    }
-
-    @Test
-    public void testSubscribe_onSubscribeSuccess() throws Exception {
-        BleRpcController bleRpcController = spy(controller);
-        testService.testSubscribeChar(bleRpcController, TEST_SUBSCRIBE_REQUEST, callbackSubscribe);
-        connectAndRun();
-        verify(bleRpcController).onSubscribeSuccess();
 
         BleRpcController secondBleRpcController = spy(new BleRpcController());
         testService.testSubscribeChar(secondBleRpcController, TEST_SUBSCRIBE_REQUEST, callbackSubscribe);

@@ -563,17 +563,12 @@ public class BleRpcChannelTest {
 
     @Test
     public void testSubscribeSuccess() throws Exception {
-        callSubscribeMethod(controller, callback);
-        finishSubscribing(descriptor);
-        verifyNoCalls(callback);
-    }
-
-    @Test
-    public void testSubscribeCalled_onSubscribeSuccessCalled() throws Exception {
         BleRpcController bleRpcController = spy(controller);
         callSubscribeMethod(bleRpcController, callback);
+        verify(bleRpcController, never()).onSubscribeSuccess();
         finishSubscribing(descriptor);
         verify(bleRpcController).onSubscribeSuccess();
+        verifyNoCalls(callback);
     }
 
     @Test
@@ -585,20 +580,13 @@ public class BleRpcChannelTest {
     }
 
     @Test
-    public void testSubscribeCalled_subscriptionAlreadyExists_onSubscribeSuccessCalled() throws Exception {
+    public void testSubscribeCalled_afterActiveSubscriptionAlreadyExists_onSubscribeSuccessCalled() throws Exception {
         callSubscribeMethod(controller, callback);
         finishSubscribing(descriptor);
 
         BleRpcController bleRpcController = spy(controller2);
         callSubscribeMethod(bleRpcController, callback);
         verify(bleRpcController).onSubscribeSuccess();
-    }
-
-    @Test
-    public void testSubscribeCalled_subscriptionNotExists_callSubscribeMethod_onSubscribeSuccessNotCalled() throws Exception {
-        BleRpcController bleRpcController = spy(controller);
-        callSubscribeMethod(bleRpcController, callback);
-        verify(bleRpcController, never()).onSubscribeSuccess();
     }
 
     @Test
