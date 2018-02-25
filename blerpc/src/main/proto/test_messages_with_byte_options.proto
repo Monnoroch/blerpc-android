@@ -1,0 +1,225 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option optimize_for = CODE_SIZE;
+option java_generic_services = true;
+
+package com.blerpc.device.test.proto;
+
+import "blerpc.proto";
+
+message TestOptionsImage {
+    option (com.blerpc.message) = {
+        message_size_bytes: 27
+    };
+
+    int32 version = 1 [(com.blerpc.field) = {
+        from_byte: 0
+        to_byte: 1
+    }];
+    int32 crc = 2 [(com.blerpc.field) = {
+        from_byte: 1
+        to_byte: 3
+    }];
+    int32 length = 3 [(com.blerpc.field) = {
+        from_byte: 3
+        to_byte: 7
+    }];
+    bool release = 4 [(com.blerpc.field) = {
+        from_byte: 7
+        to_byte: 8
+    }];
+    TestType type = 5 [(com.blerpc.field) = {
+        from_byte: 8
+        to_byte: 9
+    }];
+
+    TestMetadata metadata = 6 [(com.blerpc.field) = {
+        from_byte: 9
+        to_byte: 19
+    }];
+    int64 buildTime = 7 [(com.blerpc.field) = {
+        from_byte: 19
+        to_byte: 27
+    }];
+}
+
+message TestOptionsImageRequest {}
+
+message TestOptionsZeroBytesRequest {
+    option (com.blerpc.message) = {
+        message_size_bytes: 0
+    };
+    int32 value = 1;
+}
+
+enum TestType {
+    UNKNOWN = 0;
+    ONLY_APP = 1;
+    FULL = 2;
+}
+
+message TestMetadata {
+    option (com.blerpc.message) = {
+        message_size_bytes: 10
+    };
+
+    bytes metadata = 1 [(com.blerpc.field) = {
+        from_byte: 0
+        to_byte: 10
+    }];
+}
+
+message TestOptionsWithFieldNoBytesRequest {
+    int32 value = 1;
+}
+
+message TestOptionsNoBytesRangeRequest {
+    option (com.blerpc.message) = {
+        message_size_bytes: 2
+    };
+    int32 value = 1;
+}
+
+message TestOptionsEqualsIndexesRequest {
+    option (com.blerpc.message) = {
+        message_size_bytes: 10
+    };
+
+    bytes metadata = 1 [(com.blerpc.field) = {
+        from_byte: 0
+        to_byte: 0
+    }];
+}
+
+message TestOptionsNegativeRangeRequest {
+    option (com.blerpc.message) = {
+        message_size_bytes: 10
+    };
+
+    bytes metadata = 1 [(com.blerpc.field) = {
+        from_byte: -1
+        to_byte: 0
+    }];
+}
+
+message TestOptionsRangeBiggerThanCountRequest {
+    option (com.blerpc.message) = {
+        message_size_bytes: 10
+    };
+
+    bytes metadata = 1 [(com.blerpc.field) = {
+        from_byte: 0
+        to_byte: 11
+    }];
+}
+
+message TestOptionsRangeIntersectRequest {
+    option (com.blerpc.message) = {
+        message_size_bytes: 10
+    };
+
+    bytes value = 1 [(com.blerpc.field) = {
+        from_byte: 0
+        to_byte: 3
+    }];
+
+    bytes metadata = 2 [(com.blerpc.field) = {
+        from_byte: 2
+        to_byte: 10
+    }];
+}
+
+message TestOptionsStringValueRequest {
+    option (com.blerpc.message) = {
+        message_size_bytes: 4
+    };
+
+    string message = 1 [(com.blerpc.field) = {
+        from_byte: 0
+        to_byte: 4
+    }];
+}
+
+message TestOptionsFloatValueRequest {
+    option (com.blerpc.message) = {
+        message_size_bytes: 4
+    };
+
+    float weight = 1 [(com.blerpc.field) = {
+        from_byte: 0
+        to_byte: 4
+    }];
+}
+
+message TestOptionsDoubleValueRequest {
+    option (com.blerpc.message) = {
+        message_size_bytes: 4
+    };
+
+    double impedance = 1 [(com.blerpc.field) = {
+        from_byte: 0
+        to_byte: 4
+    }];
+}
+
+message TestOptionsWrongIntegerRangeRequest {
+    option (com.blerpc.message) = {
+        message_size_bytes: 5
+    };
+
+    int32 value = 1 [(com.blerpc.field) = {
+        from_byte: 0
+        to_byte: 5
+    }];
+}
+
+message TestOptionsWrongLongRangeRequest {
+    option (com.blerpc.message) = {
+        message_size_bytes: 9
+    };
+
+    int64 value = 1 [(com.blerpc.field) = {
+        from_byte: 0
+        to_byte: 9
+    }];
+}
+
+message TestOptionsWrongEnumRangeRequest {
+    option (com.blerpc.message) = {
+        message_size_bytes: 3
+    };
+
+    TestType type = 1 [(com.blerpc.field) = {
+        from_byte: 0
+        to_byte: 3
+    }];
+}
+
+message TestOptionsWrongBooleanRangeRequest {
+    option (com.blerpc.message) = {
+        message_size_bytes: 2
+    };
+
+    bool release = 1 [(com.blerpc.field) = {
+        from_byte: 0
+        to_byte: 2
+    }];
+}
+
+service TestImageService {
+    rpc TestSendImage (TestOptionsImageRequest) returns (TestOptionsImage) {}
+    rpc TestSendEmptyImage (TestOptionsImage) returns (TestOptionsImageRequest) {}
+    rpc TestWithFieldNoBytesMethod (TestOptionsImageRequest) returns (TestOptionsWithFieldNoBytesRequest) {}
+    rpc TestNoBytesRangeMethod (TestOptionsImageRequest) returns (TestOptionsNoBytesRangeRequest) {}
+    rpc TestEqualsIndexesMethod (TestOptionsImageRequest) returns (TestOptionsEqualsIndexesRequest) {}
+    rpc TestNegativeRangeMethod (TestOptionsImageRequest) returns (TestOptionsNegativeRangeRequest) {}
+    rpc TestRangeBiggerCountMethod (TestOptionsImageRequest) returns (TestOptionsRangeBiggerThanCountRequest) {}
+    rpc TestStringValueMethod (TestOptionsImageRequest) returns (TestOptionsStringValueRequest) {}
+    rpc TestFloatValueMethod (TestOptionsImageRequest) returns (TestOptionsFloatValueRequest) {}
+    rpc TestDoubleValueMethod (TestOptionsImageRequest) returns (TestOptionsDoubleValueRequest) {}
+    rpc TestWrongIntegerRangeMethod (TestOptionsImageRequest) returns (TestOptionsWrongIntegerRangeRequest) {}
+    rpc TestWrongLongRangeMethod (TestOptionsImageRequest) returns (TestOptionsWrongLongRangeRequest) {}
+    rpc TestWrongEnumRangeMethod (TestOptionsImageRequest) returns (TestOptionsWrongEnumRangeRequest) {}
+    rpc TestWrongBooleanRangeMethod (TestOptionsImageRequest) returns (TestOptionsWrongBooleanRangeRequest) {}
+}

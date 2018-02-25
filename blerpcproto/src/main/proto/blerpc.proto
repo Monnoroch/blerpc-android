@@ -39,6 +39,30 @@ message BleServiceRule {
     string uuid = 1;
 }
 
+// Desribes byte size of message.
+message BytesSize {
+    // Size of message in bytes.
+    int32 message_size_bytes = 1;
+}
+
+// Desribes bytes range that field holds in message.
+message BytesRange {
+    // The beginning index, inclusive.
+    int32 from_byte = 1;
+    // The ending index, exclusive.
+    int32 to_byte = 2;
+}
+
+// Add `field` fiels option for attaching description of field bytes range.
+extend google.protobuf.FieldOptions {
+    BytesRange field = 82595722;
+}
+
+// Add `message` message option for attaching description of message byte size.
+extend google.protobuf.MessageOptions {
+    BytesSize message = 82595723;
+}
+
 // Add `characteristic` method option for attaching the method to a BLE characteristic.
 extend google.protobuf.MethodOptions {
     BleCharacteristicRule characteristic = 82595724;
