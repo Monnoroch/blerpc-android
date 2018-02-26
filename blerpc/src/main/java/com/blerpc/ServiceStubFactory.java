@@ -56,7 +56,7 @@ public class ServiceStubFactory {
                                                  Handler listenerHandler,
                                                  Logger logger
     ) {
-        Preconditions.checkState(serviceStubFactory == null);
+        Preconditions.checkState(serviceStubFactory == null, "Factory instance already exists");
         serviceStubFactory = new ServiceStubFactory(
                 context, messageConverter, workHandler, listenerHandler, logger
         );
@@ -67,7 +67,7 @@ public class ServiceStubFactory {
      * Disconnect from all devices and clear a {@link ServiceStubFactory} instance.
      */
     public static void clearInstance() {
-        Preconditions.checkNotNull(serviceStubFactory);
+        Preconditions.checkNotNull(serviceStubFactory, "Factory instance doesn't exist");
         disconnectAll();
         serviceStubFactory = null;
     }
@@ -101,7 +101,8 @@ public class ServiceStubFactory {
      * @param deviceAddress - bluetooth device mac address to disconnect from.
      */
     public void disconnect(String deviceAddress) {
-        Preconditions.checkState(bleRpcChannels.containsKey(deviceAddress));
+        Preconditions.checkState(bleRpcChannels.containsKey(deviceAddress),
+                String.format("Chanel with bluetooth device %s doesn't exist", deviceAddress));
         bleRpcChannels.get(deviceAddress).reset();
         bleRpcChannels.remove(deviceAddress);
     }

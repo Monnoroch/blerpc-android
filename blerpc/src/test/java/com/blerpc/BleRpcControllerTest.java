@@ -1,7 +1,7 @@
 package com.blerpc;
 
+import static com.blerpc.Assert.assertError;
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.Assert.fail;
 
 import com.google.protobuf.RpcCallback;
 import org.junit.Test;
@@ -73,10 +73,7 @@ public class BleRpcControllerTest {
 
     @Test
     public void testNotifyOnCancel_notImplemented() {
-        try {
-            bleRpcController.notifyOnCancel(TEST_RPC_CALLBACK);
-            fail("Exception not thrown.");
-        } catch (UnsupportedOperationException expected) { }
+        assertError(() -> bleRpcController.notifyOnCancel(TEST_RPC_CALLBACK), "Not implemented.");
     }
 
     private void verifyInitialState() {
