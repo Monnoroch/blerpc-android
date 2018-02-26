@@ -20,9 +20,11 @@ public interface MessageConverter {
      * Provides a way to convert a received bytes from the remote to device to the top level response.
      *
      * @param methodDescriptor descriptor received from the {@link com.google.protobuf.Service}.
+     * @param responsePrototype method response message prototype received from the {@link com.google.protobuf.RpcChannel}.
      * @param value row value received from {@link android.bluetooth.BluetoothGattCharacteristic}.
      * @return the top-level response that represents the received data.
      * @throws CouldNotConvertMessageException when deserializing failed.
      */
-    Message deserializeResponse(MethodDescriptor methodDescriptor, byte[] value) throws CouldNotConvertMessageException;
+    Message deserializeResponse(MethodDescriptor methodDescriptor, Message responsePrototype, byte[] value)
+            throws CouldNotConvertMessageException;
 }

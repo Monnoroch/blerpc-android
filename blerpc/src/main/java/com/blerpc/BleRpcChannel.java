@@ -17,6 +17,7 @@ import com.blerpc.proto.MethodType;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Optional;
 import com.google.common.collect.FluentIterable;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.protobuf.Descriptors.MethodDescriptor;
@@ -157,7 +158,7 @@ public class BleRpcChannel implements RpcChannel {
     private void handleResult(byte[] value) {
         RpcCall currentCall = finishRpcCall();
         try {
-            Message response = messageConverter.deserializeResponse(currentCall.method, value);
+            Message response = messageConverter.deserializeResponse(currentCall.method, currentCall.responsePrototype, value);
             notifyResultForCall(currentCall, response);
         } catch (CouldNotConvertMessageException exception) {
             notifyCallFailed(currentCall, exception.getMessage());
@@ -225,7 +226,10 @@ public class BleRpcChannel implements RpcChannel {
         }
 
         try {
-            Message response = messageConverter.deserializeResponse(subscription.method, characteristic.getValue());
+            Message response = messageConverter.deserializeResponse(
+                    subscription.method,
+                    ImmutableList.copyOf(subscription.calls).get(0).responsePrototype,
+                    characteristic.getValue());
             for (RpcCall call : subscription.calls) {
                 notifyResultForCall(call, response);
             }
