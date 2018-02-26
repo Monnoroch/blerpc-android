@@ -12,7 +12,6 @@ import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor.JavaType;
 import com.google.protobuf.Descriptors.MethodDescriptor;
 import com.google.protobuf.Message;
-import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
@@ -86,11 +85,7 @@ public class AnnotationMessageConverter implements MessageConverter {
     }
 
     @Override
-    public Message deserializeResponse(MethodDescriptor methodDescriptor, byte[] value) throws CouldNotConvertMessageException {
-        return deserializeResponse(getMessageFromDescriptor(methodDescriptor.getOutputType()), value);
-    }
-
-    private Message deserializeResponse(Message message, byte[] value) throws CouldNotConvertMessageException {
+    public Message deserializeResponse(MethodDescriptor methodDescriptor, Message message, byte[] value) throws CouldNotConvertMessageException {
         if (value.length == 0) {
             return message.getDefaultInstanceForType();
         }
@@ -104,8 +99,10 @@ public class AnnotationMessageConverter implements MessageConverter {
             JavaType fieldType = fieldDescriptor.getType().getJavaType();
             switch (fieldType) {
                 case MESSAGE:
-                    messageBuilder.setField(fieldDescriptor, deserializeResponse(getMessageFromDescriptor(
-                            fieldDescriptor.getMessageType()), copyArrayRange(value, bytesRange)));
+                    messageBuilder.setField(fieldDescriptor, deserializeResponse(
+                            null,
+                            (Message) message.getField(fieldDescriptor),
+                            copyArrayRange(value, bytesRange)));
                     break;
                 case INT:
                     messageBuilder.setField(fieldDescriptor, (int) deserializeLong(copyArrayRange(value, bytesRange), fieldName));
@@ -248,15 +245,5 @@ public class AnnotationMessageConverter implements MessageConverter {
         byte[] byteArray = new byte[bytesRange.getToByte() - bytesRange.getFromByte()];
         checkArgument(Arrays.equals(copyArrayRange(messageBytes, bytesRange), byteArray),
                 String.format("ByteRange must not intersect with other fields ByteRange, field name: %s", name));
-    }
-
-    private static Message getMessageFromDescriptor(Descriptor descriptor) throws CouldNotConvertMessageException {
-        try {
-            Class<?> clazz = Class.forName(descriptor.getFullName());
-            Method method = clazz.getDeclaredMethod("newBuilder");
-            return ((Message.Builder) method.invoke(null)).build();
-        } catch (Exception exception) {
-            throw CouldNotConvertMessageException.deserializeResponse(exception);
-        }
     }
 }

@@ -206,20 +206,3 @@ message TestOptionsWrongBooleanRangeRequest {
         to_byte: 2
     }];
 }
-
-service TestImageService {
-    rpc TestSendImage (TestOptionsImageRequest) returns (TestOptionsImage) {}
-    rpc TestSendEmptyImage (TestOptionsImage) returns (TestOptionsImageRequest) {}
-    rpc TestWithFieldNoBytesMethod (TestOptionsImageRequest) returns (TestOptionsWithFieldNoBytesRequest) {}
-    rpc TestNoBytesRangeMethod (TestOptionsImageRequest) returns (TestOptionsNoBytesRangeRequest) {}
-    rpc TestEqualsIndexesMethod (TestOptionsImageRequest) returns (TestOptionsEqualsIndexesRequest) {}
-    rpc TestNegativeRangeMethod (TestOptionsImageRequest) returns (TestOptionsNegativeRangeRequest) {}
-    rpc TestRangeBiggerCountMethod (TestOptionsImageRequest) returns (TestOptionsRangeBiggerThanCountRequest) {}
-    rpc TestStringValueMethod (TestOptionsImageRequest) returns (TestOptionsStringValueRequest) {}
-    rpc TestFloatValueMethod (TestOptionsImageRequest) returns (TestOptionsFloatValueRequest) {}
-    rpc TestDoubleValueMethod (TestOptionsImageRequest) returns (TestOptionsDoubleValueRequest) {}
-    rpc TestWrongIntegerRangeMethod (TestOptionsImageRequest) returns (TestOptionsWrongIntegerRangeRequest) {}
-    rpc TestWrongLongRangeMethod (TestOptionsImageRequest) returns (TestOptionsWrongLongRangeRequest) {}
-    rpc TestWrongEnumRangeMethod (TestOptionsImageRequest) returns (TestOptionsWrongEnumRangeRequest) {}
-    rpc TestWrongBooleanRangeMethod (TestOptionsImageRequest) returns (TestOptionsWrongBooleanRangeRequest) {}
-}

@@ -3,7 +3,6 @@ package com.blerpc;
 import static com.blerpc.Assert.assertError;
 import static com.google.common.truth.Truth.assertThat;
 
-import com.blerpc.device.test.proto.TestImageService;
 import com.blerpc.device.test.proto.TestMetadata;
 import com.blerpc.device.test.proto.TestOptionsDoubleValueRequest;
 import com.blerpc.device.test.proto.TestOptionsEqualsIndexesRequest;
@@ -23,7 +22,6 @@ import com.blerpc.device.test.proto.TestOptionsWrongLongRangeRequest;
 import com.blerpc.device.test.proto.TestOptionsZeroBytesRequest;
 import com.blerpc.device.test.proto.TestType;
 import com.google.protobuf.ByteString;
-import com.google.protobuf.Descriptors.MethodDescriptor;
 import java.nio.ByteOrder;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -56,8 +54,6 @@ public class AnnotationMessageConverterTest {
                     .setMetadata(ByteString.copyFrom(new byte[]{5, 4, 3, 2, 1, 10, 9, 8, 7, 6})))
             .setBuildTime(1519576271989L)
             .build();
-    private static final MethodDescriptor SEND_IMAGE_DESCRIPTOR = TestImageService.getDescriptor().findMethodByName("TestSendImage");
-    private static final MethodDescriptor SEND_EMPTY_IMAGE_DESCRIPTOR = TestImageService.getDescriptor().findMethodByName("TestSendEmptyImage");
     private static final TestOptionsImage IMAGE_REQUEST_WRONG_BYTE_STRING = TestOptionsImage.newBuilder()
             .setMetadata(TestMetadata.newBuilder()
                     .setMetadata(ByteString.copyFrom(new byte[]{1, 2, 3})))
@@ -73,63 +69,39 @@ public class AnnotationMessageConverterTest {
             new byte[]{35, 3, 32, 0, 1, -3, -60, 0, 1, 5, 4, 3, 2, 1, 10, 9, 8, 7, 6, 0, 0, 1, 97, -51, -51, -52, 117};
     private static final TestOptionsZeroBytesRequest ZERO_BYTES_REQUEST = TestOptionsZeroBytesRequest.getDefaultInstance();
     private static final TestOptionsWithFieldNoBytesRequest FIELD_NO_BYTES_REQUEST = TestOptionsWithFieldNoBytesRequest.getDefaultInstance();
-    private static final MethodDescriptor FIELD_NO_BYTES_DESCRIPTOR = TestImageService.getDescriptor()
-            .findMethodByName("TestWithFieldNoBytesMethod");
     private static final TestOptionsNoBytesRangeRequest NO_BYTES_RANGE_REQUEST = TestOptionsNoBytesRangeRequest.newBuilder()
             .setValue(20)
             .build();
-    private static final MethodDescriptor NO_BYTES_RANGE_DESCRIPTOR = TestImageService.getDescriptor()
-            .findMethodByName("TestNoBytesRangeMethod");
     private static final TestOptionsEqualsIndexesRequest EQUALS_INDEXES_REQUEST = TestOptionsEqualsIndexesRequest.newBuilder()
             .setMetadata(METADATA_STRING)
             .build();
-    private static final MethodDescriptor EQUALS_INDEXES_DESCRIPTOR = TestImageService.getDescriptor()
-            .findMethodByName("TestEqualsIndexesMethod");
     private static final TestOptionsNegativeRangeRequest NEGATIVE_RANGE_REQUEST = TestOptionsNegativeRangeRequest.newBuilder()
             .setMetadata(METADATA_STRING)
             .build();
-    private static final MethodDescriptor NEGATIVE_RANGE_DESCRIPTOR = TestImageService.getDescriptor()
-            .findMethodByName("TestNegativeRangeMethod");
     private static final TestOptionsStringValueRequest STRING_VALUE_REQUEST = TestOptionsStringValueRequest.newBuilder()
             .setMessage("Message")
             .build();
-    private static final MethodDescriptor STRING_VALUE_DESCRIPTOR = TestImageService.getDescriptor()
-            .findMethodByName("TestStringValueMethod");
     private static final TestOptionsFloatValueRequest FLOAT_VALUE_REQUEST = TestOptionsFloatValueRequest.newBuilder()
             .setWeight(85.5f)
             .build();
-    private static final MethodDescriptor FLOAT_VALUE_DESCRIPTOR = TestImageService.getDescriptor()
-            .findMethodByName("TestFloatValueMethod");
     private static final TestOptionsDoubleValueRequest DOUBLE_VALUE_REQUEST = TestOptionsDoubleValueRequest.newBuilder()
             .setImpedance(300.5678d)
             .build();
-    private static final MethodDescriptor DOUBLE_VALUE_DESCRIPTOR = TestImageService.getDescriptor()
-            .findMethodByName("TestDoubleValueMethod");
     private static final TestOptionsRangeBiggerThanCountRequest RANGE_BIGGER_COUNT_REQUEST = TestOptionsRangeBiggerThanCountRequest.newBuilder()
             .setMetadata(METADATA_STRING)
             .build();
-    private static final MethodDescriptor RANGE_BIGGER_COUNT_DESCRIPTOR = TestImageService.getDescriptor()
-            .findMethodByName("TestRangeBiggerCountMethod");
     private static final TestOptionsWrongIntegerRangeRequest WRONG_INT_RANGE_REQUEST = TestOptionsWrongIntegerRangeRequest.newBuilder()
             .setValue(20)
             .build();
-    private static final MethodDescriptor WRONG_INT_RANGE_DESCRIPTOR = TestImageService.getDescriptor()
-            .findMethodByName("TestWrongIntegerRangeMethod");
     private static final TestOptionsWrongLongRangeRequest WRONG_LONG_RANGE_REQUEST = TestOptionsWrongLongRangeRequest.newBuilder()
             .setValue(100000)
             .build();
-    private static final MethodDescriptor WRONG_LONG_RANGE_DESCRIPTOR = TestImageService.getDescriptor()
-            .findMethodByName("TestWrongLongRangeMethod");
     private static final TestOptionsWrongEnumRangeRequest WRONG_ENUM_RANGE_REQUEST = TestOptionsWrongEnumRangeRequest.newBuilder()
             .setType(TestType.ONLY_APP)
             .build();
-    private static final MethodDescriptor WRONG_ENUM_RANGE_DESCRIPTOR = TestImageService.getDescriptor()
-            .findMethodByName("TestWrongEnumRangeMethod");
     private static final TestOptionsWrongBooleanRangeRequest WRONG_BOOLEAN_RANGE_REQUEST = TestOptionsWrongBooleanRangeRequest.newBuilder()
             .setRelease(true)
             .build();
-    private static final MethodDescriptor WRONG_BOOLEAN_RANGE_DESCRIPTOR = TestImageService.getDescriptor()
-            .findMethodByName("TestWrongBooleanRangeMethod");
     private static final TestOptionsRangeIntersectRequest RANGE_INTERSECT_REQUEST = TestOptionsRangeIntersectRequest.newBuilder()
             .setValue(ByteString.copyFrom(new byte[]{1, 2, 3}))
             .setMetadata(METADATA_STRING)
@@ -228,78 +200,91 @@ public class AnnotationMessageConverterTest {
 
     @Test
     public void deserializeResponseTest() throws Exception {
-        assertThat(converterLittleEndian.deserializeResponse(SEND_IMAGE_DESCRIPTOR, IMAGE_REQUEST_1_BYTES_LITTLE_ENDIAN)).isEqualTo(IMAGE_REQUEST_1);
-        assertThat(converter.deserializeResponse(SEND_IMAGE_DESCRIPTOR, IMAGE_REQUEST_1_BYTES_BIG_ENDIAN)).isEqualTo(IMAGE_REQUEST_1);
-        assertThat(converterLittleEndian.deserializeResponse(SEND_IMAGE_DESCRIPTOR, IMAGE_REQUEST_2_BYTES_LITTLE_ENDIAN)).isEqualTo(IMAGE_REQUEST_2);
-        assertThat(converter.deserializeResponse(SEND_IMAGE_DESCRIPTOR, IMAGE_REQUEST_2_BYTES_BIG_ENDIAN)).isEqualTo(IMAGE_REQUEST_2);
+        assertThat(converterLittleEndian.deserializeResponse(null, TestOptionsImage.getDefaultInstance(), IMAGE_REQUEST_1_BYTES_LITTLE_ENDIAN))
+                .isEqualTo(IMAGE_REQUEST_1);
+        assertThat(converter.deserializeResponse(null, TestOptionsImage.getDefaultInstance(), IMAGE_REQUEST_1_BYTES_BIG_ENDIAN))
+                .isEqualTo(IMAGE_REQUEST_1);
+        assertThat(converterLittleEndian.deserializeResponse(null, TestOptionsImage.getDefaultInstance(), IMAGE_REQUEST_2_BYTES_LITTLE_ENDIAN))
+                .isEqualTo(IMAGE_REQUEST_2);
+        assertThat(converter.deserializeResponse(null, TestOptionsImage.getDefaultInstance(), IMAGE_REQUEST_2_BYTES_BIG_ENDIAN))
+                .isEqualTo(IMAGE_REQUEST_2);
     }
 
     @Test
     public void deserializeResponseTest_emptyMessage() throws Exception {
-        assertThat(converter.deserializeResponse(SEND_EMPTY_IMAGE_DESCRIPTOR, EMPTY_ARRAY)).isEqualTo(TestOptionsImageRequest.getDefaultInstance());
+        assertThat(converter.deserializeResponse(null, TestOptionsImageRequest.getDefaultInstance(), EMPTY_ARRAY))
+                .isEqualTo(TestOptionsImageRequest.getDefaultInstance());
     }
 
     @Test
     public void deserializeResponseTest_wrongMessageByteSize() throws Exception {
-        assertError(() -> converter.deserializeResponse(SEND_IMAGE_DESCRIPTOR, new byte[10]),
+        assertError(() -> converter.deserializeResponse(null, TestOptionsImage.getDefaultInstance(), new byte[10]),
                 "Message byte size 10 is not equals to expected size of device response 27");
     }
 
     @Test
     public void deserializeResponseTest_messageWithFieldAndWithoutByteSize() throws Exception {
-        assertError(() -> converter.deserializeResponse(FIELD_NO_BYTES_DESCRIPTOR, IMAGE_REQUEST_1_BYTES_LITTLE_ENDIAN),
+        assertError(() -> converter.deserializeResponse(null,
+                TestOptionsWithFieldNoBytesRequest.getDefaultInstance(),
+                IMAGE_REQUEST_1_BYTES_LITTLE_ENDIAN),
                 "Proto message \"TestOptionsWithFieldNoBytesRequest\" with fields must have BytesSize option");
     }
 
     @Test
     public void deserializeResponseTest_noByteRangeMessage() throws Exception {
-        assertError(() -> converter.deserializeResponse(NO_BYTES_RANGE_DESCRIPTOR, new byte[2]),
+        assertError(() -> converter.deserializeResponse(null, TestOptionsNoBytesRangeRequest.getDefaultInstance(), new byte[2]),
                 "Proto field \"value\" must have ByteRange option");
     }
 
     @Test
     public void deserializeResponseTest_equalsIndexesMessage() throws Exception {
-        assertError(() -> converter.deserializeResponse(EQUALS_INDEXES_DESCRIPTOR, new byte[10]),
+        assertError(() -> converter.deserializeResponse(null, TestOptionsEqualsIndexesRequest.getDefaultInstance(), new byte[10]),
                 "ByteRange first byte 0 must be lower than last byte 0, field name: metadata");
     }
 
     @Test
     public void deserializeResponseTest_negativeRangeMessage() throws Exception {
-        assertError(() -> converter.deserializeResponse(NEGATIVE_RANGE_DESCRIPTOR, new byte[10]),
+        assertError(() -> converter.deserializeResponse(null, TestOptionsNegativeRangeRequest.getDefaultInstance(), new byte[10]),
                 "ByteRange must have only positive values, field name: metadata");
     }
 
     @Test
     public void deserializeResponseTest_rangeBiggerThanCountMessage() throws Exception {
-        assertError(() -> converter.deserializeResponse(RANGE_BIGGER_COUNT_DESCRIPTOR, new byte[10]),
+        assertError(() -> converter.deserializeResponse(null, TestOptionsRangeBiggerThanCountRequest.getDefaultInstance(), new byte[10]),
                 "ByteRange last byte 11 must not be bigger than message byte count 10, field name: metadata");
     }
 
     @Test
     public void deserializeResponseTest_unsupportedType() throws Exception {
-        assertError(() -> converter.deserializeResponse(STRING_VALUE_DESCRIPTOR, new byte[4]), "Unsupported field type: STRING");
-        assertError(() -> converter.deserializeResponse(FLOAT_VALUE_DESCRIPTOR, new byte[4]), "Unsupported field type: FLOAT");
-        assertError(() -> converter.deserializeResponse(DOUBLE_VALUE_DESCRIPTOR, new byte[4]), "Unsupported field type: DOUBLE");
+        assertError(() -> converter.deserializeResponse(null, TestOptionsStringValueRequest.getDefaultInstance(), new byte[4]),
+                "Unsupported field type: STRING");
+        assertError(() -> converter.deserializeResponse(null, TestOptionsFloatValueRequest.getDefaultInstance(), new byte[4]),
+                "Unsupported field type: FLOAT");
+        assertError(() -> converter.deserializeResponse(null, TestOptionsDoubleValueRequest.getDefaultInstance(), new byte[4]),
+                "Unsupported field type: DOUBLE");
     }
 
     @Test
     public void deserializeResponseTest_wrongIntegerRange() throws Exception {
-        assertError(() -> converter.deserializeResponse(WRONG_INT_RANGE_DESCRIPTOR, new byte[5]), "Number field \"value\" has wrong bytes count");
+        assertError(() -> converter.deserializeResponse(null, TestOptionsWrongIntegerRangeRequest.getDefaultInstance(), new byte[5]),
+                "Number field \"value\" has wrong bytes count");
     }
 
     @Test
     public void deserializeResponseTest_wrongLongRange() throws Exception {
-        assertError(() -> converter.deserializeResponse(WRONG_LONG_RANGE_DESCRIPTOR, new byte[9]), "Number field \"value\" has wrong bytes count");
+        assertError(() -> converter.deserializeResponse(null, TestOptionsWrongLongRangeRequest.getDefaultInstance(), new byte[9]),
+                "Number field \"value\" has wrong bytes count");
     }
 
     @Test
     public void deserializeResponseTest_wrongEnumRange() throws Exception {
-        assertError(() -> converter.deserializeResponse(WRONG_ENUM_RANGE_DESCRIPTOR, new byte[3]), "Number field \"type\" has wrong bytes count");
+        assertError(() -> converter.deserializeResponse(null, TestOptionsWrongEnumRangeRequest.getDefaultInstance(), new byte[3]),
+                "Number field \"type\" has wrong bytes count");
     }
 
     @Test
     public void deserializeResponseTest_wrongBooleanRange() throws Exception {
-        assertError(() -> converter.deserializeResponse(WRONG_BOOLEAN_RANGE_DESCRIPTOR, new byte[2]),
+        assertError(() -> converter.deserializeResponse(null, TestOptionsWrongBooleanRangeRequest.getDefaultInstance(), new byte[2]),
                 "Boolean value \"release\" mustn't take more than 1 byte");
     }
 }
