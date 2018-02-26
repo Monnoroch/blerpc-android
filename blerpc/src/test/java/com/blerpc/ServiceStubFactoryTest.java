@@ -1,5 +1,6 @@
 package com.blerpc;
 
+import static com.blerpc.Assert.assertError;
 import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -76,9 +77,9 @@ public class ServiceStubFactoryTest {
         }
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test
     public void getInstance_secondTime() {
-        ServiceStubFactory.getInstance(context, messageConverter, handler, handler, logger);
+        assertError(() -> ServiceStubFactory.getInstance(context, messageConverter, handler, handler, logger), "Factory instance already exists");
     }
 
     @Test
@@ -87,10 +88,10 @@ public class ServiceStubFactoryTest {
         ServiceStubFactory.getInstance(context, messageConverter, handler, handler, logger);
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test
     public void clearInstance_instanceDoesntExists() {
         ServiceStubFactory.clearInstance();
-        ServiceStubFactory.clearInstance();
+        assertError(ServiceStubFactory::clearInstance, "Factory instance doesn't exist");
     }
 
     @Test
@@ -145,9 +146,9 @@ public class ServiceStubFactoryTest {
         verify(bluetoothDeviceSecond).connectGatt(eq(context), anyBoolean(), any(BluetoothGattCallback.class));
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test
     public void testProvideService_incorrectClass() throws Exception {
-        serviceStubFactory.provideService(bluetoothDevice, String.class);
+        assertError(() -> serviceStubFactory.provideService(bluetoothDevice, String.class), "Service class is incorrect");
     }
 
     @Test
@@ -164,8 +165,8 @@ public class ServiceStubFactoryTest {
         verify(bluetoothGatt).close();
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test
     public void testDisconnectBeforeAnyCalls() {
-        serviceStubFactory.disconnect(DEVICE_ADDRESS);
+        assertError(() -> serviceStubFactory.disconnect(DEVICE_ADDRESS), "Chanel with bluetooth device address doesn't exist");
     }
 }
