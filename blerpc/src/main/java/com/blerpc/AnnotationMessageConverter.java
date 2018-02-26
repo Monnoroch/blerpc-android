@@ -102,7 +102,6 @@ public class AnnotationMessageConverter implements MessageConverter {
             BytesRange bytesRange = getBytesRange(messageBytesSize, fieldDescriptor);
             String fieldName = fieldDescriptor.getName();
             JavaType fieldType = fieldDescriptor.getType().getJavaType();
-
             switch (fieldType) {
                 case MESSAGE:
                     messageBuilder.setField(fieldDescriptor, deserializeResponse(getMessageFromDescriptor(
