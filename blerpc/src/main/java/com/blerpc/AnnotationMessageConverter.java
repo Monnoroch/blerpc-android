@@ -47,7 +47,6 @@ public class AnnotationMessageConverter implements MessageConverter {
             return new byte[0];
         }
         byte[] messageBytes = new byte[messageBytesSize];
-
         for (Map.Entry<FieldDescriptor, Object> entry : message.getAllFields().entrySet()) {
             FieldDescriptor fieldDescriptor = entry.getKey();
             Object fieldObject = entry.getValue();
@@ -129,8 +128,8 @@ public class AnnotationMessageConverter implements MessageConverter {
     }
 
     private byte[] serializeLong(long fieldValue, int bytesCount, String fieldName) throws CouldNotConvertMessageException {
-        checkArgument(bytesCount <= 8, String.format("Only integer fields with declared bytes size in [1, 8] are supported. " +
-                "Field %s has %d bytes size.", fieldName, bytesCount));
+        checkArgument(bytesCount <= 8, String.format("Only integer fields with declared bytes size in [1, 8] are supported. "
+                + "Field %s has %d bytes size.", fieldName, bytesCount));
         byte[] bytes = ByteBuffer.allocate(8).order(byteOrder).putLong(fieldValue).array();
         return copyArrayRange(bytes, BytesRange.newBuilder()
                 .setFromByte(byteOrder.equals(ByteOrder.BIG_ENDIAN) ? 8 - bytesCount : 0)
@@ -152,8 +151,8 @@ public class AnnotationMessageConverter implements MessageConverter {
     }
 
     private long deserializeLong(byte[] bytes, String fieldName) throws CouldNotConvertMessageException {
-        checkArgument(bytes.length <= 8, String.format("Only integer fields with declared bytes size in [1, 8] are supported. " +
-                "Field %s has %d bytes size.", fieldName, bytes.length));
+        checkArgument(bytes.length <= 8, String.format("Only integer fields with declared bytes size in [1, 8] are supported. "
+                + "Field %s has %d bytes size.", fieldName, bytes.length));
         byte[] longBytes = new byte[8];
         setBytesToArray(longBytes, byteOrder.equals(ByteOrder.BIG_ENDIAN) ? longBytes.length - bytes.length : 0, bytes);
         return ByteBuffer.wrap(longBytes).order(byteOrder).getLong();
