@@ -1,10 +1,10 @@
 package com.blerpc;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import com.blerpc.proto.Blerpc;
 import com.blerpc.proto.BytesRange;
-import com.google.common.base.Preconditions;
 import com.google.protobuf.ByteString;
-import com.google.protobuf.DescriptorProtos.FieldOptions;
 import com.google.protobuf.DescriptorProtos.MessageOptions;
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.Descriptors.Descriptor;
@@ -26,7 +26,7 @@ public class AnnotationMessageConverter implements MessageConverter {
     private final ByteOrder byteOrder;
 
     /**
-     * Create {@link AnnotationMessageConverter} instance.
+     * Create {@link AnnotationMessageConverter} instance for big endian byte order.
      */
     public AnnotationMessageConverter() {
         this(ByteOrder.BIG_ENDIAN);
@@ -56,28 +56,25 @@ public class AnnotationMessageConverter implements MessageConverter {
             BytesRange bytesRange = getBytesRange(messageBytes, fieldDescriptor);
             int fieldBytesSize = bytesRange.getToByte() - bytesRange.getFromByte();
             JavaType fieldType = fieldDescriptor.getType().getJavaType();
-
             byte[] fieldBytes;
             switch (fieldType) {
                 case MESSAGE:
-                    fieldBytes = serializeRequest(null, ((Message) entry.getValue()));
+                    fieldBytes = serializeRequest(null, (Message) entry.getValue());
                     break;
                 case INT:
-                    fieldBytes = intToBytes(((Integer) fieldObject), fieldBytesSize, fieldName);
+                    fieldBytes = serializeLong((Integer) fieldObject, fieldBytesSize, fieldName);
                     break;
                 case LONG:
-                    fieldBytes = intToBytes(((Long) fieldObject), fieldBytesSize, fieldName);
+                    fieldBytes = serializeLong((Long) fieldObject, fieldBytesSize, fieldName);
                     break;
                 case BYTE_STRING:
-                    fieldBytes = ((ByteString) entry.getValue()).toByteArray();
-                    Preconditions.checkState(fieldBytes.length == fieldBytesSize,
-                            String.format("ByteString \"%s\" size is not equals to field bytes count", fieldName));
+                    fieldBytes = serializeByteString((ByteString) entry.getValue(), fieldBytesSize);
                     break;
                 case ENUM:
-                    fieldBytes = intToBytes(((Descriptors.EnumValueDescriptor) fieldObject).getNumber(), fieldBytesSize, fieldName);
+                    fieldBytes = serializeLong(((Descriptors.EnumValueDescriptor) fieldObject).getNumber(), fieldBytesSize, fieldName);
                     break;
                 case BOOLEAN:
-                    fieldBytes = new byte[]{(Boolean) entry.getValue() ? (byte) 1 : (byte) 0};
+                    fieldBytes = serializeBoolean((Boolean) entry.getValue());
                     break;
                 // TODO(#5): Add support of String, Float and Double.
                 default:
@@ -98,8 +95,8 @@ public class AnnotationMessageConverter implements MessageConverter {
             return message.getDefaultInstanceForType();
         }
         int messageBytesSize = getMessageBytesSize(message);
-        Preconditions.checkState(value.length == messageBytesSize, "Message byte size is not equals to size of device response");
-
+        checkArgument(value.length == messageBytesSize,
+                String.format("Message byte size %d is not equals to expected size of device response %d", value.length, messageBytesSize));
         Message.Builder messageBuilder = message.toBuilder();
         for (FieldDescriptor fieldDescriptor : message.getDescriptorForType().getFields()) {
             BytesRange bytesRange = getBytesRange(messageBytesSize, fieldDescriptor);
@@ -112,20 +109,20 @@ public class AnnotationMessageConverter implements MessageConverter {
                             fieldDescriptor.getMessageType()), copyArrayRange(value, bytesRange)));
                     break;
                 case INT:
-                    messageBuilder.setField(fieldDescriptor, (int) bytesToInt(copyArrayRange(value, bytesRange), fieldName));
+                    messageBuilder.setField(fieldDescriptor, (int) deserializeLong(copyArrayRange(value, bytesRange), fieldName));
                     break;
                 case LONG:
-                    messageBuilder.setField(fieldDescriptor, bytesToInt(copyArrayRange(value, bytesRange), fieldName));
+                    messageBuilder.setField(fieldDescriptor, deserializeLong(copyArrayRange(value, bytesRange), fieldName));
                     break;
                 case BYTE_STRING:
-                    messageBuilder.setField(fieldDescriptor, ByteString.copyFrom(copyArrayRange(value, bytesRange)));
+                    messageBuilder.setField(fieldDescriptor, deserializeByteString(copyArrayRange(value, bytesRange)));
                     break;
                 case ENUM:
                     messageBuilder.setField(fieldDescriptor, fieldDescriptor.getEnumType()
-                            .findValueByNumber((int) bytesToInt(copyArrayRange(value, bytesRange), fieldName)));
+                            .findValueByNumber((int) deserializeLong(copyArrayRange(value, bytesRange), fieldName)));
                     break;
                 case BOOLEAN:
-                    messageBuilder.setField(fieldDescriptor, value[bytesRange.getFromByte()] != 0);
+                    messageBuilder.setField(fieldDescriptor, deserializeBoolean(value[bytesRange.getFromByte()]));
                     break;
                 // TODO(#5): Add support of String, Float and Double.
                 default:
@@ -135,7 +132,7 @@ public class AnnotationMessageConverter implements MessageConverter {
         return messageBuilder.build();
     }
 
-    private byte[] intToBytes(long fieldValue, int bytesCount, String fieldName) throws CouldNotConvertMessageException {
+    private byte[] serializeLong(long fieldValue, int bytesCount, String fieldName) throws CouldNotConvertMessageException {
         switch (bytesCount) {
             case 1:
                 return new byte[]{(byte) fieldValue};
@@ -146,11 +143,25 @@ public class AnnotationMessageConverter implements MessageConverter {
             case 8:
                 return ByteBuffer.allocate(8).order(byteOrder).putLong(fieldValue).array();
             default:
-                throw CouldNotConvertMessageException.serializeRequest(String.format("Number field \"%s\" has wrong bytes count", fieldName));
+                throw CouldNotConvertMessageException
+                        .serializeRequest(String.format("Number field \"%s\" has wrong bytes count %d", fieldName, bytesCount));
         }
     }
 
-    private long bytesToInt(byte[] intBytes, String fieldName) throws CouldNotConvertMessageException {
+    private byte[] serializeBoolean(boolean fieldValue) throws CouldNotConvertMessageException {
+        return new byte[]{fieldValue ? (byte) 1 : (byte) 0};
+    }
+
+    private byte[] serializeByteString(ByteString fieldValue, int expectedBytesSize) throws CouldNotConvertMessageException {
+        byte[] bytes = fieldValue.toByteArray();
+        if (bytes.length != expectedBytesSize) {
+            throw CouldNotConvertMessageException.serializeRequest
+                    ("Actual byte string size %d is not equal to the declared field size %d", bytes.length, expectedBytesSize);
+        }
+        return bytes;
+    }
+
+    private long deserializeLong(byte[] intBytes, String fieldName) throws CouldNotConvertMessageException {
         switch (intBytes.length) {
             case 1:
                 return intBytes[0];
@@ -161,8 +172,17 @@ public class AnnotationMessageConverter implements MessageConverter {
             case 8:
                 return ByteBuffer.wrap(intBytes).order(byteOrder).getLong();
             default:
-                throw CouldNotConvertMessageException.serializeRequest(String.format("Number field \"%s\" has wrong bytes count", fieldName));
+                throw CouldNotConvertMessageException
+                        .serializeRequest(String.format("Number field \"%s\" has wrong bytes count %d", fieldName, intBytes.length));
         }
+    }
+
+    private boolean deserializeBoolean(byte booleanValue) throws CouldNotConvertMessageException {
+        return booleanValue != 0;
+    }
+
+    private ByteString deserializeByteString(byte[] stringBytes) throws CouldNotConvertMessageException {
+        return ByteString.copyFrom(stringBytes);
     }
 
     private void setBytesToArray(byte[] bytesArray, int fromByte, byte[] bytesForSetting) {
@@ -178,38 +198,42 @@ public class AnnotationMessageConverter implements MessageConverter {
     private static int getMessageBytesSize(Message message) {
         Descriptor descriptor = message.getDescriptorForType();
         MessageOptions options = descriptor.getOptions();
-        Preconditions.checkState(options.hasExtension(Blerpc.message) || descriptor.getFields().isEmpty(),
+        checkArgument(options.hasExtension(Blerpc.messageSize) || descriptor.getFields().isEmpty(),
                 String.format("Proto message \"%s\" with fields must have BytesSize option", descriptor.getName()));
-        return options.getExtension(Blerpc.message).getMessageSizeBytes();
+        return options.getExtension(Blerpc.messageSize).getMessageSizeBytes();
     }
 
     private BytesRange getBytesRange(byte[] messageBytes, FieldDescriptor descriptor) {
-        FieldOptions options = descriptor.getOptions();
-        String fieldName = descriptor.getName();
-        Preconditions.checkState(options.hasExtension(Blerpc.field),
-                String.format("Proto field \"%s\" must have ByteRange option", fieldName));
-        BytesRange bytesRange = options.getExtension(Blerpc.field);
-        checkBytesRangeValid(bytesRange, messageBytes.length, descriptor);
-        checkBytesRangeNotFilled(messageBytes, bytesRange, fieldName);
+        BytesRange bytesRange = getBytesRange(messageBytes.length, descriptor);
+        checkBytesRangeNotFilled(messageBytes, bytesRange, descriptor.getName());
         return bytesRange;
     }
 
     private BytesRange getBytesRange(int messageBytesSize, FieldDescriptor descriptor) {
-        Preconditions.checkState(descriptor.getOptions().hasExtension(Blerpc.field),
-                String.format("Proto field \"%s\" must have ByteRange option", descriptor.getName()));
-        BytesRange bytesRange = descriptor.getOptions().getExtension(Blerpc.field);
+        checkFieldHasByteRangeOption(descriptor);
+        BytesRange bytesRange = descriptor.getOptions().getExtension(Blerpc.filedBytes);
         checkBytesRangeValid(bytesRange, messageBytesSize, descriptor);
         return bytesRange;
     }
 
+    private static void checkFieldHasByteRangeOption(FieldDescriptor descriptor) {
+        checkArgument(descriptor.getOptions().hasExtension(Blerpc.filedBytes),
+                String.format("Proto field \"%s\" must have ByteRange option", descriptor.getName()));
+    }
+
     private static void checkBytesRangeValid(BytesRange bytesRange, int maxRangeValue, FieldDescriptor descriptor) {
         String name = descriptor.getName();
-        Preconditions.checkState(bytesRange.getFromByte() < bytesRange.getToByte(), bytesRange.toString(),
-                String.format("ByteRange beginning index must be lower than ending index, field name: %s", name));
-        Preconditions.checkState(bytesRange.getFromByte() >= 0,
+        int firstByte = bytesRange.getFromByte();
+        int lastByte = bytesRange.getToByte();
+        checkArgument(firstByte < lastByte, bytesRange.toString(),
+                String.format("ByteRange first byte %d must be lower than last byte %d, field name: %s", firstByte, lastByte, name));
+        checkArgument(firstByte >= 0,
                 String.format("ByteRange must have only positive values, field name: %s", name));
-        Preconditions.checkState(bytesRange.getToByte() <= maxRangeValue,
-                String.format("ByteRange ending index must not be bigger than message byte count, field name: %s", name));
+        checkArgument(bytesRange.getToByte() <= maxRangeValue,
+                String.format("ByteRange last byte %d must not be bigger than message byte count %d, field name: %s",
+                        lastByte,
+                        maxRangeValue,
+                        name));
         checkBooleanRange(bytesRange, descriptor);
     }
 
@@ -217,20 +241,20 @@ public class AnnotationMessageConverter implements MessageConverter {
         if (!descriptor.getType().getJavaType().equals(JavaType.BOOLEAN)) {
             return;
         }
-        Preconditions.checkState(bytesRange.getToByte() - bytesRange.getFromByte() == 1,
+        checkArgument(bytesRange.getToByte() - bytesRange.getFromByte() == 1,
                 String.format("Boolean value \"%s\" mustn't take more than 1 byte", descriptor.getName()));
     }
 
     private static void checkBytesRangeNotFilled(byte[] messageBytes, BytesRange bytesRange, String name) {
         byte[] byteArray = new byte[bytesRange.getToByte() - bytesRange.getFromByte()];
-        Preconditions.checkState(Arrays.equals(copyArrayRange(messageBytes, bytesRange), byteArray),
+        checkArgument(Arrays.equals(copyArrayRange(messageBytes, bytesRange), byteArray),
                 String.format("ByteRange must not intersect with other fields ByteRange, field name: %s", name));
     }
 
     private static Message getMessageFromDescriptor(Descriptor descriptor) throws CouldNotConvertMessageException {
         try {
             Class<?> clazz = Class.forName(descriptor.getFullName());
-            Method method = clazz.getDeclaredMethod("newBuilder", null);
+            Method method = clazz.getDeclaredMethod("newBuilder");
             return ((Message.Builder) method.invoke(null)).build();
         } catch (Exception exception) {
             throw CouldNotConvertMessageException.deserializeResponse(exception);

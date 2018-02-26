@@ -34,7 +34,7 @@ configurations.all {
 
 dependencies {
     compile group: 'findbugs', name: 'annotations', version: '1.0.0'
-    compile "com.github.monnoroch:blerpcproto-android:0.1.1"
+    compile "com.github.monnoroch:blerpcproto-android:0.1.2"
     compile 'com.google.guava:guava:20.0'
     compile 'com.google.protobuf:protobuf-java:3.2.0'
     compile 'com.google.protobuf:protoc:3.0.0'

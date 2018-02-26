@@ -171,7 +171,7 @@ public class AnnotationMessageConverterTest {
     @Test
     public void serializeRequestTest_equalsIndexesMessage() throws Exception {
         assertError(() -> converter.serializeRequest(null, EQUALS_INDEXES_REQUEST),
-                "ByteRange beginning index must be lower than ending index, field name: metadata");
+                "ByteRange first byte 0 must be lower than last byte 0, field name: metadata");
     }
 
     @Test
@@ -183,7 +183,7 @@ public class AnnotationMessageConverterTest {
     @Test
     public void serializeRequestTest_rangeBiggerThanCountMessage() throws Exception {
         assertError(() -> converter.serializeRequest(null, RANGE_BIGGER_COUNT_REQUEST),
-                "ByteRange ending index must not be bigger than message byte count, field name: metadata");
+                "ByteRange last byte 11 must not be bigger than message byte count 10, field name: metadata");
     }
 
     @Test
@@ -223,7 +223,7 @@ public class AnnotationMessageConverterTest {
     @Test
     public void serializeRequestTest_byteStringWrongSize() throws Exception {
         assertError(() -> converter.serializeRequest(null, IMAGE_REQUEST_WRONG_BYTE_STRING),
-                "ByteString \"metadata\" size is not equals to field bytes count");
+                "Could not serialize request: Actual byte string size 3 is not equal to the declared field size 10");
     }
 
     @Test
@@ -242,7 +242,7 @@ public class AnnotationMessageConverterTest {
     @Test
     public void deserializeResponseTest_wrongMessageByteSize() throws Exception {
         assertError(() -> converter.deserializeResponse(SEND_IMAGE_DESCRIPTOR, new byte[10]),
-                "Message byte size is not equals to size of device response");
+                "Message byte size 10 is not equals to expected size of device response 27");
     }
 
     @Test
@@ -260,7 +260,7 @@ public class AnnotationMessageConverterTest {
     @Test
     public void deserializeResponseTest_equalsIndexesMessage() throws Exception {
         assertError(() -> converter.deserializeResponse(EQUALS_INDEXES_DESCRIPTOR, new byte[10]),
-                "ByteRange beginning index must be lower than ending index, field name: metadata");
+                "ByteRange first byte 0 must be lower than last byte 0, field name: metadata");
     }
 
     @Test
@@ -272,7 +272,7 @@ public class AnnotationMessageConverterTest {
     @Test
     public void deserializeResponseTest_rangeBiggerThanCountMessage() throws Exception {
         assertError(() -> converter.deserializeResponse(RANGE_BIGGER_COUNT_DESCRIPTOR, new byte[10]),
-                "ByteRange ending index must not be bigger than message byte count, field name: metadata");
+                "ByteRange last byte 11 must not be bigger than message byte count 10, field name: metadata");
     }
 
     @Test

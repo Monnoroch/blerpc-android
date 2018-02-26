@@ -3,7 +3,11 @@ package com.blerpc;
 import static com.google.common.truth.Truth.assertThat;
 import static junit.framework.Assert.fail;
 
-/** A set of assert methods. Error will be thrown only when an assertion is wrong. */
+/**
+ * A set of methods that assert conditions and return error when an condition is wrong.
+ * Methods of this class based on JUnit5 assertion methods that can't be used in Android
+ *     with Android Gradle Plugin version lower than 3.0.0.
+ */
 public class Assert {
 
     private Assert() {}
