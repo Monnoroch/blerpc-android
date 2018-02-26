@@ -311,7 +311,7 @@ public class TestServiceTest {
         }
 
         @Override
-        public Message deserializeResponse(MethodDescriptor methodDescriptor, byte[] value)
+        public Message deserializeResponse(MethodDescriptor methodDescriptor, Message responsePrototype, byte[] value)
             throws CouldNotConvertMessageException {
             MethodDescriptorEqualsWrapper descriptor = wrapper(methodDescriptor);
             try {

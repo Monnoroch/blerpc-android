@@ -128,7 +128,7 @@ public class BleRpcChannel implements RpcChannel {
             subscription = subscriptions.get(characteristic);
         } else {
             subscription = new SubscriptionCallsGroup(rpcCall.getService(), characteristic, rpcCall.getDescriptor(),
-                rpcCall.method);
+                rpcCall.method, rpcCall.responsePrototype);
             subscriptions.put(characteristic, subscription);
         }
         subscription.calls.add(rpcCall);
@@ -157,7 +157,7 @@ public class BleRpcChannel implements RpcChannel {
     private void handleResult(byte[] value) {
         RpcCall currentCall = finishRpcCall();
         try {
-            Message response = messageConverter.deserializeResponse(currentCall.method, value);
+            Message response = messageConverter.deserializeResponse(currentCall.method, currentCall.responsePrototype, value);
             notifyResultForCall(currentCall, response);
         } catch (CouldNotConvertMessageException exception) {
             notifyCallFailed(currentCall, exception.getMessage());
@@ -225,7 +225,7 @@ public class BleRpcChannel implements RpcChannel {
         }
 
         try {
-            Message response = messageConverter.deserializeResponse(subscription.method, characteristic.getValue());
+            Message response = messageConverter.deserializeResponse(subscription.method, subscription.responsePrototype, characteristic.getValue());
             for (RpcCall call : subscription.calls) {
                 notifyResultForCall(call, response);
             }
@@ -807,13 +807,15 @@ public class BleRpcChannel implements RpcChannel {
         private final Set<RpcCall> calls = new HashSet<>();
         private SubscriptionStatus status = SubscriptionStatus.UNSUBSCRIBED;
         private final MethodDescriptor method;
+        private final Message responsePrototype;
 
         private SubscriptionCallsGroup(UUID serviceUuid, UUID characteristicUuid, UUID descriptorUuid,
-            MethodDescriptor method) {
+            MethodDescriptor method, Message responsePrototype) {
             this.serviceUuid = serviceUuid;
             this.characteristicUuid = characteristicUuid;
             this.descriptorUuid = descriptorUuid;
             this.method = method;
+            this.responsePrototype = responsePrototype;
         }
 
         void clearCanceled() {
