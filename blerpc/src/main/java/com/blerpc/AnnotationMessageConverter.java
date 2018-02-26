@@ -151,8 +151,8 @@ public class AnnotationMessageConverter implements MessageConverter {
     private byte[] serializeByteString(ByteString fieldValue, int expectedBytesSize) throws CouldNotConvertMessageException {
         byte[] bytes = fieldValue.toByteArray();
         if (bytes.length != expectedBytesSize) {
-            throw CouldNotConvertMessageException.serializeRequest
-                    ("Actual byte string size %d is not equal to the declared field size %d", bytes.length, expectedBytesSize);
+            throw CouldNotConvertMessageException.serializeRequest(
+                    "Actual byte string size %d is not equal to the declared field size %d", bytes.length, expectedBytesSize);
         }
         return bytes;
     }
