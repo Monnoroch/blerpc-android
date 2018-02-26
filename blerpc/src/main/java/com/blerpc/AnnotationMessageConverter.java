@@ -129,19 +129,13 @@ public class AnnotationMessageConverter implements MessageConverter {
     }
 
     private byte[] serializeLong(long fieldValue, int bytesCount, String fieldName) throws CouldNotConvertMessageException {
-        switch (bytesCount) {
-            case 1:
-                return new byte[]{(byte) fieldValue};
-            case 2:
-                return ByteBuffer.allocate(2).order(byteOrder).putShort((short) fieldValue).array();
-            case 4:
-                return ByteBuffer.allocate(4).order(byteOrder).putInt((int) fieldValue).array();
-            case 8:
-                return ByteBuffer.allocate(8).order(byteOrder).putLong(fieldValue).array();
-            default:
-                throw CouldNotConvertMessageException
-                        .serializeRequest(String.format("Number field \"%s\" has wrong bytes count %d", fieldName, bytesCount));
-        }
+        checkArgument(bytesCount <= 8, String.format("Only integer fields with declared bytes size in [1, 8] are supported. " +
+                "Field %s has %d bytes size.", fieldName, bytesCount));
+        byte[] bytes = ByteBuffer.allocate(8).order(byteOrder).putLong(fieldValue).array();
+        return copyArrayRange(bytes, BytesRange.newBuilder()
+                .setFromByte(byteOrder.equals(ByteOrder.BIG_ENDIAN) ? 8 - bytesCount : 0)
+                .setToByte(byteOrder.equals(ByteOrder.BIG_ENDIAN) ? 8 : bytesCount)
+                .build());
     }
 
     private byte[] serializeBoolean(boolean fieldValue) throws CouldNotConvertMessageException {
@@ -157,20 +151,12 @@ public class AnnotationMessageConverter implements MessageConverter {
         return bytes;
     }
 
-    private long deserializeLong(byte[] intBytes, String fieldName) throws CouldNotConvertMessageException {
-        switch (intBytes.length) {
-            case 1:
-                return intBytes[0];
-            case 2:
-                return ByteBuffer.wrap(intBytes).order(byteOrder).getShort();
-            case 4:
-                return ByteBuffer.wrap(intBytes).order(byteOrder).getInt();
-            case 8:
-                return ByteBuffer.wrap(intBytes).order(byteOrder).getLong();
-            default:
-                throw CouldNotConvertMessageException
-                        .serializeRequest(String.format("Number field \"%s\" has wrong bytes count %d", fieldName, intBytes.length));
-        }
+    private long deserializeLong(byte[] bytes, String fieldName) throws CouldNotConvertMessageException {
+        checkArgument(bytes.length <= 8, String.format("Only integer fields with declared bytes size in [1, 8] are supported. " +
+                "Field %s has %d bytes size.", fieldName, bytes.length));
+        byte[] longBytes = new byte[8];
+        setBytesToArray(longBytes, byteOrder.equals(ByteOrder.BIG_ENDIAN) ? longBytes.length - bytes.length : 0, bytes);
+        return ByteBuffer.wrap(longBytes).order(byteOrder).getLong();
     }
 
     private boolean deserializeBoolean(byte booleanValue) throws CouldNotConvertMessageException {

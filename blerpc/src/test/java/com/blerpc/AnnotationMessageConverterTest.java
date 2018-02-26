@@ -173,17 +173,20 @@ public class AnnotationMessageConverterTest {
 
     @Test
     public void serializeRequestTest_wrongIntegerRange() throws Exception {
-        assertError(() -> converter.serializeRequest(null, WRONG_INT_RANGE_REQUEST), "Number field \"value\" has wrong bytes count");
+        assertError(() -> converter.serializeRequest(null, WRONG_INT_RANGE_REQUEST),
+                "Only integer fields with declared bytes size in [1, 8] are supported. Field value has 11 bytes size.");
     }
 
     @Test
     public void serializeRequestTest_wrongLongRange() throws Exception {
-        assertError(() -> converter.serializeRequest(null, WRONG_LONG_RANGE_REQUEST), "Number field \"value\" has wrong bytes count");
+        assertError(() -> converter.serializeRequest(null, WRONG_LONG_RANGE_REQUEST),
+                "Only integer fields with declared bytes size in [1, 8] are supported. Field value has 13 bytes size.");
     }
 
     @Test
     public void serializeRequestTest_wrongEnumRange() throws Exception {
-        assertError(() -> converter.serializeRequest(null, WRONG_ENUM_RANGE_REQUEST), "Number field \"type\" has wrong bytes count");
+        assertError(() -> converter.serializeRequest(null, WRONG_ENUM_RANGE_REQUEST),
+                "Only integer fields with declared bytes size in [1, 8] are supported. Field type has 9 bytes size.");
     }
 
     @Test
@@ -266,20 +269,20 @@ public class AnnotationMessageConverterTest {
 
     @Test
     public void deserializeResponseTest_wrongIntegerRange() throws Exception {
-        assertError(() -> converter.deserializeResponse(null, TestOptionsWrongIntegerRangeRequest.getDefaultInstance(), new byte[5]),
-                "Number field \"value\" has wrong bytes count");
+        assertError(() -> converter.deserializeResponse(null, TestOptionsWrongIntegerRangeRequest.getDefaultInstance(), new byte[11]),
+                "Only integer fields with declared bytes size in [1, 8] are supported. Field value has 11 bytes size.");
     }
 
     @Test
     public void deserializeResponseTest_wrongLongRange() throws Exception {
-        assertError(() -> converter.deserializeResponse(null, TestOptionsWrongLongRangeRequest.getDefaultInstance(), new byte[9]),
-                "Number field \"value\" has wrong bytes count");
+        assertError(() -> converter.deserializeResponse(null, TestOptionsWrongLongRangeRequest.getDefaultInstance(), new byte[13]),
+                "Only integer fields with declared bytes size in [1, 8] are supported. Field value has 13 bytes size.");
     }
 
     @Test
     public void deserializeResponseTest_wrongEnumRange() throws Exception {
-        assertError(() -> converter.deserializeResponse(null, TestOptionsWrongEnumRangeRequest.getDefaultInstance(), new byte[3]),
-                "Number field \"type\" has wrong bytes count");
+        assertError(() -> converter.deserializeResponse(null, TestOptionsWrongEnumRangeRequest.getDefaultInstance(), new byte[9]),
+                "Only integer fields with declared bytes size in [1, 8] are supported. Field type has 9 bytes size.");
     }
 
     @Test

@@ -165,34 +165,34 @@ message TestOptionsDoubleValueRequest {
 
 message TestOptionsWrongIntegerRangeRequest {
     option (com.blerpc.message_size) = {
-        message_size_bytes: 5
+        message_size_bytes: 11
     };
 
     int32 value = 1 [(com.blerpc.filed_bytes) = {
         from_byte: 0
-        to_byte: 5
+        to_byte: 11
     }];
 }
 
 message TestOptionsWrongLongRangeRequest {
     option (com.blerpc.message_size) = {
-        message_size_bytes: 9
+        message_size_bytes: 13
     };
 
     int64 value = 1 [(com.blerpc.filed_bytes) = {
         from_byte: 0
-        to_byte: 9
+        to_byte: 13
     }];
 }
 
 message TestOptionsWrongEnumRangeRequest {
     option (com.blerpc.message_size) = {
-        message_size_bytes: 3
+        message_size_bytes: 9
     };
 
     TestType type = 1 [(com.blerpc.filed_bytes) = {
         from_byte: 0
-        to_byte: 3
+        to_byte: 9
     }];
 }
 
