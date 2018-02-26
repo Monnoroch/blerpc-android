@@ -217,7 +217,7 @@ public class BleRpcChannelTest {
     @Before
     public void setUpMessageConverter() throws Exception {
         when(messageConverter.serializeRequest(any(), any())).thenReturn(new byte[]{});
-        when(messageConverter.deserializeResponse(any(), any(byte[].class)))
+        when(messageConverter.deserializeResponse(any(), any(Message.class), any(byte[].class)))
             .thenReturn(TestBleReadResponse.getDefaultInstance());
     }
 
@@ -371,7 +371,7 @@ public class BleRpcChannelTest {
     @Test
     public void testReadDeserializeFailed() throws Exception {
         when(characteristic.getValue()).thenReturn(TEST_READ_RESPONSE_BYTES);
-        when(messageConverter.deserializeResponse(methodReadChar, TEST_READ_RESPONSE_BYTES))
+        when(messageConverter.deserializeResponse(methodReadChar, TestBleReadResponse.getDefaultInstance(), TEST_READ_RESPONSE_BYTES))
             .thenThrow(CouldNotConvertMessageException.deserializeResponse("Error"));
         callReadMethod(methodReadChar, controller, callback);
         finishConnecting();
@@ -382,7 +382,7 @@ public class BleRpcChannelTest {
     @Test
     public void testReadSuccess() throws Exception {
         when(characteristic.getValue()).thenReturn(TEST_READ_RESPONSE_BYTES);
-        when(messageConverter.deserializeResponse(methodReadChar, TEST_READ_RESPONSE_BYTES))
+        when(messageConverter.deserializeResponse(methodReadChar, TestBleReadResponse.getDefaultInstance(), TEST_READ_RESPONSE_BYTES))
             .thenReturn(TEST_READ_RESPONSE);
         callReadMethod(methodReadChar, controller, callback);
         finishConnecting();
@@ -439,7 +439,7 @@ public class BleRpcChannelTest {
     @Test
     public void testWriteDeserializeFailed() throws Exception {
         when(characteristic.getValue()).thenReturn(TEST_WRITE_RESPONSE_BYTES);
-        when(messageConverter.deserializeResponse(methodWriteChar, TEST_WRITE_RESPONSE_BYTES))
+        when(messageConverter.deserializeResponse(methodWriteChar, TestBleWriteResponse.getDefaultInstance(), TEST_WRITE_RESPONSE_BYTES))
             .thenThrow(CouldNotConvertMessageException.deserializeResponse("Error"));
         callWriteMethod(methodWriteChar, controller);
         finishConnecting();
@@ -450,7 +450,7 @@ public class BleRpcChannelTest {
     @Test
     public void testWriteSuccess() throws Exception {
         when(characteristic.getValue()).thenReturn(TEST_WRITE_RESPONSE_BYTES);
-        when(messageConverter.deserializeResponse(methodWriteChar, TEST_WRITE_RESPONSE_BYTES))
+        when(messageConverter.deserializeResponse(methodWriteChar, TestBleWriteResponse.getDefaultInstance(), TEST_WRITE_RESPONSE_BYTES))
             .thenReturn(TEST_WRITE_RESPONSE);
         callWriteMethod(methodWriteChar, controller, callback);
         finishConnecting();
@@ -624,8 +624,10 @@ public class BleRpcChannelTest {
         callSubscribeMethod(methodSubscribeChar, controller, callback);
         finishSubscribing(descriptor);
         when(characteristic.getValue()).thenReturn(TEST_SUBSCRIBE_RESPONSE_BYTES);
-        when(messageConverter.deserializeResponse(methodSubscribeChar, TEST_SUBSCRIBE_RESPONSE_BYTES))
-            .thenReturn(TEST_SUBSCRIBE_RESPONSE);
+        when(messageConverter.deserializeResponse(methodSubscribeChar,
+                TestBleSubscribeResponse.getDefaultInstance(),
+                TEST_SUBSCRIBE_RESPONSE_BYTES))
+                .thenReturn(TEST_SUBSCRIBE_RESPONSE);
         onCharacteristicChanged(characteristic);
         assertCallSucceeded(controller);
         verify(callback).run(TEST_SUBSCRIBE_RESPONSE);
@@ -636,14 +638,18 @@ public class BleRpcChannelTest {
         callSubscribeMethod(methodSubscribeChar, controller, callback);
         finishSubscribing(descriptor);
         when(characteristic.getValue()).thenReturn(TEST_SUBSCRIBE_RESPONSE_BYTES);
-        when(messageConverter.deserializeResponse(methodSubscribeChar, TEST_SUBSCRIBE_RESPONSE_BYTES))
-            .thenReturn(TEST_SUBSCRIBE_RESPONSE);
+        when(messageConverter.deserializeResponse(methodSubscribeChar,
+                TestBleSubscribeResponse.getDefaultInstance(),
+                TEST_SUBSCRIBE_RESPONSE_BYTES))
+                .thenReturn(TEST_SUBSCRIBE_RESPONSE);
         onCharacteristicChanged(characteristic);
         assertCallSucceeded(controller);
         verify(callback).run(TEST_SUBSCRIBE_RESPONSE);
         when(characteristic.getValue()).thenReturn(TEST_SUBSCRIBE_RESPONSE_BYTES2);
-        when(messageConverter.deserializeResponse(methodSubscribeChar, TEST_SUBSCRIBE_RESPONSE_BYTES2))
-            .thenReturn(TEST_SUBSCRIBE_RESPONSE2);
+        when(messageConverter.deserializeResponse(methodSubscribeChar,
+                TestBleSubscribeResponse.getDefaultInstance(),
+                TEST_SUBSCRIBE_RESPONSE_BYTES2))
+                .thenReturn(TEST_SUBSCRIBE_RESPONSE2);
         onCharacteristicChanged(characteristic);
         assertCallSucceeded(controller);
         verify(callback).run(TEST_SUBSCRIBE_RESPONSE2);
@@ -722,12 +728,16 @@ public class BleRpcChannelTest {
         onSubscribe(descriptor);
         onSubscribe(descriptor2);
         when(characteristic.getValue()).thenReturn(TEST_SUBSCRIBE_RESPONSE_BYTES);
-        when(messageConverter.deserializeResponse(methodSubscribeChar, TEST_SUBSCRIBE_RESPONSE_BYTES))
-            .thenReturn(TEST_SUBSCRIBE_RESPONSE);
+        when(messageConverter.deserializeResponse(methodSubscribeChar,
+                TestBleSubscribeResponse.getDefaultInstance(),
+                TEST_SUBSCRIBE_RESPONSE_BYTES))
+                .thenReturn(TEST_SUBSCRIBE_RESPONSE);
         onCharacteristicChanged(characteristic);
         when(characteristic2.getValue()).thenReturn(TEST_SUBSCRIBE_RESPONSE_BYTES2);
-        when(messageConverter.deserializeResponse(methodSubscribeChar2, TEST_SUBSCRIBE_RESPONSE_BYTES2))
-            .thenReturn(TEST_SUBSCRIBE_RESPONSE2);
+        when(messageConverter.deserializeResponse(methodSubscribeChar2,
+                TestBleSubscribeResponse.getDefaultInstance(),
+                TEST_SUBSCRIBE_RESPONSE_BYTES2))
+                .thenReturn(TEST_SUBSCRIBE_RESPONSE2);
         onCharacteristicChanged(characteristic2);
         assertCallSucceeded(controller);
         verify(callback).run(TEST_SUBSCRIBE_RESPONSE);
@@ -741,7 +751,7 @@ public class BleRpcChannelTest {
         when(listenerHandler.post(any())).thenReturn(true);
         callSubscribeMethod(methodSubscribeChar, controller, callback);
         finishSubscribing(descriptor);
-        when(messageConverter.deserializeResponse(eq(methodSubscribeChar), any())).thenReturn(null);
+        when(messageConverter.deserializeResponse(eq(methodSubscribeChar), any(Message.class), any())).thenReturn(null);
         onCharacteristicChanged(characteristic);
         ArgumentCaptor<Runnable> callCallback = ArgumentCaptor.forClass(Runnable.class);
         verify(listenerHandler).post(callCallback.capture());
@@ -798,8 +808,10 @@ public class BleRpcChannelTest {
 
     void setUpSubscriptionDesetializeFailure(BluetoothGattCharacteristic characteristic) throws Exception {
         when(characteristic.getValue()).thenReturn(TEST_SUBSCRIBE_RESPONSE_BYTES);
-        when(messageConverter.deserializeResponse(methodSubscribeChar, TEST_SUBSCRIBE_RESPONSE_BYTES))
-            .thenThrow(CouldNotConvertMessageException.deserializeResponse("Error"));
+        when(messageConverter.deserializeResponse(methodSubscribeChar,
+                TestBleSubscribeResponse.getDefaultInstance(),
+                TEST_SUBSCRIBE_RESPONSE_BYTES))
+                .thenThrow(CouldNotConvertMessageException.deserializeResponse("Error"));
     }
 
     void verifySubscribe(BluetoothGattDescriptor descriptor) {
