@@ -6,8 +6,8 @@ import com.blerpc.proto.Blerpc;
 import com.blerpc.proto.BytesRange;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.DescriptorProtos.MessageOptions;
-import com.google.protobuf.Descriptors;
 import com.google.protobuf.Descriptors.Descriptor;
+import com.google.protobuf.Descriptors.EnumValueDescriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor.JavaType;
 import com.google.protobuf.Descriptors.MethodDescriptor;
@@ -52,33 +52,32 @@ public class AnnotationMessageConverter implements MessageConverter {
             Object fieldObject = entry.getValue();
             String fieldName = fieldDescriptor.getName();
             BytesRange bytesRange = getBytesRange(messageBytes, fieldDescriptor);
+            int firstByte = bytesRange.getFromByte();
             int fieldBytesSize = bytesRange.getToByte() - bytesRange.getFromByte();
             JavaType fieldType = fieldDescriptor.getType().getJavaType();
-            byte[] fieldBytes;
             switch (fieldType) {
                 case MESSAGE:
-                    fieldBytes = serializeRequest(null, (Message) entry.getValue());
+                    setBytesToArray(messageBytes, firstByte, serializeRequest(null, (Message) fieldObject));
                     break;
                 case INT:
-                    fieldBytes = serializeLong((Integer) fieldObject, fieldBytesSize, fieldName);
+                    setBytesToArray(messageBytes, firstByte, serializeLong((Integer) fieldObject, fieldBytesSize, fieldName));
                     break;
                 case LONG:
-                    fieldBytes = serializeLong((Long) fieldObject, fieldBytesSize, fieldName);
+                    setBytesToArray(messageBytes, firstByte, serializeLong((Long) fieldObject, fieldBytesSize, fieldName));
                     break;
                 case BYTE_STRING:
-                    fieldBytes = serializeByteString((ByteString) entry.getValue(), fieldBytesSize);
+                    setBytesToArray(messageBytes, firstByte, serializeByteString((ByteString) fieldObject, fieldBytesSize));
                     break;
                 case ENUM:
-                    fieldBytes = serializeLong(((Descriptors.EnumValueDescriptor) fieldObject).getNumber(), fieldBytesSize, fieldName);
+                    setBytesToArray(messageBytes, firstByte, serializeEnum((EnumValueDescriptor) fieldObject, fieldBytesSize, fieldName));
                     break;
                 case BOOLEAN:
-                    fieldBytes = serializeBoolean((Boolean) entry.getValue());
+                    setBytesToArray(messageBytes, firstByte, serializeBoolean((Boolean) fieldObject));
                     break;
                 // TODO(#5): Add support of String, Float and Double.
                 default:
                     throw CouldNotConvertMessageException.serializeRequest(String.format("Unsupported field type: %s", fieldType.name()));
             }
-            setBytesToArray(messageBytes, bytesRange.getFromByte(), fieldBytes);
         }
         return messageBytes;
     }
@@ -127,7 +126,7 @@ public class AnnotationMessageConverter implements MessageConverter {
         return messageBuilder.build();
     }
 
-    private byte[] serializeLong(long fieldValue, int bytesCount, String fieldName) throws CouldNotConvertMessageException {
+    private byte[] serializeLong(long fieldValue, int bytesCount, String fieldName) {
         checkArgument(bytesCount <= 8, String.format("Only integer fields with declared bytes size in [1, 8] are supported. "
                 + "Field %s has %d bytes size.", fieldName, bytesCount));
         byte[] bytes = ByteBuffer.allocate(8).order(byteOrder).putLong(fieldValue).array();
@@ -137,8 +136,12 @@ public class AnnotationMessageConverter implements MessageConverter {
                 .build());
     }
 
-    private byte[] serializeBoolean(boolean fieldValue) throws CouldNotConvertMessageException {
+    private byte[] serializeBoolean(boolean fieldValue) {
         return new byte[]{fieldValue ? (byte) 1 : (byte) 0};
+    }
+
+    private byte[] serializeEnum(EnumValueDescriptor enumDescriptor, int bytesCount, String fieldName) {
+        return serializeLong(enumDescriptor.getNumber(), bytesCount, fieldName);
     }
 
     private byte[] serializeByteString(ByteString fieldValue, int expectedBytesSize) throws CouldNotConvertMessageException {
@@ -150,7 +153,7 @@ public class AnnotationMessageConverter implements MessageConverter {
         return bytes;
     }
 
-    private long deserializeLong(byte[] bytes, String fieldName) throws CouldNotConvertMessageException {
+    private long deserializeLong(byte[] bytes, String fieldName) {
         checkArgument(bytes.length <= 8, String.format("Only integer fields with declared bytes size in [1, 8] are supported. "
                 + "Field %s has %d bytes size.", fieldName, bytes.length));
         byte[] longBytes = new byte[8];
@@ -158,11 +161,11 @@ public class AnnotationMessageConverter implements MessageConverter {
         return ByteBuffer.wrap(longBytes).order(byteOrder).getLong();
     }
 
-    private boolean deserializeBoolean(byte booleanValue) throws CouldNotConvertMessageException {
+    private boolean deserializeBoolean(byte booleanValue) {
         return booleanValue != 0;
     }
 
-    private ByteString deserializeByteString(byte[] stringBytes) throws CouldNotConvertMessageException {
+    private ByteString deserializeByteString(byte[] stringBytes) {
         return ByteString.copyFrom(stringBytes);
     }
 
