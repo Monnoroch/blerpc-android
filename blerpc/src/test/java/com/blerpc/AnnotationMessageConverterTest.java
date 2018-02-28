@@ -20,6 +20,7 @@ import com.blerpc.device.test.proto.TestOptionsWrongEnumRangeRequest;
 import com.blerpc.device.test.proto.TestOptionsWrongIntegerRangeRequest;
 import com.blerpc.device.test.proto.TestOptionsWrongLongRangeRequest;
 import com.blerpc.device.test.proto.TestOptionsZeroBytesRequest;
+import com.blerpc.device.test.proto.TestToken;
 import com.blerpc.device.test.proto.TestType;
 import com.google.protobuf.ByteString;
 import java.nio.ByteOrder;
@@ -33,7 +34,10 @@ import org.mockito.junit.MockitoJUnitRunner;
 @RunWith(MockitoJUnitRunner.class)
 public class AnnotationMessageConverterTest {
 
-    private static final ByteString METADATA_STRING = ByteString.copyFrom(new byte[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
+    private static final ByteString METADATA_STRING_1 = ByteString.copyFrom(new byte[]{1, 2, 3, 4});
+    private static final ByteString TOKEN_STRING_1 = ByteString.copyFrom(new byte[]{6, 7, 8, 9, 10});
+    private static final ByteString METADATA_STRING_2 = ByteString.copyFrom(new byte[]{5, 4, 3, 2});
+    private static final ByteString TOKEN_STRING_2 = ByteString.copyFrom(new byte[]{10, 9, 8, 7, 6});
     private static final TestOptionsImage IMAGE_REQUEST_1 = TestOptionsImage.newBuilder()
             .setVersion(20)
             .setCrc(500)
@@ -41,7 +45,9 @@ public class AnnotationMessageConverterTest {
             .setRelease(true)
             .setType(TestType.FULL)
             .setMetadata(TestMetadata.newBuilder()
-                    .setMetadata(METADATA_STRING))
+                    .setBleMetadata(METADATA_STRING_1)
+                    .setToken(TestToken.newBuilder()
+                            .setToken(TOKEN_STRING_1)))
             .setBuildTime(1519548579757L)
             .build();
     private static final TestOptionsImage IMAGE_REQUEST_2 = TestOptionsImage.newBuilder()
@@ -51,32 +57,36 @@ public class AnnotationMessageConverterTest {
             .setRelease(false)
             .setType(TestType.ONLY_APP)
             .setMetadata(TestMetadata.newBuilder()
-                    .setMetadata(ByteString.copyFrom(new byte[]{5, 4, 3, 2, 1, 10, 9, 8, 7, 6})))
+                    .setBleMetadata(METADATA_STRING_2)
+                    .setToken(TestToken.newBuilder()
+                            .setToken(TOKEN_STRING_2)))
             .setBuildTime(1519576271989L)
             .build();
     private static final TestOptionsImage IMAGE_REQUEST_WRONG_BYTE_STRING = TestOptionsImage.newBuilder()
             .setMetadata(TestMetadata.newBuilder()
-                    .setMetadata(ByteString.copyFrom(new byte[]{1, 2, 3})))
+                    .setBleMetadata(ByteString.copyFrom(new byte[]{1, 2, 3}))
+                    .setToken(TestToken.newBuilder()
+                            .setToken(TOKEN_STRING_1)))
             .build();
     private static final byte[] EMPTY_ARRAY = new byte[0];
     private static final byte[] IMAGE_REQUEST_1_BYTES_LITTLE_ENDIAN =
-            new byte[]{20, -12, 1, -96, -122, 1, 0, 1, 2, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, -83, 63, 39, -52, 97, 1, 0, 0};
+            new byte[]{20, -12, 1, -96, -122, 1, 0, 1, 2, 0, 1, 2, 3, 4, 0, 6, 7, 8, 9, 10, -83, 63, 39, -52, 97, 1, 0, 0};
     private static final byte[] IMAGE_REQUEST_1_BYTES_BIG_ENDIAN =
-            new byte[]{20, 1, -12, 0, 1, -122, -96, 1, 2, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 0, 0, 1, 97, -52, 39, 63, -83};
+            new byte[]{20, 1, -12, 0, 1, -122, -96, 1, 2, 0, 1, 2, 3, 4, 0, 6, 7, 8, 9, 10, 0, 0, 1, 97, -52, 39, 63, -83};
     private static final byte[] IMAGE_REQUEST_2_BYTES_LITTLE_ENDIAN =
-            new byte[]{35, 32, 3, -60, -3, 1, 0, 0, 1, 5, 4, 3, 2, 1, 10, 9, 8, 7, 6, 117, -52, -51, -51, 97, 1, 0, 0};
+            new byte[]{35, 32, 3, -60, -3, 1, 0, 0, 1, 0, 5, 4, 3, 2, 0, 10, 9, 8, 7, 6, 117, -52, -51, -51, 97, 1, 0, 0};
     private static final byte[] IMAGE_REQUEST_2_BYTES_BIG_ENDIAN =
-            new byte[]{35, 3, 32, 0, 1, -3, -60, 0, 1, 5, 4, 3, 2, 1, 10, 9, 8, 7, 6, 0, 0, 1, 97, -51, -51, -52, 117};
+            new byte[]{35, 3, 32, 0, 1, -3, -60, 0, 1, 0, 5, 4, 3, 2, 0, 10, 9, 8, 7, 6, 0, 0, 1, 97, -51, -51, -52, 117};
     private static final TestOptionsZeroBytesRequest ZERO_BYTES_REQUEST = TestOptionsZeroBytesRequest.getDefaultInstance();
     private static final TestOptionsWithFieldNoBytesRequest FIELD_NO_BYTES_REQUEST = TestOptionsWithFieldNoBytesRequest.getDefaultInstance();
     private static final TestOptionsNoBytesRangeRequest NO_BYTES_RANGE_REQUEST = TestOptionsNoBytesRangeRequest.newBuilder()
             .setValue(20)
             .build();
     private static final TestOptionsEqualsIndexesRequest EQUALS_INDEXES_REQUEST = TestOptionsEqualsIndexesRequest.newBuilder()
-            .setMetadata(METADATA_STRING)
+            .setMetadata(METADATA_STRING_1)
             .build();
     private static final TestOptionsNegativeRangeRequest NEGATIVE_RANGE_REQUEST = TestOptionsNegativeRangeRequest.newBuilder()
-            .setMetadata(METADATA_STRING)
+            .setMetadata(METADATA_STRING_1)
             .build();
     private static final TestOptionsStringValueRequest STRING_VALUE_REQUEST = TestOptionsStringValueRequest.newBuilder()
             .setMessage("Message")
@@ -88,7 +98,7 @@ public class AnnotationMessageConverterTest {
             .setImpedance(300.5678d)
             .build();
     private static final TestOptionsRangeBiggerThanCountRequest RANGE_BIGGER_COUNT_REQUEST = TestOptionsRangeBiggerThanCountRequest.newBuilder()
-            .setMetadata(METADATA_STRING)
+            .setMetadata(METADATA_STRING_1)
             .build();
     private static final TestOptionsWrongIntegerRangeRequest WRONG_INT_RANGE_REQUEST = TestOptionsWrongIntegerRangeRequest.newBuilder()
             .setValue(20)
@@ -104,7 +114,7 @@ public class AnnotationMessageConverterTest {
             .build();
     private static final TestOptionsRangeIntersectRequest RANGE_INTERSECT_REQUEST = TestOptionsRangeIntersectRequest.newBuilder()
             .setValue(ByteString.copyFrom(new byte[]{1, 2, 3}))
-            .setMetadata(METADATA_STRING)
+            .setMetadata(METADATA_STRING_1)
             .build();
 
     AnnotationMessageConverter converter = new AnnotationMessageConverter();
@@ -198,7 +208,7 @@ public class AnnotationMessageConverterTest {
     @Test
     public void serializeRequestTest_byteStringWrongSize() throws Exception {
         assertError(() -> converter.serializeRequest(null, IMAGE_REQUEST_WRONG_BYTE_STRING),
-                "Could not serialize request: Actual byte string size 3 is not equal to the declared field size 10");
+                "Could not serialize request: Actual byte string size 3 is not equal to the declared field size 4");
     }
 
     @Test
@@ -222,7 +232,7 @@ public class AnnotationMessageConverterTest {
     @Test
     public void deserializeResponseTest_wrongMessageByteSize() throws Exception {
         assertError(() -> converter.deserializeResponse(null, TestOptionsImage.getDefaultInstance(), new byte[10]),
-                "Message byte size 10 is not equals to expected size of device response 27");
+                "Message byte size 10 is not equals to expected size of device response 28");
     }
 
     @Test

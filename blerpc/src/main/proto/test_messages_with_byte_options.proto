@@ -10,7 +10,7 @@ import "blerpc.proto";
 
 message TestOptionsImage {
     option (com.blerpc.message_size) = {
-        message_size_bytes: 27
+        message_size_bytes: 28
     };
 
     int32 version = 1 [(com.blerpc.filed_bytes) = {
@@ -35,12 +35,12 @@ message TestOptionsImage {
     }];
 
     TestMetadata metadata = 6 [(com.blerpc.filed_bytes) = {
-        from_byte: 9
-        to_byte: 19
+        from_byte: 10
+        to_byte: 20
     }];
     int64 buildTime = 7 [(com.blerpc.filed_bytes) = {
-        from_byte: 19
-        to_byte: 27
+        from_byte: 20
+        to_byte: 28
     }];
 }
 
@@ -64,9 +64,25 @@ message TestMetadata {
         message_size_bytes: 10
     };
 
-    bytes metadata = 1 [(com.blerpc.filed_bytes) = {
+    bytes ble_metadata = 1 [(com.blerpc.filed_bytes) = {
         from_byte: 0
+        to_byte: 4
+    }];
+
+    TestToken token = 2 [(com.blerpc.filed_bytes) = {
+        from_byte: 5
         to_byte: 10
+    }];
+}
+
+message TestToken {
+    option (com.blerpc.message_size) = {
+        message_size_bytes: 5
+    };
+
+    bytes token = 1 [(com.blerpc.filed_bytes) = {
+        from_byte: 0
+        to_byte: 5
     }];
 }
 
