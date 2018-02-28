@@ -2,6 +2,7 @@ package com.blerpc;
 
 import static com.blerpc.Assert.assertError;
 import static com.google.common.truth.Truth.assertThat;
+import static org.mockito.Mockito.when;
 
 import com.blerpc.device.test.proto.TestMetadata;
 import com.blerpc.device.test.proto.TestOptionsDoubleValueRequest;
@@ -22,10 +23,15 @@ import com.blerpc.device.test.proto.TestOptionsWrongLongRangeRequest;
 import com.blerpc.device.test.proto.TestOptionsZeroBytesRequest;
 import com.blerpc.device.test.proto.TestToken;
 import com.blerpc.device.test.proto.TestType;
+import com.blerpc.proto.BytesRange;
 import com.google.protobuf.ByteString;
+import com.google.protobuf.Descriptors.EnumDescriptor;
+import com.google.protobuf.Descriptors.EnumValueDescriptor;
 import java.nio.ByteOrder;
+import java.util.List;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 /**
@@ -34,6 +40,9 @@ import org.mockito.junit.MockitoJUnitRunner;
 @RunWith(MockitoJUnitRunner.class)
 public class AnnotationMessageConverterTest {
 
+    private static final int MAX_BYTE_VALUE = 255;
+    private static final int MAX_SHORT_VALUE = 65535;
+    private static final String ENUM_NAME = "enum_name";
     private static final ByteString METADATA_STRING_1 = ByteString.copyFrom(new byte[]{1, 2, 3, 4});
     private static final ByteString TOKEN_STRING_1 = ByteString.copyFrom(new byte[]{6, 7, 8, 9, 10});
     private static final ByteString METADATA_STRING_2 = ByteString.copyFrom(new byte[]{5, 4, 3, 2});
@@ -117,6 +126,9 @@ public class AnnotationMessageConverterTest {
             .setMetadata(METADATA_STRING_1)
             .build();
 
+    @Mock EnumValueDescriptor enumValueDescriptor;
+    @Mock List<EnumValueDescriptor> enumValuesList;
+    @Mock EnumDescriptor enumDescriptor;
     AnnotationMessageConverter converter = new AnnotationMessageConverter();
     AnnotationMessageConverter converterLittleEndian = new AnnotationMessageConverter(ByteOrder.LITTLE_ENDIAN);
 
@@ -196,7 +208,7 @@ public class AnnotationMessageConverterTest {
     @Test
     public void serializeRequestTest_wrongEnumRange() throws Exception {
         assertError(() -> converter.serializeRequest(null, WRONG_ENUM_RANGE_REQUEST),
-                "Only integer fields with declared bytes size in [1, 8] are supported. Field type has 9 bytes size.");
+                "Only enum fields with declared bytes size in [1, 2] are supported. Field type has 9 bytes size.");
     }
 
     @Test
@@ -232,7 +244,7 @@ public class AnnotationMessageConverterTest {
     @Test
     public void deserializeResponseTest_wrongMessageByteSize() throws Exception {
         assertError(() -> converter.deserializeResponse(null, TestOptionsImage.getDefaultInstance(), new byte[10]),
-                "Message byte size 10 is not equals to expected size of device response 28");
+                "Message TestOptionsImage byte size 10 is not equals to expected size of device response 28");
     }
 
     @Test
@@ -299,5 +311,44 @@ public class AnnotationMessageConverterTest {
     public void deserializeResponseTest_wrongBooleanRange() throws Exception {
         assertError(() -> converter.deserializeResponse(null, TestOptionsWrongBooleanRangeRequest.getDefaultInstance(), new byte[2]),
                 "Boolean value \"release\" mustn't take more than 1 byte");
+    }
+
+    @Test
+    public void checkBytesRangeEnoughForEnum() throws Exception {
+        when(enumValueDescriptor.getType()).thenReturn(enumDescriptor);
+        when(enumDescriptor.getValues()).thenReturn(enumValuesList);
+        when(enumDescriptor.getName()).thenReturn(ENUM_NAME);
+
+        when(enumValuesList.size()).thenReturn(MAX_BYTE_VALUE);
+        AnnotationMessageConverter.checkBytesRangeEnoughForEnum(enumValueDescriptor,
+                BytesRange.newBuilder()
+                        .setFromByte(0)
+                        .setToByte(1)
+                        .build(),
+                ENUM_NAME);
+
+        when(enumValuesList.size()).thenReturn(MAX_SHORT_VALUE);
+        AnnotationMessageConverter.checkBytesRangeEnoughForEnum(enumValueDescriptor,
+                BytesRange.newBuilder()
+                        .setFromByte(0)
+                        .setToByte(2)
+                        .build(),
+                ENUM_NAME);
+
+        when(enumValuesList.size()).thenReturn(MAX_BYTE_VALUE + 1);
+        assertError(() -> AnnotationMessageConverter.checkBytesRangeEnoughForEnum(enumValueDescriptor,
+                BytesRange.newBuilder()
+                        .setFromByte(0)
+                        .setToByte(1)
+                        .build(),
+                ENUM_NAME), String.format("1 byte(s) not enough for %s enum that has 256 values", ENUM_NAME));
+
+        when(enumValuesList.size()).thenReturn(MAX_SHORT_VALUE + 1);
+        assertError(() -> AnnotationMessageConverter.checkBytesRangeEnoughForEnum(enumValueDescriptor,
+                BytesRange.newBuilder()
+                        .setFromByte(0)
+                        .setToByte(2)
+                        .build(),
+                ENUM_NAME), String.format("2 byte(s) not enough for %s enum that has 65536 values", ENUM_NAME));
     }
 }
