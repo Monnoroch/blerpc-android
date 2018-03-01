@@ -153,37 +153,37 @@ public class AnnotationMessageConverterTest {
     @Test
     public void serializeRequestTest_messageWithFieldAndWithoutByteSize() throws Exception {
         assertError(() -> converter.serializeRequest(null, FIELD_NO_BYTES_REQUEST),
-                "Proto message \"TestOptionsWithFieldNoBytesRequest\" with fields must have BytesSize option");
+                "Proto message TestOptionsWithFieldNoBytesRequest with fields must have BytesSize option");
     }
 
     @Test
     public void serializeRequestTest_noByteRangeMessage() throws Exception {
         assertError(() -> converter.serializeRequest(null, NO_BYTES_RANGE_REQUEST),
-                "Proto field \"value\" must have ByteRange option");
+                "Proto field value doesn't have ByteRange option");
     }
 
     @Test
     public void serializeRequestTest_equalsIndexesMessage() throws Exception {
         assertError(() -> converter.serializeRequest(null, EQUALS_INDEXES_REQUEST),
-                "ByteRange first byte 0 must be lower than last byte 0, field name: metadata");
+                "Field metadata has from_bytes = 0 which must be less than to_bytes = 0");
     }
 
     @Test
     public void serializeRequestTest_negativeRangeMessage() throws Exception {
         assertError(() -> converter.serializeRequest(null, NEGATIVE_RANGE_REQUEST),
-                "ByteRange must have only positive values, field name: metadata");
+                "Field metadata has from_bytes = -1 which is less than zero");
     }
 
     @Test
     public void serializeRequestTest_rangeBiggerThanCountMessage() throws Exception {
         assertError(() -> converter.serializeRequest(null, RANGE_BIGGER_COUNT_REQUEST),
-                "ByteRange last byte 11 must not be bigger than message byte count 10, field name: metadata");
+                "Field metadata has to_bytes = 11 which is bigger than message bytes size = 10");
     }
 
     @Test
     public void serializeRequestTest_rangeIntersectMessage() throws Exception {
         assertError(() -> converter.serializeRequest(null, RANGE_INTERSECT_REQUEST),
-                "ByteRange must not intersect with other fields ByteRange, field name: metadata");
+                "Field metadata bytes range intersects with another field bytes range");
     }
 
     @Test
@@ -214,7 +214,7 @@ public class AnnotationMessageConverterTest {
     @Test
     public void serializeRequestTest_wrongBooleanRange() throws Exception {
         assertError(() -> converter.serializeRequest(null, WRONG_BOOLEAN_RANGE_REQUEST),
-                "Boolean value \"release\" mustn't take more than 1 byte");
+                "Boolean value release has bytes size = 2 that more than 1 byte");
     }
 
     @Test
@@ -252,31 +252,31 @@ public class AnnotationMessageConverterTest {
         assertError(() -> converter.deserializeResponse(null,
                 TestOptionsWithFieldNoBytesRequest.getDefaultInstance(),
                 IMAGE_REQUEST_1_BYTES_LITTLE_ENDIAN),
-                "Proto message \"TestOptionsWithFieldNoBytesRequest\" with fields must have BytesSize option");
+                "Proto message TestOptionsWithFieldNoBytesRequest with fields must have BytesSize option");
     }
 
     @Test
     public void deserializeResponseTest_noByteRangeMessage() throws Exception {
         assertError(() -> converter.deserializeResponse(null, TestOptionsNoBytesRangeRequest.getDefaultInstance(), new byte[2]),
-                "Proto field \"value\" must have ByteRange option");
+                "Proto field value doesn't have ByteRange option");
     }
 
     @Test
     public void deserializeResponseTest_equalsIndexesMessage() throws Exception {
         assertError(() -> converter.deserializeResponse(null, TestOptionsEqualsIndexesRequest.getDefaultInstance(), new byte[10]),
-                "ByteRange first byte 0 must be lower than last byte 0, field name: metadata");
+                "Field metadata has from_bytes = 0 which must be less than to_bytes = 0");
     }
 
     @Test
     public void deserializeResponseTest_negativeRangeMessage() throws Exception {
         assertError(() -> converter.deserializeResponse(null, TestOptionsNegativeRangeRequest.getDefaultInstance(), new byte[10]),
-                "ByteRange must have only positive values, field name: metadata");
+                "Field metadata has from_bytes = -1 which is less than zero");
     }
 
     @Test
     public void deserializeResponseTest_rangeBiggerThanCountMessage() throws Exception {
         assertError(() -> converter.deserializeResponse(null, TestOptionsRangeBiggerThanCountRequest.getDefaultInstance(), new byte[10]),
-                "ByteRange last byte 11 must not be bigger than message byte count 10, field name: metadata");
+                "Field metadata has to_bytes = 11 which is bigger than message bytes size = 10");
     }
 
     @Test
@@ -310,7 +310,7 @@ public class AnnotationMessageConverterTest {
     @Test
     public void deserializeResponseTest_wrongBooleanRange() throws Exception {
         assertError(() -> converter.deserializeResponse(null, TestOptionsWrongBooleanRangeRequest.getDefaultInstance(), new byte[2]),
-                "Boolean value \"release\" mustn't take more than 1 byte");
+                "Boolean value release has bytes size = 2 that more than 1 byte");
     }
 
     @Test
