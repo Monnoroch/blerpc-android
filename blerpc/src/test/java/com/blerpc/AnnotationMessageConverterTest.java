@@ -2,7 +2,6 @@ package com.blerpc;
 
 import static com.blerpc.Assert.assertError;
 import static com.google.common.truth.Truth.assertThat;
-import static org.mockito.Mockito.when;
 
 import com.blerpc.device.test.proto.TestMetadata;
 import com.blerpc.device.test.proto.TestOptionsDoubleValueRequest;
@@ -14,6 +13,7 @@ import com.blerpc.device.test.proto.TestOptionsNegativeRangeRequest;
 import com.blerpc.device.test.proto.TestOptionsNoBytesRangeRequest;
 import com.blerpc.device.test.proto.TestOptionsRangeBiggerThanCountRequest;
 import com.blerpc.device.test.proto.TestOptionsRangeIntersectRequest;
+import com.blerpc.device.test.proto.TestOptionsSmallEnumRangeRequest;
 import com.blerpc.device.test.proto.TestOptionsStringValueRequest;
 import com.blerpc.device.test.proto.TestOptionsWithFieldNoBytesRequest;
 import com.blerpc.device.test.proto.TestOptionsWrongBooleanRangeRequest;
@@ -23,15 +23,9 @@ import com.blerpc.device.test.proto.TestOptionsWrongLongRangeRequest;
 import com.blerpc.device.test.proto.TestOptionsZeroBytesRequest;
 import com.blerpc.device.test.proto.TestToken;
 import com.blerpc.device.test.proto.TestType;
-import com.blerpc.proto.BytesRange;
-import com.google.protobuf.ByteString;
-import com.google.protobuf.Descriptors.EnumDescriptor;
-import com.google.protobuf.Descriptors.EnumValueDescriptor;
 import java.nio.ByteOrder;
-import java.util.List;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 /**
@@ -43,10 +37,6 @@ public class AnnotationMessageConverterTest {
     private static final int MAX_BYTE_VALUE = 255;
     private static final int MAX_SHORT_VALUE = 65535;
     private static final String ENUM_NAME = "enum_name";
-    private static final ByteString METADATA_STRING_1 = ByteString.copyFrom(new byte[]{1, 2, 3, 4});
-    private static final ByteString TOKEN_STRING_1 = ByteString.copyFrom(new byte[]{6, 7, 8, 9, 10});
-    private static final ByteString METADATA_STRING_2 = ByteString.copyFrom(new byte[]{5, 4, 3, 2});
-    private static final ByteString TOKEN_STRING_2 = ByteString.copyFrom(new byte[]{10, 9, 8, 7, 6});
     private static final TestOptionsImage IMAGE_REQUEST_1 = TestOptionsImage.newBuilder()
             .setVersion(20)
             .setCrc(500)
@@ -54,9 +44,9 @@ public class AnnotationMessageConverterTest {
             .setRelease(true)
             .setType(TestType.FULL)
             .setMetadata(TestMetadata.newBuilder()
-                    .setBleMetadata(METADATA_STRING_1)
+                    .setBleMetadata(20000)
                     .setToken(TestToken.newBuilder()
-                            .setToken(TOKEN_STRING_1)))
+                            .setToken(30000)))
             .setBuildTime(1519548579757L)
             .build();
     private static final TestOptionsImage IMAGE_REQUEST_2 = TestOptionsImage.newBuilder()
@@ -66,36 +56,36 @@ public class AnnotationMessageConverterTest {
             .setRelease(false)
             .setType(TestType.ONLY_APP)
             .setMetadata(TestMetadata.newBuilder()
-                    .setBleMetadata(METADATA_STRING_2)
+                    .setBleMetadata(40000)
                     .setToken(TestToken.newBuilder()
-                            .setToken(TOKEN_STRING_2)))
+                            .setToken(50000)))
             .setBuildTime(1519576271989L)
             .build();
     private static final TestOptionsImage IMAGE_REQUEST_WRONG_BYTE_STRING = TestOptionsImage.newBuilder()
             .setMetadata(TestMetadata.newBuilder()
-                    .setBleMetadata(ByteString.copyFrom(new byte[]{1, 2, 3}))
+                    .setBleMetadata(20000)
                     .setToken(TestToken.newBuilder()
-                            .setToken(TOKEN_STRING_1)))
+                            .setToken(20000)))
             .build();
     private static final byte[] EMPTY_ARRAY = new byte[0];
     private static final byte[] IMAGE_REQUEST_1_BYTES_LITTLE_ENDIAN =
-            new byte[]{20, -12, 1, -96, -122, 1, 0, 1, 2, 0, 1, 2, 3, 4, 0, 6, 7, 8, 9, 10, -83, 63, 39, -52, 97, 1, 0, 0};
+            new byte[]{20, -12, 1, -96, -122, 1, 0, 1, 2, 0, 32, 78, 0, 0, 0, 48, 117, 0, 0, 0, -83, 63, 39, -52, 97, 1, 0, 0};
     private static final byte[] IMAGE_REQUEST_1_BYTES_BIG_ENDIAN =
-            new byte[]{20, 1, -12, 0, 1, -122, -96, 1, 2, 0, 1, 2, 3, 4, 0, 6, 7, 8, 9, 10, 0, 0, 1, 97, -52, 39, 63, -83};
+            new byte[]{20, 1, -12, 0, 1, -122, -96, 1, 2, 0, 0, 0, 78, 32, 0, 0, 0, 117, 48, 0, 0, 0, 1, 97, -52, 39, 63, -83};
     private static final byte[] IMAGE_REQUEST_2_BYTES_LITTLE_ENDIAN =
-            new byte[]{35, 32, 3, -60, -3, 1, 0, 0, 1, 0, 5, 4, 3, 2, 0, 10, 9, 8, 7, 6, 117, -52, -51, -51, 97, 1, 0, 0};
+            new byte[]{35, 32, 3, -60, -3, 1, 0, 0, 1, 0, 64, -100, 0, 0, 0, 80, -61, 0, 0, 0, 117, -52, -51, -51, 97, 1, 0, 0};
     private static final byte[] IMAGE_REQUEST_2_BYTES_BIG_ENDIAN =
-            new byte[]{35, 3, 32, 0, 1, -3, -60, 0, 1, 0, 5, 4, 3, 2, 0, 10, 9, 8, 7, 6, 0, 0, 1, 97, -51, -51, -52, 117};
+            new byte[]{35, 3, 32, 0, 1, -3, -60, 0, 1, 0, 0, 0, -100, 64, 0, 0, 0, -61, 80, 0, 0, 0, 1, 97, -51, -51, -52, 117};
     private static final TestOptionsZeroBytesRequest ZERO_BYTES_REQUEST = TestOptionsZeroBytesRequest.getDefaultInstance();
     private static final TestOptionsWithFieldNoBytesRequest FIELD_NO_BYTES_REQUEST = TestOptionsWithFieldNoBytesRequest.getDefaultInstance();
     private static final TestOptionsNoBytesRangeRequest NO_BYTES_RANGE_REQUEST = TestOptionsNoBytesRangeRequest.newBuilder()
             .setValue(20)
             .build();
     private static final TestOptionsEqualsIndexesRequest EQUALS_INDEXES_REQUEST = TestOptionsEqualsIndexesRequest.newBuilder()
-            .setMetadata(METADATA_STRING_1)
+            .setMetadata(20000)
             .build();
     private static final TestOptionsNegativeRangeRequest NEGATIVE_RANGE_REQUEST = TestOptionsNegativeRangeRequest.newBuilder()
-            .setMetadata(METADATA_STRING_1)
+            .setMetadata(20000)
             .build();
     private static final TestOptionsStringValueRequest STRING_VALUE_REQUEST = TestOptionsStringValueRequest.newBuilder()
             .setMessage("Message")
@@ -107,7 +97,7 @@ public class AnnotationMessageConverterTest {
             .setImpedance(300.5678d)
             .build();
     private static final TestOptionsRangeBiggerThanCountRequest RANGE_BIGGER_COUNT_REQUEST = TestOptionsRangeBiggerThanCountRequest.newBuilder()
-            .setMetadata(METADATA_STRING_1)
+            .setMetadata(20000)
             .build();
     private static final TestOptionsWrongIntegerRangeRequest WRONG_INT_RANGE_REQUEST = TestOptionsWrongIntegerRangeRequest.newBuilder()
             .setValue(20)
@@ -122,13 +112,13 @@ public class AnnotationMessageConverterTest {
             .setRelease(true)
             .build();
     private static final TestOptionsRangeIntersectRequest RANGE_INTERSECT_REQUEST = TestOptionsRangeIntersectRequest.newBuilder()
-            .setValue(ByteString.copyFrom(new byte[]{1, 2, 3}))
-            .setMetadata(METADATA_STRING_1)
+            .setValue(20000)
+            .setMetadata(30000)
+            .build();
+    private static final TestOptionsSmallEnumRangeRequest SMALL_ENUM_RANGE_REQUEST = TestOptionsSmallEnumRangeRequest.newBuilder()
+            .setBigEnumValue(2)
             .build();
 
-    @Mock EnumValueDescriptor enumValueDescriptor;
-    @Mock List<EnumValueDescriptor> enumValuesList;
-    @Mock EnumDescriptor enumDescriptor;
     AnnotationMessageConverter converter = new AnnotationMessageConverter();
     AnnotationMessageConverter converterLittleEndian = new AnnotationMessageConverter(ByteOrder.LITTLE_ENDIAN);
 
@@ -183,7 +173,7 @@ public class AnnotationMessageConverterTest {
     @Test
     public void serializeRequestTest_rangeIntersectMessage() throws Exception {
         assertError(() -> converter.serializeRequest(null, RANGE_INTERSECT_REQUEST),
-                "Field metadata bytes range intersects with another field bytes range");
+                "Field metadata bytes range intersects with field value bytes range");
     }
 
     @Test
@@ -218,9 +208,9 @@ public class AnnotationMessageConverterTest {
     }
 
     @Test
-    public void serializeRequestTest_byteStringWrongSize() throws Exception {
-        assertError(() -> converter.serializeRequest(null, IMAGE_REQUEST_WRONG_BYTE_STRING),
-                "Could not serialize request: Actual byte string size 3 is not equal to the declared field size 4");
+    public void serializeRequestTest_notEnoughRangeForEnum() throws Exception {
+        assertError(() -> converter.serializeRequest(null, SMALL_ENUM_RANGE_REQUEST),
+                "1 byte(s) not enough for TestTwoBytesSizeEnum enum that has 257 values");
     }
 
     @Test
@@ -311,44 +301,5 @@ public class AnnotationMessageConverterTest {
     public void deserializeResponseTest_wrongBooleanRange() throws Exception {
         assertError(() -> converter.deserializeResponse(null, TestOptionsWrongBooleanRangeRequest.getDefaultInstance(), new byte[2]),
                 "Boolean value release has bytes size = 2 that more than 1 byte");
-    }
-
-    @Test
-    public void checkBytesRangeEnoughForEnum() throws Exception {
-        when(enumValueDescriptor.getType()).thenReturn(enumDescriptor);
-        when(enumDescriptor.getValues()).thenReturn(enumValuesList);
-        when(enumDescriptor.getName()).thenReturn(ENUM_NAME);
-
-        when(enumValuesList.size()).thenReturn(MAX_BYTE_VALUE);
-        AnnotationMessageConverter.checkBytesRangeEnoughForEnum(enumValueDescriptor,
-                BytesRange.newBuilder()
-                        .setFromByte(0)
-                        .setToByte(1)
-                        .build(),
-                ENUM_NAME);
-
-        when(enumValuesList.size()).thenReturn(MAX_SHORT_VALUE);
-        AnnotationMessageConverter.checkBytesRangeEnoughForEnum(enumValueDescriptor,
-                BytesRange.newBuilder()
-                        .setFromByte(0)
-                        .setToByte(2)
-                        .build(),
-                ENUM_NAME);
-
-        when(enumValuesList.size()).thenReturn(MAX_BYTE_VALUE + 1);
-        assertError(() -> AnnotationMessageConverter.checkBytesRangeEnoughForEnum(enumValueDescriptor,
-                BytesRange.newBuilder()
-                        .setFromByte(0)
-                        .setToByte(1)
-                        .build(),
-                ENUM_NAME), String.format("1 byte(s) not enough for %s enum that has 256 values", ENUM_NAME));
-
-        when(enumValuesList.size()).thenReturn(MAX_SHORT_VALUE + 1);
-        assertError(() -> AnnotationMessageConverter.checkBytesRangeEnoughForEnum(enumValueDescriptor,
-                BytesRange.newBuilder()
-                        .setFromByte(0)
-                        .setToByte(2)
-                        .build(),
-                ENUM_NAME), String.format("2 byte(s) not enough for %s enum that has 65536 values", ENUM_NAME));
     }
 }
