@@ -13,7 +13,9 @@ import com.blerpc.device.test.proto.TestOptionsNegativeRangeRequest;
 import com.blerpc.device.test.proto.TestOptionsNoBytesRangeRequest;
 import com.blerpc.device.test.proto.TestOptionsRangeBiggerThanCountRequest;
 import com.blerpc.device.test.proto.TestOptionsRangeIntersectRequest;
-import com.blerpc.device.test.proto.TestOptionsSmallEnumRangeRequest;
+import com.blerpc.device.test.proto.TestOptionsSmallFourBytesEnumRangeRequest;
+import com.blerpc.device.test.proto.TestOptionsSmallThreeBytesEnumRangeRequest;
+import com.blerpc.device.test.proto.TestOptionsSmallTwoBytesEnumRangeRequest;
 import com.blerpc.device.test.proto.TestOptionsStringValueRequest;
 import com.blerpc.device.test.proto.TestOptionsWithFieldNoBytesRequest;
 import com.blerpc.device.test.proto.TestOptionsWrongBooleanRangeRequest;
@@ -112,9 +114,18 @@ public class AnnotationMessageConverterTest {
             .setValue(20000)
             .setMetadata(30000)
             .build();
-    private static final TestOptionsSmallEnumRangeRequest SMALL_ENUM_RANGE_REQUEST = TestOptionsSmallEnumRangeRequest.newBuilder()
+    private static final TestOptionsSmallTwoBytesEnumRangeRequest SMALL_TWO_BYTES_ENUM_RANGE_REQUEST =
+            TestOptionsSmallTwoBytesEnumRangeRequest.newBuilder()
             .setBigEnumValue(2)
             .build();
+    private static final TestOptionsSmallThreeBytesEnumRangeRequest SMALL_THREE_BYTES_ENUM_RANGE_REQUEST =
+            TestOptionsSmallThreeBytesEnumRangeRequest.newBuilder()
+                    .setBigEnumValue(2)
+                    .build();
+    private static final TestOptionsSmallFourBytesEnumRangeRequest SMALL_FOUR_BYTES_ENUM_RANGE_REQUEST =
+            TestOptionsSmallFourBytesEnumRangeRequest.newBuilder()
+                    .setBigEnumValue(2)
+                    .build();
 
     AnnotationMessageConverter converter = new AnnotationMessageConverter();
     AnnotationMessageConverter converterLittleEndian = new AnnotationMessageConverter(ByteOrder.LITTLE_ENDIAN);
@@ -206,8 +217,12 @@ public class AnnotationMessageConverterTest {
 
     @Test
     public void serializeRequestTest_notEnoughRangeForEnum() throws Exception {
-        assertError(() -> converter.serializeRequest(null, SMALL_ENUM_RANGE_REQUEST),
+        assertError(() -> converter.serializeRequest(null, SMALL_TWO_BYTES_ENUM_RANGE_REQUEST),
                 "1 byte(s) not enough for TestTwoBytesSizeEnum enum that has 2222 max number");
+        assertError(() -> converter.serializeRequest(null, SMALL_THREE_BYTES_ENUM_RANGE_REQUEST),
+                "2 byte(s) not enough for TestThreeBytesSizeEnum enum that has 222222 max number");
+        assertError(() -> converter.serializeRequest(null, SMALL_FOUR_BYTES_ENUM_RANGE_REQUEST),
+                "3 byte(s) not enough for TestFourBytesSizeEnum enum that has 222222222 max number");
     }
 
     @Test
