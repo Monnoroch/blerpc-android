@@ -170,7 +170,7 @@ public class AnnotationMessageConverterTest {
     @Test
     public void serializeRequestTest_rangeIntersectMessage() throws Exception {
         assertError(() -> converter.serializeRequest(null, RANGE_INTERSECT_REQUEST),
-                "Field value bytes range intersects with another field bytes range");
+                "Field value bytes range [0, 4] intersects with another field metadata bytes range [2, 6]");
     }
 
     @Test
@@ -183,31 +183,31 @@ public class AnnotationMessageConverterTest {
     @Test
     public void serializeRequestTest_wrongIntegerRange() throws Exception {
         assertError(() -> converter.serializeRequest(null, WRONG_INT_RANGE_REQUEST),
-                "Only integer fields with declared bytes size in [1, 8] are supported. Field value has 11 bytes size.");
+                "Integer field value has unsupported size 11. Only sizes in [1, 8] are supported.");
     }
 
     @Test
     public void serializeRequestTest_wrongLongRange() throws Exception {
         assertError(() -> converter.serializeRequest(null, WRONG_LONG_RANGE_REQUEST),
-                "Only integer fields with declared bytes size in [1, 8] are supported. Field value has 13 bytes size.");
+                "Integer field value has unsupported size 13. Only sizes in [1, 8] are supported.");
     }
 
     @Test
     public void serializeRequestTest_wrongEnumRange() throws Exception {
         assertError(() -> converter.serializeRequest(null, WRONG_ENUM_RANGE_REQUEST),
-                "Only enum fields with declared bytes size in [1, 2] are supported. Field type has 9 bytes size.");
+                "Enum TestType field type has unsupported size 9. Only sizes in [1, 4] are supported.");
     }
 
     @Test
     public void serializeRequestTest_wrongBooleanRange() throws Exception {
         assertError(() -> converter.serializeRequest(null, WRONG_BOOLEAN_RANGE_REQUEST),
-                "Boolean value release has bytes size = 2 that more than 1 byte");
+                "Boolean field release has bytes size = 2, but has to be of size 1");
     }
 
     @Test
     public void serializeRequestTest_notEnoughRangeForEnum() throws Exception {
         assertError(() -> converter.serializeRequest(null, SMALL_ENUM_RANGE_REQUEST),
-                "1 byte(s) not enough for TestTwoBytesSizeEnum enum that has 257 values");
+                "1 byte(s) not enough for TestTwoBytesSizeEnum enum that has 2222 max number");
     }
 
     @Test
@@ -231,7 +231,7 @@ public class AnnotationMessageConverterTest {
     @Test
     public void deserializeResponseTest_wrongMessageByteSize() throws Exception {
         assertError(() -> converter.deserializeResponse(null, TestOptionsImage.getDefaultInstance(), new byte[10]),
-                "Message TestOptionsImage byte size 10 is not equals to expected size of device response 28");
+                "Declared size 28 of message TestOptionsImage is not equal to device response size 10");
     }
 
     @Test
@@ -279,24 +279,24 @@ public class AnnotationMessageConverterTest {
     @Test
     public void deserializeResponseTest_wrongIntegerRange() throws Exception {
         assertError(() -> converter.deserializeResponse(null, TestOptionsWrongIntegerRangeRequest.getDefaultInstance(), new byte[11]),
-                "Only integer fields with declared bytes size in [1, 8] are supported. Field value has 11 bytes size.");
+                "Integer field value has unsupported size 11. Only sizes in [1, 8] are supported.");
     }
 
     @Test
     public void deserializeResponseTest_wrongLongRange() throws Exception {
         assertError(() -> converter.deserializeResponse(null, TestOptionsWrongLongRangeRequest.getDefaultInstance(), new byte[13]),
-                "Only integer fields with declared bytes size in [1, 8] are supported. Field value has 13 bytes size.");
+                "Integer field value has unsupported size 13. Only sizes in [1, 8] are supported.");
     }
 
     @Test
     public void deserializeResponseTest_wrongEnumRange() throws Exception {
         assertError(() -> converter.deserializeResponse(null, TestOptionsWrongEnumRangeRequest.getDefaultInstance(), new byte[9]),
-                "Only integer fields with declared bytes size in [1, 8] are supported. Field type has 9 bytes size.");
+                "Enum TestType field type has unsupported size 9. Only sizes in [1, 4] are supported.");
     }
 
     @Test
     public void deserializeResponseTest_wrongBooleanRange() throws Exception {
         assertError(() -> converter.deserializeResponse(null, TestOptionsWrongBooleanRangeRequest.getDefaultInstance(), new byte[2]),
-                "Boolean value release has bytes size = 2 that more than 1 byte");
+                "Boolean field release has bytes size = 2, but has to be of size 1");
     }
 }

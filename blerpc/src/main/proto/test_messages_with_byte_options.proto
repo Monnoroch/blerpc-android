@@ -457,7 +457,7 @@ enum TestTwoBytesSizeEnum {
     VALUE_219 = 219;
     VALUE_220 = 220;
     VALUE_221 = 221;
-    VALUE_222 = 222;
+    VALUE_222 = 2222;
     VALUE_223 = 223;
     VALUE_224 = 224;
     VALUE_225 = 225;
