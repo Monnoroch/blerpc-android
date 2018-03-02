@@ -4,11 +4,16 @@ import static com.blerpc.Assert.assertError;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.blerpc.device.test.proto.TestMetadata;
+import com.blerpc.device.test.proto.TestOptionsBool;
 import com.blerpc.device.test.proto.TestOptionsDoubleValueRequest;
+import com.blerpc.device.test.proto.TestOptionsEnum;
 import com.blerpc.device.test.proto.TestOptionsEqualsIndexesRequest;
 import com.blerpc.device.test.proto.TestOptionsFloatValueRequest;
 import com.blerpc.device.test.proto.TestOptionsImage;
 import com.blerpc.device.test.proto.TestOptionsImageRequest;
+import com.blerpc.device.test.proto.TestOptionsInteger;
+import com.blerpc.device.test.proto.TestOptionsLong;
+import com.blerpc.device.test.proto.TestOptionsMessage;
 import com.blerpc.device.test.proto.TestOptionsNegativeRangeRequest;
 import com.blerpc.device.test.proto.TestOptionsNoBytesRangeRequest;
 import com.blerpc.device.test.proto.TestOptionsRangeBiggerThanCountRequest;
@@ -60,13 +65,21 @@ public class AnnotationMessageConverterTest {
                             .setToken(50000)))
             .setBuildTime(1519576271989L)
             .build();
-    private static final TestOptionsImage IMAGE_REQUEST_WRONG_BYTE_STRING = TestOptionsImage.newBuilder()
-            .setMetadata(TestMetadata.newBuilder()
-                    .setBleMetadata(20000)
-                    .setToken(TestToken.newBuilder()
-                            .setToken(20000)))
+    private static final TestOptionsInteger TEST_OPTIONS_INTEGER = TestOptionsInteger.newBuilder()
+            .setValue(100000)
             .build();
-    private static final byte[] EMPTY_ARRAY = new byte[0];
+    private static final TestOptionsLong TEST_OPTIONS_LONG = TestOptionsLong.newBuilder()
+            .setValue(10000000000L)
+            .build();
+    private static final TestOptionsBool TEST_OPTIONS_BOOL = TestOptionsBool.newBuilder()
+            .setValue(true)
+            .build();
+    private static final TestOptionsEnum TEST_OPTIONS_ENUM = TestOptionsEnum.newBuilder()
+            .setType(TestType.FULL)
+            .build();
+    private static final TestOptionsMessage TEST_OPTIONS_MESSAGE = TestOptionsMessage.newBuilder()
+            .setValueMessage(TEST_OPTIONS_INTEGER)
+            .build();
     private static final byte[] IMAGE_REQUEST_1_BYTES_LITTLE_ENDIAN =
             new byte[]{20, -12, 1, -96, -122, 1, 0, 1, 2, 0, 32, 78, 0, 0, 0, 48, 117, 0, 0, 0, -83, 63, 39, -52, 97, 1, 0, 0};
     private static final byte[] IMAGE_REQUEST_1_BYTES_BIG_ENDIAN =
@@ -75,57 +88,14 @@ public class AnnotationMessageConverterTest {
             new byte[]{35, 32, 3, -60, -3, 1, 0, 0, 1, 0, 64, -100, 0, 0, 0, 80, -61, 0, 0, 0, 117, -52, -51, -51, 97, 1, 0, 0};
     private static final byte[] IMAGE_REQUEST_2_BYTES_BIG_ENDIAN =
             new byte[]{35, 3, 32, 0, 1, -3, -60, 0, 1, 0, 0, 0, -100, 64, 0, 0, 0, -61, 80, 0, 0, 0, 1, 97, -51, -51, -52, 117};
-    private static final TestOptionsZeroBytesRequest ZERO_BYTES_REQUEST = TestOptionsZeroBytesRequest.getDefaultInstance();
-    private static final TestOptionsWithFieldNoBytesRequest FIELD_NO_BYTES_REQUEST = TestOptionsWithFieldNoBytesRequest.getDefaultInstance();
-    private static final TestOptionsNoBytesRangeRequest NO_BYTES_RANGE_REQUEST = TestOptionsNoBytesRangeRequest.newBuilder()
-            .setValue(20)
-            .build();
-    private static final TestOptionsEqualsIndexesRequest EQUALS_INDEXES_REQUEST = TestOptionsEqualsIndexesRequest.newBuilder()
-            .setMetadata(20000)
-            .build();
-    private static final TestOptionsNegativeRangeRequest NEGATIVE_RANGE_REQUEST = TestOptionsNegativeRangeRequest.newBuilder()
-            .setMetadata(20000)
-            .build();
-    private static final TestOptionsStringValueRequest STRING_VALUE_REQUEST = TestOptionsStringValueRequest.newBuilder()
-            .setMessage("Message")
-            .build();
-    private static final TestOptionsFloatValueRequest FLOAT_VALUE_REQUEST = TestOptionsFloatValueRequest.newBuilder()
-            .setWeight(85.5f)
-            .build();
-    private static final TestOptionsDoubleValueRequest DOUBLE_VALUE_REQUEST = TestOptionsDoubleValueRequest.newBuilder()
-            .setImpedance(300.5678d)
-            .build();
-    private static final TestOptionsRangeBiggerThanCountRequest RANGE_BIGGER_COUNT_REQUEST = TestOptionsRangeBiggerThanCountRequest.newBuilder()
-            .setMetadata(20000)
-            .build();
-    private static final TestOptionsWrongIntegerRangeRequest WRONG_INT_RANGE_REQUEST = TestOptionsWrongIntegerRangeRequest.newBuilder()
-            .setValue(20)
-            .build();
-    private static final TestOptionsWrongLongRangeRequest WRONG_LONG_RANGE_REQUEST = TestOptionsWrongLongRangeRequest.newBuilder()
-            .setValue(100000)
-            .build();
-    private static final TestOptionsWrongEnumRangeRequest WRONG_ENUM_RANGE_REQUEST = TestOptionsWrongEnumRangeRequest.newBuilder()
-            .setType(TestType.ONLY_APP)
-            .build();
-    private static final TestOptionsWrongBooleanRangeRequest WRONG_BOOLEAN_RANGE_REQUEST = TestOptionsWrongBooleanRangeRequest.newBuilder()
-            .setRelease(true)
-            .build();
-    private static final TestOptionsRangeIntersectRequest RANGE_INTERSECT_REQUEST = TestOptionsRangeIntersectRequest.newBuilder()
-            .setValue(20000)
-            .setMetadata(30000)
-            .build();
-    private static final TestOptionsSmallTwoBytesEnumRangeRequest SMALL_TWO_BYTES_ENUM_RANGE_REQUEST =
-            TestOptionsSmallTwoBytesEnumRangeRequest.newBuilder()
-            .setBigEnumValue(2)
-            .build();
-    private static final TestOptionsSmallThreeBytesEnumRangeRequest SMALL_THREE_BYTES_ENUM_RANGE_REQUEST =
-            TestOptionsSmallThreeBytesEnumRangeRequest.newBuilder()
-                    .setBigEnumValue(2)
-                    .build();
-    private static final TestOptionsSmallFourBytesEnumRangeRequest SMALL_FOUR_BYTES_ENUM_RANGE_REQUEST =
-            TestOptionsSmallFourBytesEnumRangeRequest.newBuilder()
-                    .setBigEnumValue(2)
-                    .build();
+    private static final byte[] TEST_OPTIONS_INTEGER_BYTES_LITTLE_ENDIAN = new byte[]{-96, -122, 1, 0};
+    private static final byte[] TEST_OPTIONS_INTEGER_BYTES_BIG_ENDIAN = new byte[]{0, 1, -122, -96};
+    private static final byte[] TEST_OPTIONS_LONG_BYTES_LITTLE_ENDIAN = new byte[]{0, -28, 11, 84, 2, 0, 0, 0};
+    private static final byte[] TEST_OPTIONS_LONG_BYTES_BIG_ENDIAN = new byte[]{0, 0, 0, 2, 84, 11, -28, 0};
+    private static final byte[] TEST_OPTIONS_BOOL_BYTES = new byte[]{1};
+    private static final byte[] TEST_OPTIONS_ENUM_BYTES = new byte[]{2};
+    private static final byte[] TEST_OPTIONS_MESSAGE_BYTES_LITTLE_ENDIAN = new byte[]{-96, -122, 1, 0};
+    private static final byte[] TEST_OPTIONS_MESSAGE_BYTES_BIG_ENDIAN = new byte[]{0, 1, -122, -96};
 
     AnnotationMessageConverter converter = new AnnotationMessageConverter();
     AnnotationMessageConverter converterLittleEndian = new AnnotationMessageConverter(ByteOrder.LITTLE_ENDIAN);
@@ -134,94 +104,135 @@ public class AnnotationMessageConverterTest {
     public void serializeRequestTest() throws Exception {
         assertThat(converterLittleEndian.serializeRequest(null, IMAGE_REQUEST_1)).isEqualTo(IMAGE_REQUEST_1_BYTES_LITTLE_ENDIAN);
         assertThat(converterLittleEndian.serializeRequest(null, IMAGE_REQUEST_2)).isEqualTo(IMAGE_REQUEST_2_BYTES_LITTLE_ENDIAN);
+        assertThat(converterLittleEndian.serializeRequest(null, TEST_OPTIONS_INTEGER)).isEqualTo(TEST_OPTIONS_INTEGER_BYTES_LITTLE_ENDIAN);
+        assertThat(converterLittleEndian.serializeRequest(null, TEST_OPTIONS_LONG)).isEqualTo(TEST_OPTIONS_LONG_BYTES_LITTLE_ENDIAN);
+        assertThat(converterLittleEndian.serializeRequest(null, TEST_OPTIONS_BOOL)).isEqualTo(TEST_OPTIONS_BOOL_BYTES);
+        assertThat(converterLittleEndian.serializeRequest(null, TEST_OPTIONS_ENUM)).isEqualTo(TEST_OPTIONS_ENUM_BYTES);
+        assertThat(converterLittleEndian.serializeRequest(null, TEST_OPTIONS_MESSAGE)).isEqualTo(TEST_OPTIONS_MESSAGE_BYTES_LITTLE_ENDIAN);
         assertThat(converter.serializeRequest(null, IMAGE_REQUEST_1)).isEqualTo(IMAGE_REQUEST_1_BYTES_BIG_ENDIAN);
         assertThat(converter.serializeRequest(null, IMAGE_REQUEST_2)).isEqualTo(IMAGE_REQUEST_2_BYTES_BIG_ENDIAN);
+        assertThat(converter.serializeRequest(null, TEST_OPTIONS_INTEGER)).isEqualTo(TEST_OPTIONS_INTEGER_BYTES_BIG_ENDIAN);
+        assertThat(converter.serializeRequest(null, TEST_OPTIONS_LONG)).isEqualTo(TEST_OPTIONS_LONG_BYTES_BIG_ENDIAN);
+        assertThat(converter.serializeRequest(null, TEST_OPTIONS_BOOL)).isEqualTo(TEST_OPTIONS_BOOL_BYTES);
+        assertThat(converter.serializeRequest(null, TEST_OPTIONS_ENUM)).isEqualTo(TEST_OPTIONS_ENUM_BYTES);
+        assertThat(converter.serializeRequest(null, TEST_OPTIONS_MESSAGE)).isEqualTo(TEST_OPTIONS_MESSAGE_BYTES_BIG_ENDIAN);
     }
 
     @Test
     public void serializeRequestTest_emptyMessage() throws Exception {
-        assertThat(converter.serializeRequest(null, TestOptionsImageRequest.getDefaultInstance())).isEqualTo(EMPTY_ARRAY);
+        assertThat(converter.serializeRequest(null, TestOptionsImageRequest.getDefaultInstance())).isEmpty();
     }
 
     @Test
     public void serializeRequestTest_zeroBytesMessage() throws Exception {
-        assertThat(converter.serializeRequest(null, ZERO_BYTES_REQUEST)).isEqualTo(EMPTY_ARRAY);
+        assertThat(converter.serializeRequest(null, TestOptionsZeroBytesRequest.getDefaultInstance())).isEmpty();
     }
 
     @Test
     public void serializeRequestTest_messageWithFieldAndWithoutByteSize() throws Exception {
-        assertError(() -> converter.serializeRequest(null, FIELD_NO_BYTES_REQUEST),
+        assertError(() -> converter.serializeRequest(null, TestOptionsWithFieldNoBytesRequest.getDefaultInstance()),
                 "A non empty message TestOptionsWithFieldNoBytesRequest doesn't have com.blerpc.message_size annotation.");
     }
 
     @Test
     public void serializeRequestTest_noByteRangeMessage() throws Exception {
-        assertError(() -> converter.serializeRequest(null, NO_BYTES_RANGE_REQUEST),
+        assertError(() -> converter.serializeRequest(null, TestOptionsNoBytesRangeRequest.newBuilder()
+                .setValue(20)
+                .build()),
                 "Proto field value doesn't have com.blerpc.field_bytes annotation");
     }
 
     @Test
     public void serializeRequestTest_equalsIndexesMessage() throws Exception {
-        assertError(() -> converter.serializeRequest(null, EQUALS_INDEXES_REQUEST),
+        assertError(() -> converter.serializeRequest(null, TestOptionsEqualsIndexesRequest.newBuilder()
+                .setMetadata(20000)
+                .build()),
                 "Field metadata has from_bytes = 0 which must be less than to_bytes = 0");
     }
 
     @Test
     public void serializeRequestTest_negativeRangeMessage() throws Exception {
-        assertError(() -> converter.serializeRequest(null, NEGATIVE_RANGE_REQUEST),
+        assertError(() -> converter.serializeRequest(null, TestOptionsNegativeRangeRequest.newBuilder()
+                .setMetadata(20000)
+                .build()),
                 "Field metadata has from_bytes = -1 which is less than zero");
     }
 
     @Test
     public void serializeRequestTest_rangeBiggerThanCountMessage() throws Exception {
-        assertError(() -> converter.serializeRequest(null, RANGE_BIGGER_COUNT_REQUEST),
+        assertError(() -> converter.serializeRequest(null, TestOptionsRangeBiggerThanCountRequest.newBuilder()
+                .setMetadata(20000)
+                .build()),
                 "Field metadata has to_bytes = 11 which is bigger than message bytes size = 10");
     }
 
     @Test
     public void serializeRequestTest_rangeIntersectMessage() throws Exception {
-        assertError(() -> converter.serializeRequest(null, RANGE_INTERSECT_REQUEST),
+        assertError(() -> converter.serializeRequest(null, TestOptionsRangeIntersectRequest.newBuilder()
+                .setValue(20000)
+                .setMetadata(30000)
+                .build()),
                 "Field value bytes range [0, 4] intersects with another field metadata bytes range [2, 6]");
     }
 
     @Test
     public void serializeRequestTest_unsupportedType() throws Exception {
-        assertError(() -> converter.serializeRequest(null, STRING_VALUE_REQUEST), "Unsupported field type: STRING");
-        assertError(() -> converter.serializeRequest(null, FLOAT_VALUE_REQUEST), "Unsupported field type: FLOAT");
-        assertError(() -> converter.serializeRequest(null, DOUBLE_VALUE_REQUEST), "Unsupported field type: DOUBLE");
+        assertError(() -> converter.serializeRequest(null, TestOptionsStringValueRequest.newBuilder()
+                .setMessage("Message")
+                .build()), "Unsupported field type: STRING");
+        assertError(() -> converter.serializeRequest(null, TestOptionsFloatValueRequest.newBuilder()
+                .setWeight(85.5f)
+                .build()), "Unsupported field type: FLOAT");
+        assertError(() -> converter.serializeRequest(null, TestOptionsDoubleValueRequest.newBuilder()
+                .setImpedance(300.5678d)
+                .build()), "Unsupported field type: DOUBLE");
     }
 
     @Test
     public void serializeRequestTest_wrongIntegerRange() throws Exception {
-        assertError(() -> converter.serializeRequest(null, WRONG_INT_RANGE_REQUEST),
+        assertError(() -> converter.serializeRequest(null, TestOptionsWrongIntegerRangeRequest.newBuilder()
+                .setValue(20)
+                .build()),
                 "Integer field value has unsupported size 11. Only sizes in [1, 8] are supported.");
     }
 
     @Test
     public void serializeRequestTest_wrongLongRange() throws Exception {
-        assertError(() -> converter.serializeRequest(null, WRONG_LONG_RANGE_REQUEST),
+        assertError(() -> converter.serializeRequest(null, TestOptionsWrongLongRangeRequest.newBuilder()
+                .setValue(100000)
+                .build()),
                 "Integer field value has unsupported size 13. Only sizes in [1, 8] are supported.");
     }
 
     @Test
     public void serializeRequestTest_wrongEnumRange() throws Exception {
-        assertError(() -> converter.serializeRequest(null, WRONG_ENUM_RANGE_REQUEST),
+        assertError(() -> converter.serializeRequest(null, TestOptionsWrongEnumRangeRequest.newBuilder()
+                .setType(TestType.ONLY_APP)
+                .build()),
                 "Enum TestType field type has unsupported size 9. Only sizes in [1, 4] are supported.");
     }
 
     @Test
     public void serializeRequestTest_wrongBooleanRange() throws Exception {
-        assertError(() -> converter.serializeRequest(null, WRONG_BOOLEAN_RANGE_REQUEST),
+        assertError(() -> converter.serializeRequest(null, TestOptionsWrongBooleanRangeRequest.newBuilder()
+                .setRelease(true)
+                .build()),
                 "Boolean field release has bytes size = 2, but has to be of size 1");
     }
 
     @Test
     public void serializeRequestTest_notEnoughRangeForEnum() throws Exception {
-        assertError(() -> converter.serializeRequest(null, SMALL_TWO_BYTES_ENUM_RANGE_REQUEST),
+        assertError(() -> converter.serializeRequest(null, TestOptionsSmallTwoBytesEnumRangeRequest.newBuilder()
+                .setBigEnumValue(2)
+                .build()),
                 "1 byte(s) not enough for TestTwoBytesSizeEnum enum that has 2222 max number");
-        assertError(() -> converter.serializeRequest(null, SMALL_THREE_BYTES_ENUM_RANGE_REQUEST),
+        assertError(() -> converter.serializeRequest(null, TestOptionsSmallThreeBytesEnumRangeRequest.newBuilder()
+                .setBigEnumValue(2)
+                .build()),
                 "2 byte(s) not enough for TestThreeBytesSizeEnum enum that has 222222 max number");
-        assertError(() -> converter.serializeRequest(null, SMALL_FOUR_BYTES_ENUM_RANGE_REQUEST),
+        assertError(() -> converter.serializeRequest(null, TestOptionsSmallFourBytesEnumRangeRequest.newBuilder()
+                .setBigEnumValue(2)
+                .build()),
                 "3 byte(s) not enough for TestFourBytesSizeEnum enum that has 222222222 max number");
     }
 
@@ -235,11 +246,41 @@ public class AnnotationMessageConverterTest {
                 .isEqualTo(IMAGE_REQUEST_2);
         assertThat(converter.deserializeResponse(null, TestOptionsImage.getDefaultInstance(), IMAGE_REQUEST_2_BYTES_BIG_ENDIAN))
                 .isEqualTo(IMAGE_REQUEST_2);
+        assertThat(converterLittleEndian.deserializeResponse(null, TestOptionsInteger.getDefaultInstance(),
+                TEST_OPTIONS_INTEGER_BYTES_LITTLE_ENDIAN))
+                .isEqualTo(TEST_OPTIONS_INTEGER);
+        assertThat(converter.deserializeResponse(null, TestOptionsInteger.getDefaultInstance(),
+                TEST_OPTIONS_INTEGER_BYTES_BIG_ENDIAN))
+                .isEqualTo(TEST_OPTIONS_INTEGER);
+        assertThat(converterLittleEndian.deserializeResponse(null, TestOptionsLong.getDefaultInstance(),
+                TEST_OPTIONS_LONG_BYTES_LITTLE_ENDIAN))
+                .isEqualTo(TEST_OPTIONS_LONG);
+        assertThat(converter.deserializeResponse(null, TestOptionsLong.getDefaultInstance(),
+                TEST_OPTIONS_LONG_BYTES_BIG_ENDIAN))
+                .isEqualTo(TEST_OPTIONS_LONG);
+        assertThat(converterLittleEndian.deserializeResponse(null, TestOptionsBool.getDefaultInstance(),
+                TEST_OPTIONS_BOOL_BYTES))
+                .isEqualTo(TEST_OPTIONS_BOOL);
+        assertThat(converter.deserializeResponse(null, TestOptionsBool.getDefaultInstance(),
+                TEST_OPTIONS_BOOL_BYTES))
+                .isEqualTo(TEST_OPTIONS_BOOL);
+        assertThat(converterLittleEndian.deserializeResponse(null, TestOptionsEnum.getDefaultInstance(),
+                TEST_OPTIONS_ENUM_BYTES))
+                .isEqualTo(TEST_OPTIONS_ENUM);
+        assertThat(converter.deserializeResponse(null, TestOptionsEnum.getDefaultInstance(),
+                TEST_OPTIONS_ENUM_BYTES))
+                .isEqualTo(TEST_OPTIONS_ENUM);
+        assertThat(converterLittleEndian.deserializeResponse(null, TestOptionsMessage.getDefaultInstance(),
+                TEST_OPTIONS_MESSAGE_BYTES_LITTLE_ENDIAN))
+                .isEqualTo(TEST_OPTIONS_MESSAGE);
+        assertThat(converter.deserializeResponse(null, TestOptionsMessage.getDefaultInstance(),
+                TEST_OPTIONS_MESSAGE_BYTES_BIG_ENDIAN))
+                .isEqualTo(TEST_OPTIONS_MESSAGE);
     }
 
     @Test
     public void deserializeResponseTest_emptyMessage() throws Exception {
-        assertThat(converter.deserializeResponse(null, TestOptionsImageRequest.getDefaultInstance(), EMPTY_ARRAY))
+        assertThat(converter.deserializeResponse(null, TestOptionsImageRequest.getDefaultInstance(), new byte[0]))
                 .isEqualTo(TestOptionsImageRequest.getDefaultInstance());
     }
 
