@@ -34,9 +34,6 @@ import org.mockito.junit.MockitoJUnitRunner;
 @RunWith(MockitoJUnitRunner.class)
 public class AnnotationMessageConverterTest {
 
-    private static final int MAX_BYTE_VALUE = 255;
-    private static final int MAX_SHORT_VALUE = 65535;
-    private static final String ENUM_NAME = "enum_name";
     private static final TestOptionsImage IMAGE_REQUEST_1 = TestOptionsImage.newBuilder()
             .setVersion(20)
             .setCrc(500)
@@ -143,13 +140,13 @@ public class AnnotationMessageConverterTest {
     @Test
     public void serializeRequestTest_messageWithFieldAndWithoutByteSize() throws Exception {
         assertError(() -> converter.serializeRequest(null, FIELD_NO_BYTES_REQUEST),
-                "Proto message TestOptionsWithFieldNoBytesRequest with fields must have BytesSize option");
+                "A non empty message TestOptionsWithFieldNoBytesRequest doesn't have com.blerpc.message_size annotation.");
     }
 
     @Test
     public void serializeRequestTest_noByteRangeMessage() throws Exception {
         assertError(() -> converter.serializeRequest(null, NO_BYTES_RANGE_REQUEST),
-                "Proto field value doesn't have ByteRange option");
+                "Proto field value doesn't have com.blerpc.field_bytes annotation");
     }
 
     @Test
@@ -173,7 +170,7 @@ public class AnnotationMessageConverterTest {
     @Test
     public void serializeRequestTest_rangeIntersectMessage() throws Exception {
         assertError(() -> converter.serializeRequest(null, RANGE_INTERSECT_REQUEST),
-                "Field metadata bytes range intersects with field value bytes range");
+                "Field value bytes range intersects with another field bytes range");
     }
 
     @Test
@@ -242,13 +239,13 @@ public class AnnotationMessageConverterTest {
         assertError(() -> converter.deserializeResponse(null,
                 TestOptionsWithFieldNoBytesRequest.getDefaultInstance(),
                 IMAGE_REQUEST_1_BYTES_LITTLE_ENDIAN),
-                "Proto message TestOptionsWithFieldNoBytesRequest with fields must have BytesSize option");
+                "A non empty message TestOptionsWithFieldNoBytesRequest doesn't have com.blerpc.message_size annotation.");
     }
 
     @Test
     public void deserializeResponseTest_noByteRangeMessage() throws Exception {
         assertError(() -> converter.deserializeResponse(null, TestOptionsNoBytesRangeRequest.getDefaultInstance(), new byte[2]),
-                "Proto field value doesn't have ByteRange option");
+                "Proto field value doesn't have com.blerpc.field_bytes annotation");
     }
 
     @Test
