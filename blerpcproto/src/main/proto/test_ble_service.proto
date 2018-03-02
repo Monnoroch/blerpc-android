@@ -10,27 +10,69 @@ package com.device.test;
 import "blerpc.proto";
 
 message TestBleWriteRequest {
-    string value = 1;
+    option (com.blerpc.message_size) = {
+        message_size_bytes: 4
+    };
+
+    int32 value = 1 [(com.blerpc.filed_bytes) = {
+        from_byte: 0
+        to_byte: 4
+    }];
 }
 
 message TestBleWriteResponse {
-    string value = 1;
+    option (com.blerpc.message_size) = {
+        message_size_bytes: 4
+    };
+
+    int32 value = 1 [(com.blerpc.filed_bytes) = {
+        from_byte: 0
+        to_byte: 4
+    }];
 }
 
 message TestBleReadRequest {
-    string value = 1;
+    option (com.blerpc.message_size) = {
+        message_size_bytes: 4
+    };
+
+    int32 value = 1 [(com.blerpc.filed_bytes) = {
+        from_byte: 0
+        to_byte: 4
+    }];
 }
 
 message TestBleReadResponse {
-    string value = 1;
+    option (com.blerpc.message_size) = {
+        message_size_bytes: 4
+    };
+
+    int32 value = 1 [(com.blerpc.filed_bytes) = {
+        from_byte: 0
+        to_byte: 4
+    }];
 }
 
 message TestBleSubscribeRequest {
-    string value = 1;
+    option (com.blerpc.message_size) = {
+        message_size_bytes: 4
+    };
+
+    int32 value = 1 [(com.blerpc.filed_bytes) = {
+        from_byte: 0
+        to_byte: 4
+    }];
 }
 
 message TestBleSubscribeResponse {
-    string value = 1;
+    option (com.blerpc.message_size) = {
+        message_size_bytes: 4
+    };
+
+    int32 value = 1 [(com.blerpc.filed_bytes) = {
+        from_byte: 0
+        to_byte: 4
+    }];
 }
 
 service TestBleService {

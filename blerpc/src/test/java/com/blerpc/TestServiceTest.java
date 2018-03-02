@@ -29,7 +29,6 @@ import com.blerpc.device.test.proto.TestBleSubscribeResponse;
 import com.blerpc.device.test.proto.TestBleWriteRequest;
 import com.blerpc.device.test.proto.TestBleWriteResponse;
 import com.blerpc.proto.Blerpc;
-import com.google.protobuf.Descriptors.MethodDescriptor;
 import com.google.protobuf.Message;
 import com.google.protobuf.RpcCallback;
 import java.util.UUID;
@@ -58,25 +57,25 @@ public class TestServiceTest {
         TestBleService.getDescriptor().findMethodByName("TestSubscribeChar").getOptions()
             .getExtension(Blerpc.characteristic).getDescriptorUuid());
     private static final TestBleReadRequest TEST_READ_REQUEST = TestBleReadRequest.newBuilder()
-        .setValue("TEST_READ_REQUEST")
+        .setValue(1000)
         .build();
     private static final TestBleReadResponse TEST_READ_RESPONSE = TestBleReadResponse.newBuilder()
-        .setValue("TEST_READ_RESPONSE")
+        .setValue(2000)
         .build();
     private static final TestBleWriteRequest TEST_WRITE_REQUEST = TestBleWriteRequest.newBuilder()
-        .setValue("TEST_WRITE_REQUEST")
+        .setValue(3000)
         .build();
     private static final TestBleWriteResponse TEST_WRITE_RESPONSE = TestBleWriteResponse.newBuilder()
-        .setValue("TEST_WRITE_RESPONSE")
+        .setValue(4000)
         .build();
     private static final TestBleSubscribeRequest TEST_SUBSCRIBE_REQUEST = TestBleSubscribeRequest.newBuilder()
-        .setValue("TEST_SUBSCRIBE_REQUEST")
+        .setValue(5000)
         .build();
     private static final TestBleSubscribeResponse TEST_SUBSCRIBE_RESPONSE1 = TestBleSubscribeResponse.newBuilder()
-        .setValue("TEST_SUBSCRIBE_RESPONSE1")
+        .setValue(6000)
         .build();
     private static final TestBleSubscribeResponse TEST_SUBSCRIBE_RESPONSE2 = TestBleSubscribeResponse.newBuilder()
-        .setValue("TEST_SUBSCRIBE_RESPONSE2")
+        .setValue(7000)
         .build();
 
     @Mock private RpcCallback<TestBleReadResponse> callbackRead;
@@ -90,6 +89,7 @@ public class TestServiceTest {
     @Mock private BluetoothGattDescriptor descriptor;
 
     private BleRpcController controller = new BleRpcController();
+    private AnnotationMessageConverter messageConverter = new AnnotationMessageConverter();
     private TestBleService testService;
     private ArgumentCaptor<BluetoothGattCallback> bluetoothCallback =
         ArgumentCaptor.forClass(BluetoothGattCallback.class);
@@ -159,7 +159,7 @@ public class TestServiceTest {
         when(descriptor.setValue(any(byte[].class))).thenReturn(true);
         when(descriptor.getUuid()).thenReturn(TEST_DESCRIPTOR);
 
-        BleRpcChannel channel = new BleRpcChannel(bluetoothDevice, context, new TestMessageConverter(), workHandler,
+        BleRpcChannel channel = new BleRpcChannel(bluetoothDevice, context, messageConverter, workHandler,
             listenerHandler, Logger.getGlobal());
         testService = TestBleService.newStub(channel);
     }
@@ -181,7 +181,7 @@ public class TestServiceTest {
 
     @Test
     public void testRead() throws Exception {
-        when(characteristic.getValue()).thenReturn(TEST_READ_RESPONSE.toByteArray());
+        when(characteristic.getValue()).thenReturn(messageConverter.serializeRequest(null, TEST_READ_RESPONSE));
         testService.testReadChar(controller, TEST_READ_REQUEST, callbackRead);
         connectAndRun();
         assertCallSucceeded(controller);
@@ -190,7 +190,7 @@ public class TestServiceTest {
 
     @Test
     public void testWrite() throws Exception {
-        when(characteristic.getValue()).thenReturn(TEST_WRITE_RESPONSE.toByteArray());
+        when(characteristic.getValue()).thenReturn(messageConverter.serializeRequest(null, TEST_WRITE_RESPONSE));
         testService.testWriteChar(controller, TEST_WRITE_REQUEST, callbackWrite);
         connectAndRun();
         assertCallSucceeded(controller);
@@ -208,13 +208,13 @@ public class TestServiceTest {
 
     @Test
     public void testTwoCalls() throws Exception {
-        when(characteristic.getValue()).thenReturn(TEST_READ_RESPONSE.toByteArray());
+        when(characteristic.getValue()).thenReturn(messageConverter.serializeRequest(null, TEST_READ_RESPONSE));
         testService.testReadChar(controller, TEST_READ_REQUEST, callbackRead);
         connectAndRun();
         assertCallSucceeded(controller);
         verify(callbackRead).run(TEST_READ_RESPONSE);
 
-        when(characteristic.getValue()).thenReturn(TEST_WRITE_RESPONSE.toByteArray());
+        when(characteristic.getValue()).thenReturn(messageConverter.serializeRequest(null, TEST_WRITE_RESPONSE));
         testService.testWriteChar(controller, TEST_WRITE_REQUEST, callbackWrite);
         assertCallSucceeded(controller);
         verify(callbackWrite).run(TEST_WRITE_RESPONSE);
@@ -285,52 +285,13 @@ public class TestServiceTest {
         verify(callbackSubscribe, never()).run(TEST_SUBSCRIBE_RESPONSE2);
     }
 
-    void sendUpdate(Message message) {
-        when(characteristic.getValue()).thenReturn(message.toByteArray());
+    void sendUpdate(Message message) throws CouldNotConvertMessageException {
+        when(characteristic.getValue()).thenReturn(messageConverter.serializeRequest(null, message));
         bluetoothCallback.getValue().onCharacteristicChanged(bluetoothGatt, characteristic);
     }
 
     void assertCallSucceeded(BleRpcController controller) {
         assertThat(controller.failed()).isFalse();
         assertThat(controller.errorText()).isNull();
-    }
-
-    private static class TestMessageConverter implements MessageConverter {
-
-        private static final MethodDescriptorEqualsWrapper METHOD_READ =
-            wrapper(TestBleService.getDescriptor().findMethodByName("TestReadChar"));
-        private static final MethodDescriptorEqualsWrapper METHOD_WRITE =
-            wrapper(TestBleService.getDescriptor().findMethodByName("TestWriteChar"));
-        private static final MethodDescriptorEqualsWrapper METHOD_SUBSCRIBE =
-            wrapper(TestBleService.getDescriptor().findMethodByName("TestSubscribeChar"));
-
-        @Override
-        public byte[] serializeRequest(MethodDescriptor methodDescriptor, Message message)
-            throws CouldNotConvertMessageException {
-            return message.toByteArray();
-        }
-
-        @Override
-        public Message deserializeResponse(MethodDescriptor methodDescriptor, Message responsePrototype, byte[] value)
-            throws CouldNotConvertMessageException {
-            MethodDescriptorEqualsWrapper descriptor = wrapper(methodDescriptor);
-            try {
-                if (METHOD_READ.equals(descriptor)) {
-                    return TestBleReadResponse.parseFrom(value);
-                } else if (METHOD_WRITE.equals(descriptor)) {
-                    return TestBleWriteResponse.parseFrom(value);
-                } else if (METHOD_SUBSCRIBE.equals(descriptor)) {
-                    return TestBleSubscribeResponse.parseFrom(value);
-                }
-            } catch (Exception exception) {
-                throw CouldNotConvertMessageException.deserializeResponse(exception);
-            }
-            throw CouldNotConvertMessageException.deserializeResponse("unsupported method %s",
-                methodDescriptor.getFullName());
-        }
-
-        private static MethodDescriptorEqualsWrapper wrapper(MethodDescriptor methodDescriptor) {
-            return new MethodDescriptorEqualsWrapper(methodDescriptor);
-        }
     }
 }
