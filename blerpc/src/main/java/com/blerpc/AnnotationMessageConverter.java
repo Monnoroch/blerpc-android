@@ -271,15 +271,15 @@ public class AnnotationMessageConverter implements MessageConverter {
 
     private static void checkBytesRangesNotIntersect(List<FieldDescriptor> fields) {
         for (int i = 0; i < fields.size(); i++) {
-            for (int b = i + 1; b < fields.size(); b++) {
+            for (int j = i + 1; j < fields.size(); j++) {
                 BytesRange firstRange = getBytesRange(fields.get(i));
-                BytesRange secondRange = getBytesRange(fields.get(b));
+                BytesRange secondRange = getBytesRange(fields.get(j));
                 checkArgument(!bytesRangesIntersect(firstRange, secondRange),
                         "Field %s bytes range [%s, %s] intersects with another field %s bytes range [%s, %s]",
                         fields.get(i).getName(),
                         firstRange.getFromByte(),
                         firstRange.getToByte(),
-                        fields.get(b).getName(),
+                        fields.get(j).getName(),
                         secondRange.getFromByte(),
                         secondRange.getToByte());
             }
