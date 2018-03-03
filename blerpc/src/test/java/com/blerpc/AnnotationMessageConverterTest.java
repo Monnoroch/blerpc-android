@@ -10,6 +10,7 @@ import com.blerpc.device.test.proto.TestEmptyMessage;
 import com.blerpc.device.test.proto.TestEnum;
 import com.blerpc.device.test.proto.TestEnumMessage;
 import com.blerpc.device.test.proto.TestFloatValueMessage;
+import com.blerpc.device.test.proto.TestFromByteBiggerToByteMessage;
 import com.blerpc.device.test.proto.TestIntegerMessage;
 import com.blerpc.device.test.proto.TestLongMessage;
 import com.blerpc.device.test.proto.TestMessage;
@@ -137,6 +138,12 @@ public class AnnotationMessageConverterTest {
     public void serializeRequestTest_zeroSizeRangeMessage() throws Exception {
         assertError(() -> converter.serializeRequest(null, TestZeroSizeRangeMessage.getDefaultInstance()),
                 "Field metadata has from_bytes = 0 which must be less than to_bytes = 0");
+    }
+
+    @Test
+    public void serializeRequestTest_fromByteBiggerToByteMessage() throws Exception {
+        assertError(() -> converter.serializeRequest(null, TestFromByteBiggerToByteMessage.getDefaultInstance()),
+                "Field metadata has from_bytes = 1 which must be less than to_bytes = 0");
     }
 
     @Test

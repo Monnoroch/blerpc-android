@@ -147,6 +147,17 @@ message TestZeroSizeRangeMessage {
     }];
 }
 
+message TestFromByteBiggerToByteMessage {
+    option (com.blerpc.size) = {
+        size_bytes: 10
+    };
+
+    int32 metadata = 1 [(com.blerpc.range) = {
+        from_byte: 1
+        to_byte: 0
+    }];
+}
+
 message TestNegativeRangeMessage {
     option (com.blerpc.size) = {
         size_bytes: 10
