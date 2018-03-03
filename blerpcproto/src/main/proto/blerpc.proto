@@ -42,7 +42,7 @@ message BleServiceRule {
 // A description of a message size in bytes.
 message MessageSize {
     // Message size in bytes.
-    int32 message_size_bytes = 1;
+    int32 size_bytes = 1;
 }
 
 // A description of a byte range within a message the field is mapped to.
