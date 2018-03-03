@@ -34,7 +34,7 @@ configurations.all {
 
 dependencies {
     compile group: 'findbugs', name: 'annotations', version: '1.0.0'
-    compile "com.github.monnoroch:blerpcproto-android:0.1.8"
+    compile "com.github.monnoroch:blerpcproto-android:0.2.1"
     compile 'com.google.guava:guava:20.0'
     compile 'com.google.protobuf:protobuf-java:3.2.0'
     compile 'com.google.protobuf:protoc:3.0.0'
@@ -51,8 +51,7 @@ protobuf {
     protoc {
         artifact = 'com.google.protobuf:protoc:3.0.0'
     }
-    plugins {
-    }
+    plugins {}
     generateProtoTasks {
         all().each { task ->
             task.builtins {
@@ -66,7 +65,7 @@ publish {
     groupId = 'com.github.monnoroch'
     repoName = 'blerpc-android'
     artifactId = 'blerpc-android'
-    publishVersion = '0.1.8'
+    publishVersion = '0.0.7'
     desc = 'A library for simplifying working with blutooth low energy devices.'
     licences = ['MIT']
     website = 'https://github.com/monnoroch/blerpc-android'

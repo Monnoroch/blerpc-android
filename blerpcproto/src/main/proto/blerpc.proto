@@ -39,28 +39,29 @@ message BleServiceRule {
     string uuid = 1;
 }
 
-// Desribes byte size of message.
-message BytesSize {
-    // Size of message in bytes.
-    int32 message_size_bytes = 1;
+// A description of a message size in bytes.
+message MessageSize {
+    // Message size in bytes.
+    int32 size_bytes = 1;
 }
 
-// Desribes bytes range that a field is assigned to.
-message BytesRange {
-    // The number of the first byte for a field.
+// A description of a byte range within a message the field is mapped to.
+message ByteRange {
+    // The number of the first byte within a message for a field.
     int32 from_byte = 1;
-    // The number of the last byte for a field, exclusive.
+    // The number of the last byte within a message for a field.
+    // This bound is excluded, i.e. {from = 3, to = 5} describes a two-byte field.
     int32 to_byte = 2;
 }
 
-// Add `field` fiels_bytes option for describing bytes range that a field is assigned to.
+// Allow annotating fields with com.blerpc.range annotation to specify which bytes this field should map to.
 extend google.protobuf.FieldOptions {
-    BytesRange filed_bytes = 82595722;
+    ByteRange range = 82595722;
 }
 
-// Add `message` message_size option for describing size of message in bytes.
+// Allow annotating messages with com.blerpc.size annotation to specify how many bytes this message should be serialized to.
 extend google.protobuf.MessageOptions {
-    BytesSize message_size = 82595723;
+    MessageSize size = 82595723;
 }
 
 // Add `characteristic` method option for attaching the method to a BLE characteristic.

@@ -56,7 +56,7 @@ publish {
     groupId = 'com.github.monnoroch'
     repoName = 'blerpc-android'
     artifactId = 'blerpcproto-android'
-    publishVersion = '0.1.8'
+    publishVersion = '0.2.1'
     desc = 'Protobuf files for BleRpc-android library.'
     licences = ['MIT']
     website = 'https://github.com/monnoroch/blerpc-android'
