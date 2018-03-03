@@ -5,25 +5,24 @@ import static com.google.common.truth.Truth.assertThat;
 
 import com.blerpc.device.test.proto.TestBoolMessage;
 import com.blerpc.device.test.proto.TestDoubleValueMessage;
+import com.blerpc.device.test.proto.TestEmbeddedMessage;
 import com.blerpc.device.test.proto.TestEmptyMessage;
+import com.blerpc.device.test.proto.TestEnum;
 import com.blerpc.device.test.proto.TestEnumMessage;
 import com.blerpc.device.test.proto.TestFloatValueMessage;
 import com.blerpc.device.test.proto.TestIntegerMessage;
 import com.blerpc.device.test.proto.TestLongMessage;
 import com.blerpc.device.test.proto.TestMessage;
-import com.blerpc.device.test.proto.TestMetadata;
 import com.blerpc.device.test.proto.TestNegativeRangeMessage;
 import com.blerpc.device.test.proto.TestNoBytesRangeMessage;
 import com.blerpc.device.test.proto.TestNoBytesSizeMessage;
-import com.blerpc.device.test.proto.TestOptionsMessage;
+import com.blerpc.device.test.proto.TestNonPrimitiveMessage;
 import com.blerpc.device.test.proto.TestRangeBiggerThanCountMessage;
 import com.blerpc.device.test.proto.TestRangesIntersectMessage;
 import com.blerpc.device.test.proto.TestSmallFourBytesEnumRangeMessage;
 import com.blerpc.device.test.proto.TestSmallThreeBytesEnumRangeMessage;
 import com.blerpc.device.test.proto.TestSmallTwoBytesEnumRangeMessage;
 import com.blerpc.device.test.proto.TestStringValueMessage;
-import com.blerpc.device.test.proto.TestToken;
-import com.blerpc.device.test.proto.TestType;
 import com.blerpc.device.test.proto.TestWrongBooleanRangeMessage;
 import com.blerpc.device.test.proto.TestWrongEnumRangeMessage;
 import com.blerpc.device.test.proto.TestWrongIntegerRangeMessage;
@@ -42,28 +41,24 @@ import org.mockito.junit.MockitoJUnitRunner;
 public class AnnotationMessageConverterTest {
 
     private static final TestMessage IMAGE_REQUEST_1 = TestMessage.newBuilder()
-            .setVersion(20)
-            .setCrc(500)
-            .setLength(100000)
-            .setRelease(true)
-            .setType(TestType.FULL)
-            .setMetadata(TestMetadata.newBuilder()
-                    .setBleMetadata(20000)
-                    .setToken(TestToken.newBuilder()
-                            .setToken(30000)))
-            .setBuildTime(1519548579757L)
+            .setByteValue(20)
+            .setShortValue(500)
+            .setIntValue(100000)
+            .setBoolValue(true)
+            .setEnumValue(TestEnum.VALUE_2)
+            .setEmbeddedMessage(TestEmbeddedMessage.newBuilder()
+                    .setValue(20000))
+            .setLongValue(1519548579757L)
             .build();
     private static final TestMessage IMAGE_REQUEST_2 = TestMessage.newBuilder()
-            .setVersion(35)
-            .setCrc(800)
-            .setLength(130500)
-            .setRelease(false)
-            .setType(TestType.ONLY_APP)
-            .setMetadata(TestMetadata.newBuilder()
-                    .setBleMetadata(40000)
-                    .setToken(TestToken.newBuilder()
-                            .setToken(50000)))
-            .setBuildTime(1519576271989L)
+            .setByteValue(35)
+            .setShortValue(800)
+            .setIntValue(130500)
+            .setBoolValue(false)
+            .setEnumValue(TestEnum.VALUE_1)
+            .setEmbeddedMessage(TestEmbeddedMessage.newBuilder()
+                    .setValue(40000))
+            .setLongValue(1519576271989L)
             .build();
     private static final TestIntegerMessage TEST_OPTIONS_INTEGER = TestIntegerMessage.newBuilder()
             .setValue(100000)
@@ -75,19 +70,19 @@ public class AnnotationMessageConverterTest {
             .setValue(true)
             .build();
     private static final TestEnumMessage TEST_OPTIONS_ENUM = TestEnumMessage.newBuilder()
-            .setType(TestType.FULL)
+            .setType(TestEnum.VALUE_2)
             .build();
-    private static final TestOptionsMessage TEST_OPTIONS_MESSAGE = TestOptionsMessage.newBuilder()
+    private static final TestNonPrimitiveMessage TEST_NON_PRIMITIVE_MESSAGE = TestNonPrimitiveMessage.newBuilder()
             .setValueMessage(TEST_OPTIONS_INTEGER)
             .build();
     private static final byte[] IMAGE_REQUEST_1_BYTES_LITTLE_ENDIAN =
-            new byte[]{20, -12, 1, -96, -122, 1, 0, 1, 2, 0, 32, 78, 0, 0, 0, 48, 117, 0, 0, 0, -83, 63, 39, -52, 97, 1, 0, 0};
+            new byte[]{20, -12, 1, -96, -122, 1, 0, 1, 2, 0, 32, 78, 0, 0, -83, 63, 39, -52, 97, 1, 0, 0};
     private static final byte[] IMAGE_REQUEST_1_BYTES_BIG_ENDIAN =
-            new byte[]{20, 1, -12, 0, 1, -122, -96, 1, 2, 0, 0, 0, 78, 32, 0, 0, 0, 117, 48, 0, 0, 0, 1, 97, -52, 39, 63, -83};
+            new byte[]{20, 1, -12, 0, 1, -122, -96, 1, 2, 0, 0, 0, 78, 32, 0, 0, 1, 97, -52, 39, 63, -83};
     private static final byte[] IMAGE_REQUEST_2_BYTES_LITTLE_ENDIAN =
-            new byte[]{35, 32, 3, -60, -3, 1, 0, 0, 1, 0, 64, -100, 0, 0, 0, 80, -61, 0, 0, 0, 117, -52, -51, -51, 97, 1, 0, 0};
+            new byte[]{35, 32, 3, -60, -3, 1, 0, 0, 1, 0, 64, -100, 0, 0, 117, -52, -51, -51, 97, 1, 0, 0};
     private static final byte[] IMAGE_REQUEST_2_BYTES_BIG_ENDIAN =
-            new byte[]{35, 3, 32, 0, 1, -3, -60, 0, 1, 0, 0, 0, -100, 64, 0, 0, 0, -61, 80, 0, 0, 0, 1, 97, -51, -51, -52, 117};
+            new byte[]{35, 3, 32, 0, 1, -3, -60, 0, 1, 0, 0, 0, -100, 64, 0, 0, 1, 97, -51, -51, -52, 117};
     private static final byte[] TEST_OPTIONS_INTEGER_BYTES_LITTLE_ENDIAN = new byte[]{-96, -122, 1, 0};
     private static final byte[] TEST_OPTIONS_INTEGER_BYTES_BIG_ENDIAN = new byte[]{0, 1, -122, -96};
     private static final byte[] TEST_OPTIONS_LONG_BYTES_LITTLE_ENDIAN = new byte[]{0, -28, 11, 84, 2, 0, 0, 0};
@@ -108,14 +103,14 @@ public class AnnotationMessageConverterTest {
         assertThat(converterLittleEndian.serializeRequest(null, TEST_OPTIONS_LONG)).isEqualTo(TEST_OPTIONS_LONG_BYTES_LITTLE_ENDIAN);
         assertThat(converterLittleEndian.serializeRequest(null, TEST_OPTIONS_BOOL)).isEqualTo(TEST_OPTIONS_BOOL_BYTES);
         assertThat(converterLittleEndian.serializeRequest(null, TEST_OPTIONS_ENUM)).isEqualTo(TEST_OPTIONS_ENUM_BYTES);
-        assertThat(converterLittleEndian.serializeRequest(null, TEST_OPTIONS_MESSAGE)).isEqualTo(TEST_OPTIONS_MESSAGE_BYTES_LITTLE_ENDIAN);
+        assertThat(converterLittleEndian.serializeRequest(null, TEST_NON_PRIMITIVE_MESSAGE)).isEqualTo(TEST_OPTIONS_MESSAGE_BYTES_LITTLE_ENDIAN);
         assertThat(converter.serializeRequest(null, IMAGE_REQUEST_1)).isEqualTo(IMAGE_REQUEST_1_BYTES_BIG_ENDIAN);
         assertThat(converter.serializeRequest(null, IMAGE_REQUEST_2)).isEqualTo(IMAGE_REQUEST_2_BYTES_BIG_ENDIAN);
         assertThat(converter.serializeRequest(null, TEST_OPTIONS_INTEGER)).isEqualTo(TEST_OPTIONS_INTEGER_BYTES_BIG_ENDIAN);
         assertThat(converter.serializeRequest(null, TEST_OPTIONS_LONG)).isEqualTo(TEST_OPTIONS_LONG_BYTES_BIG_ENDIAN);
         assertThat(converter.serializeRequest(null, TEST_OPTIONS_BOOL)).isEqualTo(TEST_OPTIONS_BOOL_BYTES);
         assertThat(converter.serializeRequest(null, TEST_OPTIONS_ENUM)).isEqualTo(TEST_OPTIONS_ENUM_BYTES);
-        assertThat(converter.serializeRequest(null, TEST_OPTIONS_MESSAGE)).isEqualTo(TEST_OPTIONS_MESSAGE_BYTES_BIG_ENDIAN);
+        assertThat(converter.serializeRequest(null, TEST_NON_PRIMITIVE_MESSAGE)).isEqualTo(TEST_OPTIONS_MESSAGE_BYTES_BIG_ENDIAN);
     }
 
     @Test
@@ -165,7 +160,7 @@ public class AnnotationMessageConverterTest {
     }
 
     @Test
-    public void serializeRequestTest_unsupportedType() throws Exception {
+    public void serializeRequestTest_unsupportedTypes() throws Exception {
         assertError(() -> converter.serializeRequest(null, TestStringValueMessage.newBuilder()
                 .setMessage("Message")
                 .build()), "Unsupported field type: STRING");
@@ -182,7 +177,7 @@ public class AnnotationMessageConverterTest {
         assertError(() -> converter.serializeRequest(null, TestWrongIntegerRangeMessage.newBuilder()
                 .setValue(20)
                 .build()),
-                "Integer field value has unsupported size 11. Only sizes in [1, 8] are supported.");
+                "Integer field value has unsupported size 9. Only sizes in [1, 8] are supported.");
     }
 
     @Test
@@ -190,15 +185,15 @@ public class AnnotationMessageConverterTest {
         assertError(() -> converter.serializeRequest(null, TestWrongLongRangeMessage.newBuilder()
                 .setValue(100000)
                 .build()),
-                "Integer field value has unsupported size 13. Only sizes in [1, 8] are supported.");
+                "Integer field value has unsupported size 9. Only sizes in [1, 8] are supported.");
     }
 
     @Test
     public void serializeRequestTest_wrongEnumRange() throws Exception {
         assertError(() -> converter.serializeRequest(null, TestWrongEnumRangeMessage.newBuilder()
-                .setType(TestType.ONLY_APP)
+                .setType(TestEnum.VALUE_1)
                 .build()),
-                "Enum TestType field type has unsupported size 9. Only sizes in [1, 4] are supported.");
+                "Enum TestEnum field type has unsupported size 5. Only sizes in [1, 4] are supported.");
     }
 
     @Test
@@ -259,12 +254,12 @@ public class AnnotationMessageConverterTest {
         assertThat(converter.deserializeResponse(null, TestEnumMessage.getDefaultInstance(),
                 TEST_OPTIONS_ENUM_BYTES))
                 .isEqualTo(TEST_OPTIONS_ENUM);
-        assertThat(converterLittleEndian.deserializeResponse(null, TestOptionsMessage.getDefaultInstance(),
+        assertThat(converterLittleEndian.deserializeResponse(null, TestNonPrimitiveMessage.getDefaultInstance(),
                 TEST_OPTIONS_MESSAGE_BYTES_LITTLE_ENDIAN))
-                .isEqualTo(TEST_OPTIONS_MESSAGE);
-        assertThat(converter.deserializeResponse(null, TestOptionsMessage.getDefaultInstance(),
+                .isEqualTo(TEST_NON_PRIMITIVE_MESSAGE);
+        assertThat(converter.deserializeResponse(null, TestNonPrimitiveMessage.getDefaultInstance(),
                 TEST_OPTIONS_MESSAGE_BYTES_BIG_ENDIAN))
-                .isEqualTo(TEST_OPTIONS_MESSAGE);
+                .isEqualTo(TEST_NON_PRIMITIVE_MESSAGE);
     }
 
     @Test
@@ -276,7 +271,7 @@ public class AnnotationMessageConverterTest {
     @Test
     public void deserializeResponseTest_wrongMessageByteSize() throws Exception {
         assertError(() -> converter.deserializeResponse(null, TestMessage.getDefaultInstance(), new byte[10]),
-                "Declared size 28 of message TestMessage is not equal to device response size 10");
+                "Declared size 22 of message TestMessage is not equal to device response size 10");
     }
 
     @Test
@@ -312,7 +307,7 @@ public class AnnotationMessageConverterTest {
     }
 
     @Test
-    public void deserializeResponseTest_unsupportedType() throws Exception {
+    public void deserializeResponseTest_unsupportedTypes() throws Exception {
         assertError(() -> converter.deserializeResponse(null, TestStringValueMessage.getDefaultInstance(), new byte[4]),
                 "Unsupported field type: STRING");
         assertError(() -> converter.deserializeResponse(null, TestFloatValueMessage.getDefaultInstance(), new byte[4]),
@@ -323,20 +318,20 @@ public class AnnotationMessageConverterTest {
 
     @Test
     public void deserializeResponseTest_wrongIntegerRange() throws Exception {
-        assertError(() -> converter.deserializeResponse(null, TestWrongIntegerRangeMessage.getDefaultInstance(), new byte[11]),
-                "Integer field value has unsupported size 11. Only sizes in [1, 8] are supported.");
+        assertError(() -> converter.deserializeResponse(null, TestWrongIntegerRangeMessage.getDefaultInstance(), new byte[9]),
+                "Integer field value has unsupported size 9. Only sizes in [1, 8] are supported.");
     }
 
     @Test
     public void deserializeResponseTest_wrongLongRange() throws Exception {
-        assertError(() -> converter.deserializeResponse(null, TestWrongLongRangeMessage.getDefaultInstance(), new byte[13]),
-                "Integer field value has unsupported size 13. Only sizes in [1, 8] are supported.");
+        assertError(() -> converter.deserializeResponse(null, TestWrongLongRangeMessage.getDefaultInstance(), new byte[9]),
+                "Integer field value has unsupported size 9. Only sizes in [1, 8] are supported.");
     }
 
     @Test
     public void deserializeResponseTest_wrongEnumRange() throws Exception {
-        assertError(() -> converter.deserializeResponse(null, TestWrongEnumRangeMessage.getDefaultInstance(), new byte[9]),
-                "Enum TestType field type has unsupported size 9. Only sizes in [1, 4] are supported.");
+        assertError(() -> converter.deserializeResponse(null, TestWrongEnumRangeMessage.getDefaultInstance(), new byte[5]),
+                "Enum TestEnum field type has unsupported size 5. Only sizes in [1, 4] are supported.");
     }
 
     @Test

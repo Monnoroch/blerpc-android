@@ -10,37 +10,37 @@ import "blerpc.proto";
 
 message TestMessage {
     option (com.blerpc.message_size) = {
-        message_size_bytes: 28
+        message_size_bytes: 22
     };
 
-    int32 version = 1 [(com.blerpc.filed_bytes) = {
+    int32 byte_value = 1 [(com.blerpc.filed_bytes) = {
         from_byte: 0
         to_byte: 1
     }];
-    int32 crc = 2 [(com.blerpc.filed_bytes) = {
+    int32 short_value = 2 [(com.blerpc.filed_bytes) = {
         from_byte: 1
         to_byte: 3
     }];
-    int32 length = 3 [(com.blerpc.filed_bytes) = {
+    int32 int_value = 3 [(com.blerpc.filed_bytes) = {
         from_byte: 3
         to_byte: 7
     }];
-    bool release = 4 [(com.blerpc.filed_bytes) = {
+    int64 long_value = 7 [(com.blerpc.filed_bytes) = {
+        from_byte: 14
+        to_byte: 22
+    }];
+    bool bool_value = 4 [(com.blerpc.filed_bytes) = {
         from_byte: 7
         to_byte: 8
     }];
-    TestType type = 5 [(com.blerpc.filed_bytes) = {
+    TestEnum enum_value = 5 [(com.blerpc.filed_bytes) = {
         from_byte: 8
         to_byte: 9
     }];
 
-    TestMetadata metadata = 6 [(com.blerpc.filed_bytes) = {
+    TestEmbeddedMessage embedded_message = 6 [(com.blerpc.filed_bytes) = {
         from_byte: 10
-        to_byte: 20
-    }];
-    int64 buildTime = 7 [(com.blerpc.filed_bytes) = {
-        from_byte: 20
-        to_byte: 28
+        to_byte: 14
     }];
 }
 
@@ -82,13 +82,13 @@ message TestEnumMessage {
         message_size_bytes: 1
     };
 
-    TestType type = 1 [(com.blerpc.filed_bytes) = {
+    TestEnum type = 1 [(com.blerpc.filed_bytes) = {
         from_byte: 0
         to_byte: 1
     }];
 }
 
-message TestOptionsMessage {
+message TestNonPrimitiveMessage {
     option (com.blerpc.message_size) = {
         message_size_bytes: 4
     };
@@ -108,34 +108,18 @@ message TestZeroBytesMessage {
     int32 value = 1;
 }
 
-enum TestType {
-    UNKNOWN = 0;
-    ONLY_APP = 1;
-    FULL = 2;
+enum TestEnum {
+    UNKNOWN_VALUE = 0;
+    VALUE_1 = 1;
+    VALUE_2 = 2;
 }
 
-message TestMetadata {
-    option (com.blerpc.message_size) = {
-        message_size_bytes: 10
-    };
-
-    int32 ble_metadata = 1 [(com.blerpc.filed_bytes) = {
-        from_byte: 0
-        to_byte: 4
-    }];
-
-    TestToken token = 2 [(com.blerpc.filed_bytes) = {
-        from_byte: 5
-        to_byte: 9
-    }];
-}
-
-message TestToken {
+message TestEmbeddedMessage {
     option (com.blerpc.message_size) = {
         message_size_bytes: 4
     };
 
-    int32 token = 1 [(com.blerpc.filed_bytes) = {
+    int32 value = 1 [(com.blerpc.filed_bytes) = {
         from_byte: 0
         to_byte: 4
     }];
@@ -236,34 +220,34 @@ message TestDoubleValueMessage {
 
 message TestWrongIntegerRangeMessage {
     option (com.blerpc.message_size) = {
-        message_size_bytes: 11
+        message_size_bytes: 9
     };
 
     int32 value = 1 [(com.blerpc.filed_bytes) = {
         from_byte: 0
-        to_byte: 11
+        to_byte: 9
     }];
 }
 
 message TestWrongLongRangeMessage {
     option (com.blerpc.message_size) = {
-        message_size_bytes: 13
+        message_size_bytes: 9
     };
 
     int64 value = 1 [(com.blerpc.filed_bytes) = {
         from_byte: 0
-        to_byte: 13
+        to_byte: 9
     }];
 }
 
 message TestWrongEnumRangeMessage {
     option (com.blerpc.message_size) = {
-        message_size_bytes: 9
+        message_size_bytes: 5
     };
 
-    TestType type = 1 [(com.blerpc.filed_bytes) = {
+    TestEnum type = 1 [(com.blerpc.filed_bytes) = {
         from_byte: 0
-        to_byte: 9
+        to_byte: 5
     }];
 }
 

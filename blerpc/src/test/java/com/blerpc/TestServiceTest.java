@@ -1,5 +1,6 @@
 package com.blerpc;
 
+import static com.blerpc.Assert.assertError;
 import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -21,6 +22,7 @@ import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothProfile;
 import android.content.Context;
 import android.os.Handler;
+import com.blerpc.device.test.proto.TestBleInvalidReadResponse;
 import com.blerpc.device.test.proto.TestBleReadRequest;
 import com.blerpc.device.test.proto.TestBleReadResponse;
 import com.blerpc.device.test.proto.TestBleService;
@@ -28,6 +30,8 @@ import com.blerpc.device.test.proto.TestBleSubscribeRequest;
 import com.blerpc.device.test.proto.TestBleSubscribeResponse;
 import com.blerpc.device.test.proto.TestBleWriteRequest;
 import com.blerpc.device.test.proto.TestBleWriteResponse;
+import com.blerpc.device.test.proto.TestEnum;
+import com.blerpc.device.test.proto.TestIntegerMessage;
 import com.blerpc.proto.Blerpc;
 import com.google.protobuf.Message;
 import com.google.protobuf.RpcCallback;
@@ -49,7 +53,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 public class TestServiceTest {
 
     private static final UUID TEST_SERVICE = UUID.fromString(TestBleService.getDescriptor().getOptions()
-        .getExtension(Blerpc.service).getUuid());
+            .getExtension(Blerpc.service).getUuid());
     private static final UUID TEST_CHARACTERISTIC = UUID.fromString(
         TestBleService.getDescriptor().findMethodByName("TestWriteChar").getOptions()
             .getExtension(Blerpc.characteristic).getUuid());
@@ -57,28 +61,42 @@ public class TestServiceTest {
         TestBleService.getDescriptor().findMethodByName("TestSubscribeChar").getOptions()
             .getExtension(Blerpc.characteristic).getDescriptorUuid());
     private static final TestBleReadRequest TEST_READ_REQUEST = TestBleReadRequest.newBuilder()
-        .setValue(1000)
-        .build();
+            .setValue(1000)
+            .build();
+    private static final byte[] TEST_READ_RESPONSE_BYTES = new byte[]{0, 0, 7, -48};
     private static final TestBleReadResponse TEST_READ_RESPONSE = TestBleReadResponse.newBuilder()
-        .setValue(2000)
-        .build();
+            .setValue(2000)
+            .build();
+    private static byte[] TEST_WRITE_REQUEST_BYTES = new byte[]{0, 0, 1, -12, 0, 0, 0, 0, 0, 1, -122, -96, 1, 0, 2, 0, 0, 0, 3, 32};
     private static final TestBleWriteRequest TEST_WRITE_REQUEST = TestBleWriteRequest.newBuilder()
-        .setValue(3000)
-        .build();
+            .setIntValue(500)
+            .setLongValue(100000)
+            .setBoolValue(true)
+            .setEnumValue(TestEnum.VALUE_2)
+            .setMessageValue(TestIntegerMessage.newBuilder()
+                    .setValue(800))
+            .build();
+    private static byte[] TEST_WRITE_RESPONSE_BYTES = new byte[]{0, 0, 3, 32, 0, 0, 0, 0, 0, 3, 13, 64, 1, 0, 1, 0, 0, 0, 3, -24};
     private static final TestBleWriteResponse TEST_WRITE_RESPONSE = TestBleWriteResponse.newBuilder()
-        .setValue(4000)
-        .build();
+            .setIntValue(800)
+            .setLongValue(200000)
+            .setBoolValue(true)
+            .setEnumValue(TestEnum.VALUE_1)
+            .setMessageValue(TestIntegerMessage.newBuilder()
+                    .setValue(1000))
+            .build();
     private static final TestBleSubscribeRequest TEST_SUBSCRIBE_REQUEST = TestBleSubscribeRequest.newBuilder()
-        .setValue(5000)
-        .build();
+            .setValue(5000)
+            .build();
     private static final TestBleSubscribeResponse TEST_SUBSCRIBE_RESPONSE1 = TestBleSubscribeResponse.newBuilder()
-        .setValue(6000)
-        .build();
+            .setValue(6000)
+            .build();
     private static final TestBleSubscribeResponse TEST_SUBSCRIBE_RESPONSE2 = TestBleSubscribeResponse.newBuilder()
-        .setValue(7000)
-        .build();
+            .setValue(7000)
+            .build();
 
     @Mock private RpcCallback<TestBleReadResponse> callbackRead;
+    @Mock private RpcCallback<TestBleInvalidReadResponse> callbackRead2;
     @Mock private RpcCallback<TestBleWriteResponse> callbackWrite;
     @Mock private RpcCallback<TestBleSubscribeResponse> callbackSubscribe;
     @Mock private BluetoothDevice bluetoothDevice;
@@ -181,7 +199,7 @@ public class TestServiceTest {
 
     @Test
     public void testRead() throws Exception {
-        when(characteristic.getValue()).thenReturn(messageConverter.serializeRequest(null, TEST_READ_RESPONSE));
+        when(characteristic.getValue()).thenReturn(TEST_READ_RESPONSE_BYTES);
         testService.testReadChar(controller, TEST_READ_REQUEST, callbackRead);
         connectAndRun();
         assertCallSucceeded(controller);
@@ -189,11 +207,19 @@ public class TestServiceTest {
     }
 
     @Test
+    public void testRead_invalidMessage() throws Exception {
+        when(characteristic.getValue()).thenReturn(TEST_READ_RESPONSE_BYTES);
+        testService.testReadChar2(controller, TEST_READ_REQUEST, callbackRead2);
+        assertError(this::connectAndRun, "Declared size 3 of message TestBleInvalidReadResponse is not equal to device response size 4");
+    }
+
+    @Test
     public void testWrite() throws Exception {
-        when(characteristic.getValue()).thenReturn(messageConverter.serializeRequest(null, TEST_WRITE_RESPONSE));
+        when(characteristic.getValue()).thenReturn(TEST_WRITE_RESPONSE_BYTES);
         testService.testWriteChar(controller, TEST_WRITE_REQUEST, callbackWrite);
         connectAndRun();
         assertCallSucceeded(controller);
+        verify(characteristic).setValue(TEST_WRITE_REQUEST_BYTES);
         verify(callbackWrite).run(TEST_WRITE_RESPONSE);
     }
 
@@ -208,16 +234,17 @@ public class TestServiceTest {
 
     @Test
     public void testTwoCalls() throws Exception {
-        when(characteristic.getValue()).thenReturn(messageConverter.serializeRequest(null, TEST_READ_RESPONSE));
+        when(characteristic.getValue()).thenReturn(TEST_READ_RESPONSE_BYTES);
         testService.testReadChar(controller, TEST_READ_REQUEST, callbackRead);
         connectAndRun();
         assertCallSucceeded(controller);
         verify(callbackRead).run(TEST_READ_RESPONSE);
 
-        when(characteristic.getValue()).thenReturn(messageConverter.serializeRequest(null, TEST_WRITE_RESPONSE));
+        when(characteristic.getValue()).thenReturn(TEST_WRITE_RESPONSE_BYTES);
         testService.testWriteChar(controller, TEST_WRITE_REQUEST, callbackWrite);
         assertCallSucceeded(controller);
         verify(callbackWrite).run(TEST_WRITE_RESPONSE);
+        verify(characteristic).setValue(TEST_WRITE_REQUEST_BYTES);
     }
 
     @Test

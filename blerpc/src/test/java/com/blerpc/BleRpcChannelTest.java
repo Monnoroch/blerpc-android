@@ -59,16 +59,16 @@ public class BleRpcChannelTest {
         .setValue(1000)
         .build();
     private static final TestBleWriteRequest TEST_WRITE_REQUEST = TestBleWriteRequest.newBuilder()
-        .setValue(2000)
+        .setIntValue(2000)
         .build();
     private static final byte[] TEST_WRITE_REQUEST_BYTES = new byte[]{40, 45};
     private static final TestBleWriteRequest TEST_WRITE_REQUEST2 = TestBleWriteRequest.newBuilder()
-        .setValue(3000)
+        .setIntValue(3000)
         .build();
     private static final byte[] TEST_WRITE_REQUEST_BYTES2 = new byte[]{60, 65};
     private static final byte[] TEST_WRITE_RESPONSE_BYTES = new byte[]{50, 55};
     private static final TestBleWriteResponse TEST_WRITE_RESPONSE = TestBleWriteResponse.newBuilder()
-        .setValue(4000)
+        .setIntValue(4000)
         .build();
     private static final byte[] TEST_SUBSCRIBE_RESPONSE_BYTES = new byte[]{70, 75};
     private static final TestBleSubscribeResponse TEST_SUBSCRIBE_RESPONSE = TestBleSubscribeResponse.newBuilder()

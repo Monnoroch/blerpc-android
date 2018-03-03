@@ -11,29 +11,72 @@ import "blerpc.proto";
 
 message TestBleWriteRequest {
     option (com.blerpc.message_size) = {
-        message_size_bytes: 4
+        message_size_bytes: 20
     };
 
-    int32 value = 1 [(com.blerpc.filed_bytes) = {
+    int32 int_value = 1 [(com.blerpc.filed_bytes) = {
         from_byte: 0
         to_byte: 4
+    }];
+    int64 long_value = 2 [(com.blerpc.filed_bytes) = {
+        from_byte: 4
+        to_byte: 12
+    }];
+    bool bool_value = 3 [(com.blerpc.filed_bytes) = {
+        from_byte: 12
+        to_byte: 13
+    }];
+    TestEnum enum_value = 4 [(com.blerpc.filed_bytes) = {
+        from_byte: 14
+        to_byte: 15
+    }];
+    TestIntegerMessage message_value = 5 [(com.blerpc.filed_bytes) = {
+        from_byte: 16
+        to_byte: 20
     }];
 }
 
 message TestBleWriteResponse {
     option (com.blerpc.message_size) = {
-        message_size_bytes: 4
+        message_size_bytes: 20
     };
 
-    int32 value = 1 [(com.blerpc.filed_bytes) = {
+    int32 int_value = 1 [(com.blerpc.filed_bytes) = {
         from_byte: 0
         to_byte: 4
+    }];
+    int64 long_value = 2 [(com.blerpc.filed_bytes) = {
+        from_byte: 4
+        to_byte: 12
+    }];
+    bool bool_value = 3 [(com.blerpc.filed_bytes) = {
+        from_byte: 12
+        to_byte: 13
+    }];
+    TestEnum enum_value = 4 [(com.blerpc.filed_bytes) = {
+        from_byte: 14
+        to_byte: 15
+    }];
+    TestIntegerMessage message_value = 5 [(com.blerpc.filed_bytes) = {
+        from_byte: 16
+        to_byte: 20
     }];
 }
 
 message TestBleReadRequest {
     option (com.blerpc.message_size) = {
         message_size_bytes: 4
+    };
+
+    int32 value = 1 [(com.blerpc.filed_bytes) = {
+        from_byte: 0
+        to_byte: 4
+    }];
+}
+
+message TestBleInvalidReadResponse {
+    option (com.blerpc.message_size) = {
+        message_size_bytes: 3
     };
 
     int32 value = 1 [(com.blerpc.filed_bytes) = {
@@ -73,6 +116,23 @@ message TestBleSubscribeResponse {
         from_byte: 0
         to_byte: 4
     }];
+}
+
+message TestIntegerMessage {
+    option (com.blerpc.message_size) = {
+        message_size_bytes: 4
+    };
+
+    int32 value = 1 [(com.blerpc.filed_bytes) = {
+        from_byte: 0
+        to_byte: 4
+    }];
+}
+
+enum TestEnum {
+    UNKNOWN = 0;
+    VALUE_1 = 1;
+    VALUE_2 = 2;
 }
 
 service TestBleService {
@@ -122,6 +182,13 @@ service TestBleService {
             uuid: "F0CDBA74-0451-4000-B000-000000000000"
             descriptor_uuid: "F0CDBB74-0451-4000-B000-000000000000"
             type: SUBSCRIBE
+        };
+    }
+
+    rpc TestReadChar2 (TestBleReadRequest) returns (TestBleInvalidReadResponse) {
+        option (com.blerpc.characteristic) = {
+            uuid: "F0CDAA72-0451-4000-B000-000000000000"
+            type: READ
         };
     }
 }
