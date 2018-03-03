@@ -30,8 +30,8 @@ import com.blerpc.device.test.proto.TestBleSubscribeRequest;
 import com.blerpc.device.test.proto.TestBleSubscribeResponse;
 import com.blerpc.device.test.proto.TestBleWriteRequest;
 import com.blerpc.device.test.proto.TestBleWriteResponse;
-import com.blerpc.device.test.proto.TestEnum;
-import com.blerpc.device.test.proto.TestIntegerMessage;
+import com.blerpc.device.test.proto.TestIntegerEmbeddedMessage;
+import com.blerpc.device.test.proto.TestValuesEnum;
 import com.blerpc.proto.Blerpc;
 import com.google.protobuf.Message;
 import com.google.protobuf.RpcCallback;
@@ -72,8 +72,8 @@ public class TestServiceTest {
             .setIntValue(500)
             .setLongValue(100000)
             .setBoolValue(true)
-            .setEnumValue(TestEnum.VALUE_2)
-            .setMessageValue(TestIntegerMessage.newBuilder()
+            .setEnumValue(TestValuesEnum.VALUE_2)
+            .setMessageValue(TestIntegerEmbeddedMessage.newBuilder()
                     .setValue(800))
             .build();
     private static byte[] TEST_WRITE_RESPONSE_BYTES = new byte[]{0, 0, 3, 32, 0, 0, 0, 0, 0, 3, 13, 64, 1, 0, 1, 0, 0, 0, 3, -24};
@@ -81,8 +81,8 @@ public class TestServiceTest {
             .setIntValue(800)
             .setLongValue(200000)
             .setBoolValue(true)
-            .setEnumValue(TestEnum.VALUE_1)
-            .setMessageValue(TestIntegerMessage.newBuilder()
+            .setEnumValue(TestValuesEnum.VALUE_1)
+            .setMessageValue(TestIntegerEmbeddedMessage.newBuilder()
                     .setValue(1000))
             .build();
     private static final TestBleSubscribeRequest TEST_SUBSCRIBE_REQUEST = TestBleSubscribeRequest.newBuilder()
