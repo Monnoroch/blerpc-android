@@ -80,7 +80,9 @@ public class AnnotationMessageConverter implements MessageConverter {
                     break;
                 // TODO(#5): Add support of ByteString, String, Float and Double.
                 default:
-                    throwException("Unsupported field type: %s, field name: %s", fieldType.name(), fieldName);
+                    throw new IllegalArgumentException(String.format("Unsupported field type: %s, field name: %s",
+                            fieldType.name(),
+                            fieldName));
             }
         }
     }
@@ -163,7 +165,9 @@ public class AnnotationMessageConverter implements MessageConverter {
                     break;
                 // TODO(#5): Add support of ByteString, String, Float and Double.
                 default:
-                    throwException("Unsupported field type: %s, field name: %s", fieldType.name(), fieldName);
+                    throw new IllegalArgumentException(String.format("Unsupported field type: %s, field name: %s",
+                            fieldType.name(),
+                            fieldName));
             }
         }
         return messageBuilder.build();
@@ -323,9 +327,5 @@ public class AnnotationMessageConverter implements MessageConverter {
                 .setFromByte(fieldBytesRange.getFromByte() + firstByte)
                 .setToByte(fieldBytesRange.getToByte() + firstByte)
                 .build();
-    }
-
-    private void throwException(String message, Object... objects) {
-        throw new RuntimeException(String.format(message, objects));
     }
 }
