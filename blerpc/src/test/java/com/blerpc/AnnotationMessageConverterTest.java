@@ -20,8 +20,6 @@ import com.blerpc.device.test.proto.TestNonPrimitiveMessage;
 import com.blerpc.device.test.proto.TestRangeBiggerThanCountMessage;
 import com.blerpc.device.test.proto.TestRangesIntersectMessage;
 import com.blerpc.device.test.proto.TestSmallFourBytesEnumRangeMessage;
-import com.blerpc.device.test.proto.TestSmallThreeBytesEnumRangeMessage;
-import com.blerpc.device.test.proto.TestSmallTwoBytesEnumRangeMessage;
 import com.blerpc.device.test.proto.TestStringValueMessage;
 import com.blerpc.device.test.proto.TestWrongBooleanRangeMessage;
 import com.blerpc.device.test.proto.TestWrongEnumRangeMessage;
@@ -206,18 +204,10 @@ public class AnnotationMessageConverterTest {
 
     @Test
     public void serializeRequestTest_notEnoughRangeForEnum() throws Exception {
-        assertError(() -> converter.serializeRequest(null, TestSmallTwoBytesEnumRangeMessage.newBuilder()
-                .setBigEnumValue(2)
-                .build()),
-                "1 byte(s) not enough for TestTwoBytesSizeEnum enum that has 2222 max number");
-        assertError(() -> converter.serializeRequest(null, TestSmallThreeBytesEnumRangeMessage.newBuilder()
-                .setBigEnumValue(2)
-                .build()),
-                "2 byte(s) not enough for TestThreeBytesSizeEnum enum that has 222222 max number");
         assertError(() -> converter.serializeRequest(null, TestSmallFourBytesEnumRangeMessage.newBuilder()
                 .setBigEnumValue(2)
                 .build()),
-                "3 byte(s) not enough for TestFourBytesSizeEnum enum that has 222222222 max number");
+                "3 byte(s) not enough for TestFourBytesEnum enum that has 222222222 max number");
     }
 
     @Test

@@ -262,55 +262,18 @@ message TestWrongBooleanRangeMessage {
     }];
 }
 
-message TestSmallTwoBytesEnumRangeMessage {
-    option (com.blerpc.size) = {
-        size_bytes: 1
-    };
-
-    TestTwoBytesSizeEnum big_enum = 1 [(com.blerpc.range) = {
-        from_byte: 0
-        to_byte: 1
-    }];
-}
-
-message TestSmallThreeBytesEnumRangeMessage {
-    option (com.blerpc.size) = {
-        size_bytes: 2
-    };
-
-    TestThreeBytesSizeEnum big_enum = 1 [(com.blerpc.range) = {
-        from_byte: 0
-        to_byte: 2
-    }];
-}
-
 message TestSmallFourBytesEnumRangeMessage {
     option (com.blerpc.size) = {
         size_bytes: 3
     };
 
-    TestFourBytesSizeEnum big_enum = 1 [(com.blerpc.range) = {
+    TestFourBytesEnum big_enum = 1 [(com.blerpc.range) = {
         from_byte: 0
         to_byte: 3
     }];
 }
 
-enum TestTwoBytesSizeEnum {
-    UNKNOWN_TWO_BYTES_ENUM_VALUE = 0;
-    TWO_BYTES_ENUM_VALUE_1 = 1;
-    TWO_BYTES_ENUM_VALUE_2 = 221;
-    TWO_BYTES_ENUM_VALUE_3 = 2222;
-    TWO_BYTES_ENUM_VALUE_4 = 223;
-}
-
-enum TestThreeBytesSizeEnum {
-    UNKNOWN_THREE_BYTES_ENUM_VALUE = 0;
-    THREE_BYTES_ENUM_VALUE_1 = 1;
-    THREE_BYTES_ENUM_VALUE_2 = 221;
-    THREE_BYTES_ENUM_VALUE_3 = 222222;
-}
-
-enum TestFourBytesSizeEnum {
+enum TestFourBytesEnum {
     UNKNOWN_FOUR_BYTES_ENUM_VALUE = 0;
     FOUR_BYTES_ENUM_VALUE_1 = 1;
     FOUR_BYTES_ENUM_VALUE_2 = 221;
