@@ -175,7 +175,7 @@ message TestRangeBiggerThanCountMessage {
     };
 
     int32 metadata = 1 [(com.blerpc.range) = {
-        from_byte: 7
+        from_byte: 0
         to_byte: 11
     }];
 }
@@ -192,7 +192,7 @@ message TestRangesIntersectMessage {
 
     int32 metadata = 2 [(com.blerpc.range) = {
         from_byte: 2
-        to_byte: 6
+        to_byte: 10
     }];
 }
 
@@ -220,23 +220,23 @@ message TestFloatValueMessage {
 
 message TestDoubleValueMessage {
     option (com.blerpc.size) = {
-        size_bytes: 4
+        size_bytes: 8
     };
 
     double impedance = 1 [(com.blerpc.range) = {
         from_byte: 0
-        to_byte: 4
+        to_byte: 8
     }];
 }
 
 message TestWrongIntegerRangeMessage {
     option (com.blerpc.size) = {
-        size_bytes: 9
+        size_bytes: 5
     };
 
     int32 value = 1 [(com.blerpc.range) = {
         from_byte: 0
-        to_byte: 9
+        to_byte: 5
     }];
 }
 
@@ -286,7 +286,5 @@ message TestSmallFourBytesEnumRangeMessage {
 
 enum TestFourBytesEnum {
     UNKNOWN_FOUR_BYTES_ENUM_VALUE = 0;
-    FOUR_BYTES_ENUM_VALUE_1 = 1;
-    FOUR_BYTES_ENUM_VALUE_2 = 221;
     FOUR_BYTES_ENUM_VALUE_3 = 222222222;
 }

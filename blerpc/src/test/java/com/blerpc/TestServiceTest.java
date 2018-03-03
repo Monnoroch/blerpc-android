@@ -63,27 +63,27 @@ public class TestServiceTest {
     private static final TestBleReadRequest TEST_READ_REQUEST = TestBleReadRequest.newBuilder()
             .setValue(1000)
             .build();
-    private static final byte[] TEST_READ_RESPONSE_BYTES = new byte[]{0, 0, 7, -48};
+    private static final byte[] TEST_READ_RESPONSE_BYTES = new byte[]{0, 0, 0, 45};
     private static final TestBleReadResponse TEST_READ_RESPONSE = TestBleReadResponse.newBuilder()
-            .setValue(2000)
+            .setValue(45)
             .build();
-    private static byte[] TEST_WRITE_REQUEST_BYTES = new byte[]{0, 0, 1, -12, 0, 0, 0, 0, 0, 1, -122, -96, 1, 0, 2, 0, 0, 0, 3, 32};
+    private static byte[] TEST_WRITE_REQUEST_BYTES = new byte[]{0, 0, 0, 50, 0, 0, 0, 0, 0, 0, 0, 80, 1, 0, 2, 0, 0, 0, 0, 100};
     private static final TestBleWriteRequest TEST_WRITE_REQUEST = TestBleWriteRequest.newBuilder()
-            .setIntValue(500)
-            .setLongValue(100000)
+            .setIntValue(50)
+            .setLongValue(80)
             .setBoolValue(true)
             .setEnumValue(TestValuesEnum.VALUE_2)
             .setMessageValue(TestIntegerEmbeddedMessage.newBuilder()
-                    .setValue(800))
+                    .setValue(100))
             .build();
-    private static byte[] TEST_WRITE_RESPONSE_BYTES = new byte[]{0, 0, 3, 32, 0, 0, 0, 0, 0, 3, 13, 64, 1, 0, 1, 0, 0, 0, 3, -24};
+    private static byte[] TEST_WRITE_RESPONSE_BYTES = new byte[]{0, 0, 0, 60, 0, 0, 0, 0, 0, 0, 0, 95, 1, 0, 1, 0, 0, 0, 0, 115};
     private static final TestBleWriteResponse TEST_WRITE_RESPONSE = TestBleWriteResponse.newBuilder()
-            .setIntValue(800)
-            .setLongValue(200000)
+            .setIntValue(60)
+            .setLongValue(95)
             .setBoolValue(true)
             .setEnumValue(TestValuesEnum.VALUE_1)
             .setMessageValue(TestIntegerEmbeddedMessage.newBuilder()
-                    .setValue(1000))
+                    .setValue(115))
             .build();
     private static final TestBleSubscribeRequest TEST_SUBSCRIBE_REQUEST = TestBleSubscribeRequest.newBuilder()
             .setValue(5000)

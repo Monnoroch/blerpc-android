@@ -161,7 +161,7 @@ public class AnnotationMessageConverterTest {
     @Test
     public void serializeRequestTest_rangeIntersectMessage() throws Exception {
         assertError(() -> converter.serializeRequest(null, TestRangesIntersectMessage.getDefaultInstance()),
-                "Field value bytes range [0, 4] intersects with another field metadata bytes range [2, 6]");
+                "Field value bytes range [0, 4] intersects with another field metadata bytes range [2, 10]");
     }
 
     @Test
@@ -182,7 +182,7 @@ public class AnnotationMessageConverterTest {
         assertError(() -> converter.serializeRequest(null, TestWrongIntegerRangeMessage.newBuilder()
                 .setValue(20)
                 .build()),
-                "Integer field value has unsupported size 9. Only sizes in [1, 8] are supported.");
+                "Int32 field value has unsupported size 5. Only sizes in [1, 4] are supported.");
     }
 
     @Test
@@ -190,7 +190,7 @@ public class AnnotationMessageConverterTest {
         assertError(() -> converter.serializeRequest(null, TestWrongLongRangeMessage.newBuilder()
                 .setValue(100000)
                 .build()),
-                "Integer field value has unsupported size 9. Only sizes in [1, 8] are supported.");
+                "Int64 field value has unsupported size 9. Only sizes in [1, 8] are supported.");
     }
 
     @Test
@@ -309,20 +309,20 @@ public class AnnotationMessageConverterTest {
                 "Unsupported field type: STRING");
         assertError(() -> converter.deserializeResponse(null, TestFloatValueMessage.getDefaultInstance(), new byte[4]),
                 "Unsupported field type: FLOAT");
-        assertError(() -> converter.deserializeResponse(null, TestDoubleValueMessage.getDefaultInstance(), new byte[4]),
+        assertError(() -> converter.deserializeResponse(null, TestDoubleValueMessage.getDefaultInstance(), new byte[8]),
                 "Unsupported field type: DOUBLE");
     }
 
     @Test
     public void deserializeResponseTest_wrongIntegerRange() throws Exception {
-        assertError(() -> converter.deserializeResponse(null, TestWrongIntegerRangeMessage.getDefaultInstance(), new byte[9]),
-                "Integer field value has unsupported size 9. Only sizes in [1, 8] are supported.");
+        assertError(() -> converter.deserializeResponse(null, TestWrongIntegerRangeMessage.getDefaultInstance(), new byte[5]),
+                "Int32 field value has unsupported size 5. Only sizes in [1, 4] are supported.");
     }
 
     @Test
     public void deserializeResponseTest_wrongLongRange() throws Exception {
         assertError(() -> converter.deserializeResponse(null, TestWrongLongRangeMessage.getDefaultInstance(), new byte[9]),
-                "Integer field value has unsupported size 9. Only sizes in [1, 8] are supported.");
+                "Int64 field value has unsupported size 9. Only sizes in [1, 8] are supported.");
     }
 
     @Test

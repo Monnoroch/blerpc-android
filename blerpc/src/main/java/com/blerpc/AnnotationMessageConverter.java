@@ -67,7 +67,7 @@ public class AnnotationMessageConverter implements MessageConverter {
                     serializeMessage(requestBytes, (Message) fieldValue, relativeFieldBytesRange);
                     break;
                 case INT:
-                    serializeLong(requestBytes, (Integer) fieldValue, relativeFieldBytesRange, fieldName);
+                    serializeInt(requestBytes, (Integer) fieldValue, relativeFieldBytesRange, fieldName);
                     break;
                 case LONG:
                     serializeLong(requestBytes, (Long) fieldValue, relativeFieldBytesRange, fieldName);
@@ -87,11 +87,20 @@ public class AnnotationMessageConverter implements MessageConverter {
         }
     }
 
+    private void serializeInt(byte[] messageBytes, int fieldValue, ByteRange bytesRange, String fieldName) {
+        int bytesSize = bytesRange.getToByte() - bytesRange.getFromByte();
+        checkArgument(bytesSize <= 4,
+                "Int32 field %s has unsupported size %s. Only sizes in [1, 4] are supported.",
+                fieldName,
+                bytesSize);
+        serializeLong(messageBytes, fieldValue, bytesRange, fieldName);
+    }
+
     private void serializeLong(byte[] messageBytes, long fieldValue, ByteRange bytesRange, String fieldName) {
         int firstByte = bytesRange.getFromByte();
         int bytesCount = bytesRange.getToByte() - firstByte;
         checkArgument(bytesCount <= 8,
-                "Integer field %s has unsupported size %s. Only sizes in [1, 8] are supported.",
+                "Int64 field %s has unsupported size %s. Only sizes in [1, 8] are supported.",
                 fieldName,
                 bytesCount);
         if (byteOrder.equals(ByteOrder.BIG_ENDIAN)) {
@@ -152,7 +161,7 @@ public class AnnotationMessageConverter implements MessageConverter {
                             relativeFieldBytesRange));
                     break;
                 case INT:
-                    messageBuilder.setField(fieldDescriptor, (int) deserializeLong(value, relativeFieldBytesRange, fieldName));
+                    messageBuilder.setField(fieldDescriptor, deserializeInt(value, relativeFieldBytesRange, fieldName));
                     break;
                 case LONG:
                     messageBuilder.setField(fieldDescriptor, deserializeLong(value, relativeFieldBytesRange, fieldName));
@@ -173,12 +182,21 @@ public class AnnotationMessageConverter implements MessageConverter {
         return messageBuilder.build();
     }
 
+    private int deserializeInt(byte[] bytes, ByteRange bytesRange, String fieldName) {
+        int bytesSize = bytesRange.getToByte() - bytesRange.getFromByte();
+        checkArgument(bytesSize <= 4,
+                "Int32 field %s has unsupported size %s. Only sizes in [1, 4] are supported.",
+                fieldName,
+                bytesSize);
+        return (int) deserializeLong(bytes, bytesRange, fieldName);
+    }
+
     private long deserializeLong(byte[] bytes, ByteRange bytesRange, String fieldName) {
         int firstByte = bytesRange.getFromByte();
         int lastByte = bytesRange.getToByte();
         int bytesSize = lastByte - firstByte;
         checkArgument(bytesSize <= 8,
-                "Integer field %s has unsupported size %s. Only sizes in [1, 8] are supported.",
+                "Int64 field %s has unsupported size %s. Only sizes in [1, 8] are supported.",
                 fieldName,
                 bytesSize);
 
