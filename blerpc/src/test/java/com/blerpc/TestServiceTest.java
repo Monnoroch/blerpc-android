@@ -22,7 +22,6 @@ import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothProfile;
 import android.content.Context;
 import android.os.Handler;
-import com.blerpc.device.test.proto.TestBleInvalidReadResponse;
 import com.blerpc.device.test.proto.TestBleReadRequest;
 import com.blerpc.device.test.proto.TestBleReadResponse;
 import com.blerpc.device.test.proto.TestBleService;
@@ -33,7 +32,6 @@ import com.blerpc.device.test.proto.TestBleWriteResponse;
 import com.blerpc.device.test.proto.TestIntegerEmbeddedMessage;
 import com.blerpc.device.test.proto.TestValuesEnum;
 import com.blerpc.proto.Blerpc;
-import com.google.protobuf.Message;
 import com.google.protobuf.RpcCallback;
 import java.util.UUID;
 import java.util.logging.Logger;
@@ -64,6 +62,7 @@ public class TestServiceTest {
             .setValue(1000)
             .build();
     private static final byte[] TEST_READ_RESPONSE_BYTES = new byte[]{0, 0, 0, 45};
+    private static final byte[] TEST_READ_INVALID_RESPONSE_BYTES = new byte[]{0, 0, 0};
     private static final TestBleReadResponse TEST_READ_RESPONSE = TestBleReadResponse.newBuilder()
             .setValue(45)
             .build();
@@ -88,15 +87,16 @@ public class TestServiceTest {
     private static final TestBleSubscribeRequest TEST_SUBSCRIBE_REQUEST = TestBleSubscribeRequest.newBuilder()
             .setValue(5000)
             .build();
+    private static byte[] TEST_SUBSCRIBE_RESPONSE1_BYTES = new byte[]{0, 0, 0, 80};
     private static final TestBleSubscribeResponse TEST_SUBSCRIBE_RESPONSE1 = TestBleSubscribeResponse.newBuilder()
-            .setValue(6000)
+            .setValue(80)
             .build();
+    private static byte[] TEST_SUBSCRIBE_RESPONSE2_BYTES = new byte[]{0, 0, 0, 90};
     private static final TestBleSubscribeResponse TEST_SUBSCRIBE_RESPONSE2 = TestBleSubscribeResponse.newBuilder()
-            .setValue(7000)
+            .setValue(90)
             .build();
 
     @Mock private RpcCallback<TestBleReadResponse> callbackRead;
-    @Mock private RpcCallback<TestBleInvalidReadResponse> callbackRead2;
     @Mock private RpcCallback<TestBleWriteResponse> callbackWrite;
     @Mock private RpcCallback<TestBleSubscribeResponse> callbackSubscribe;
     @Mock private BluetoothDevice bluetoothDevice;
@@ -207,10 +207,10 @@ public class TestServiceTest {
     }
 
     @Test
-    public void testRead_invalidMessage() throws Exception {
-        when(characteristic.getValue()).thenReturn(TEST_READ_RESPONSE_BYTES);
-        testService.testReadChar2(controller, TEST_READ_REQUEST, callbackRead2);
-        assertError(this::connectAndRun, "Declared size 3 of message TestBleInvalidReadResponse is not equal to device response size 4");
+    public void testRead_invalidDeviceResponse() throws Exception {
+        when(characteristic.getValue()).thenReturn(TEST_READ_INVALID_RESPONSE_BYTES);
+        testService.testReadChar(controller, TEST_READ_REQUEST, callbackRead);
+        assertError(this::connectAndRun, "Declared size 4 of message TestBleReadResponse is not equal to device response size 3");
     }
 
     @Test
@@ -254,10 +254,10 @@ public class TestServiceTest {
         connectAndRun();
         verify(bleRpcController).onSubscribeSuccess();
         verify(callbackSubscribe, never()).run(any());
-        sendUpdate(TEST_SUBSCRIBE_RESPONSE1);
+        sendUpdate(TEST_SUBSCRIBE_RESPONSE1_BYTES);
         assertCallSucceeded(controller);
         verify(callbackSubscribe, times(1)).run(TEST_SUBSCRIBE_RESPONSE1);
-        sendUpdate(TEST_SUBSCRIBE_RESPONSE2);
+        sendUpdate(TEST_SUBSCRIBE_RESPONSE2_BYTES);
         assertCallSucceeded(controller);
         verify(callbackSubscribe, times(1)).run(TEST_SUBSCRIBE_RESPONSE2);
 
@@ -271,7 +271,7 @@ public class TestServiceTest {
         doAnswer(invocation -> true).when(bluetoothGatt).writeDescriptor(any(BluetoothGattDescriptor.class));
         testService.testSubscribeChar(controller, TEST_SUBSCRIBE_REQUEST, callbackSubscribe);
         connectAndRun();
-        sendUpdate(TEST_SUBSCRIBE_RESPONSE1);
+        sendUpdate(TEST_SUBSCRIBE_RESPONSE1_BYTES);
         // If fail - java.lang.IllegalArgumentException: The characteristic f0cdaa72-0451-4000-b000-000000000000 is not subscribed.
         verify(callbackSubscribe, never()).run(any());
     }
@@ -283,8 +283,8 @@ public class TestServiceTest {
         doAnswer(invocation -> true).when(bluetoothGatt).writeDescriptor(any(BluetoothGattDescriptor.class));
         controller.startCancel();
         // first sendUpdate to remove canceled subscriptions and start unsubscribing.
-        sendUpdate(TEST_SUBSCRIBE_RESPONSE1);
-        sendUpdate(TEST_SUBSCRIBE_RESPONSE1);
+        sendUpdate(TEST_SUBSCRIBE_RESPONSE1_BYTES);
+        sendUpdate(TEST_SUBSCRIBE_RESPONSE1_BYTES);
         // If fail - java.lang.IllegalArgumentException: The characteristic f0cdaa72-0451-4000-b000-000000000000 is not subscribed.
         verify(callbackSubscribe, never()).run(any());
     }
@@ -303,17 +303,17 @@ public class TestServiceTest {
         testService.testSubscribeChar(controller, TEST_SUBSCRIBE_REQUEST, callbackSubscribe);
         connectAndRun();
         verify(callbackSubscribe, never()).run(any());
-        sendUpdate(TEST_SUBSCRIBE_RESPONSE1);
+        sendUpdate(TEST_SUBSCRIBE_RESPONSE1_BYTES);
         assertCallSucceeded(controller);
         verify(callbackSubscribe, times(1)).run(TEST_SUBSCRIBE_RESPONSE1);
         controller.startCancel();
-        sendUpdate(TEST_SUBSCRIBE_RESPONSE2);
+        sendUpdate(TEST_SUBSCRIBE_RESPONSE2_BYTES);
         assertCallSucceeded(controller);
         verify(callbackSubscribe, never()).run(TEST_SUBSCRIBE_RESPONSE2);
     }
 
-    void sendUpdate(Message message) throws CouldNotConvertMessageException {
-        when(characteristic.getValue()).thenReturn(messageConverter.serializeRequest(null, message));
+    void sendUpdate(byte[] bytes) throws CouldNotConvertMessageException {
+        when(characteristic.getValue()).thenReturn(bytes);
         bluetoothCallback.getValue().onCharacteristicChanged(bluetoothGatt, characteristic);
     }
 

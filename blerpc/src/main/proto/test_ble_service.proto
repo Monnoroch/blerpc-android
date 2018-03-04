@@ -74,17 +74,6 @@ message TestBleReadRequest {
     }];
 }
 
-message TestBleInvalidReadResponse {
-    option (com.blerpc.size) = {
-        size_bytes: 3
-    };
-
-    int32 value = 1 [(com.blerpc.range) = {
-        from_byte: 0
-        to_byte: 4
-    }];
-}
-
 message TestBleReadResponse {
     option (com.blerpc.size) = {
         size_bytes: 4
@@ -182,13 +171,6 @@ service TestBleService {
             uuid: "F0CDBA74-0451-4000-B000-000000000000"
             descriptor_uuid: "F0CDBB74-0451-4000-B000-000000000000"
             type: SUBSCRIBE
-        };
-    }
-
-    rpc TestReadChar2 (TestBleReadRequest) returns (TestBleInvalidReadResponse) {
-        option (com.blerpc.characteristic) = {
-            uuid: "F0CDAA72-0451-4000-B000-000000000000"
-            type: READ
         };
     }
 }
