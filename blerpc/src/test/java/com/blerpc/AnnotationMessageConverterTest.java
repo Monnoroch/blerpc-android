@@ -27,6 +27,7 @@ import com.blerpc.device.test.proto.TestWrongIntegerRangeMessage;
 import com.blerpc.device.test.proto.TestWrongLongRangeMessage;
 import com.blerpc.device.test.proto.TestZeroBytesMessage;
 import com.blerpc.device.test.proto.TestZeroSizeRangeMessage;
+import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 import org.junit.Test;
@@ -67,11 +68,11 @@ public class AnnotationMessageConverterTest {
                 .build()))
                 .isEqualTo(TEST_LONG_BYTE_ARRAY);
         assertThat(converter.serializeRequest(null, TestEnumMessage.newBuilder()
-                .setEnumValue(TestEnum.forNumber(intFrom(TEST_ENUM_BYTE_ARRAY)))
+                .setEnumValue(TestEnum.forNumber(shortFrom(TEST_ENUM_BYTE_ARRAY)))
                 .build()))
                 .isEqualTo(TEST_ENUM_BYTE_ARRAY);
         assertThat(converterLittleEndian.serializeRequest(null, TestEnumMessage.newBuilder()
-                .setEnumValue(TestEnum.forNumber(littleEndianIntFrom(TEST_LITTLE_ENDIAN_ENUM_BYTE_ARRAY)))
+                .setEnumValue(TestEnum.forNumber(littleEndianShortFrom(TEST_LITTLE_ENDIAN_ENUM_BYTE_ARRAY)))
                 .build()))
                 .isEqualTo(TEST_LITTLE_ENDIAN_ENUM_BYTE_ARRAY);
         assertThat(converter.serializeRequest(null, TestBoolMessage.newBuilder()
@@ -245,12 +246,12 @@ public class AnnotationMessageConverterTest {
         assertThat(converter.deserializeResponse(null, TestEnumMessage.getDefaultInstance(),
                 TEST_ENUM_BYTE_ARRAY))
                 .isEqualTo(TestEnumMessage.newBuilder()
-                        .setEnumValue(TestEnum.forNumber(intFrom(TEST_ENUM_BYTE_ARRAY)))
+                        .setEnumValue(TestEnum.forNumber(shortFrom(TEST_ENUM_BYTE_ARRAY)))
                         .build());
         assertThat(converterLittleEndian.deserializeResponse(null, TestEnumMessage.getDefaultInstance(),
                 TEST_LITTLE_ENDIAN_ENUM_BYTE_ARRAY))
                 .isEqualTo(TestEnumMessage.newBuilder()
-                        .setEnumValue(TestEnum.forNumber(littleEndianIntFrom(TEST_LITTLE_ENDIAN_ENUM_BYTE_ARRAY)))
+                        .setEnumValue(TestEnum.forNumber(littleEndianShortFrom(TEST_LITTLE_ENDIAN_ENUM_BYTE_ARRAY)))
                         .build());
         assertThat(converter.deserializeResponse(null, TestBoolMessage.getDefaultInstance(),
                 TEST_BOOL_BYTE_ARRAY))
@@ -376,37 +377,35 @@ public class AnnotationMessageConverterTest {
                 "Boolean field bool_value has bytes size = 2, but has to be of size 1");
     }
 
+    private static short shortFrom(byte[] bytes) {
+        return ByteBuffer.wrap(bytes).getShort();
+    }
+
+    private static short littleEndianShortFrom(byte[] bytes) {
+        return ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).getShort();
+    }
+
     private static int intFrom(byte[] bytes) {
-        return (int) longFrom(bytes);
+        return ByteBuffer.wrap(bytes).getInt();
     }
 
     private static int littleEndianIntFrom(byte[] bytes) {
-        return (int) littleEndianLongFrom(bytes);
+        return ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).getInt();
     }
 
     private static long longFrom(byte[] bytes) {
-        long result = 0;
-        for (int i = 0; i < bytes.length; i++) {
-            result <<= 8;
-            result |= bytes[i] & 0xFF;
-        }
-        return result;
+        return ByteBuffer.wrap(bytes).getLong();
     }
 
     private static long littleEndianLongFrom(byte[] bytes) {
-        long result = 0;
-        for (int i = bytes.length; i > 0; i--) {
-            result <<= 8;
-            result |= bytes[i - 1] & 0xFF;
-        }
-        return result;
+        return ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).getLong();
     }
 
     private static boolean booleanFrom(byte[] bytes) {
         return bytes[0] != 0;
     }
 
-    public static byte[] concatArrays(byte[] firstArray, byte[]... arrays) {
+    private static byte[] concatArrays(byte[] firstArray, byte[]... arrays) {
         int totalLength = firstArray.length;
         for (byte[] array : arrays) {
             totalLength += array.length;
