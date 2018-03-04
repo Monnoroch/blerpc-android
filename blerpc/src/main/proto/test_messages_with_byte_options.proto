@@ -8,42 +8,6 @@ package com.blerpc.device.test.proto;
 
 import "blerpc.proto";
 
-message TestMessage {
-    option (com.blerpc.size) = {
-        size_bytes: 22
-    };
-
-    int32 byte_value = 1 [(com.blerpc.range) = {
-        from_byte: 0
-        to_byte: 1
-    }];
-    int32 short_value = 2 [(com.blerpc.range) = {
-        from_byte: 1
-        to_byte: 3
-    }];
-    int32 int_value = 3 [(com.blerpc.range) = {
-        from_byte: 3
-        to_byte: 7
-    }];
-    int64 long_value = 7 [(com.blerpc.range) = {
-        from_byte: 14
-        to_byte: 22
-    }];
-    bool bool_value = 4 [(com.blerpc.range) = {
-        from_byte: 7
-        to_byte: 8
-    }];
-    TestEnum enum_value = 5 [(com.blerpc.range) = {
-        from_byte: 8
-        to_byte: 9
-    }];
-
-    TestEmbeddedMessage embedded_message = 6 [(com.blerpc.range) = {
-        from_byte: 10
-        to_byte: 14
-    }];
-}
-
 message TestIntegerMessage {
     option (com.blerpc.size) = {
         size_bytes: 4
@@ -82,20 +46,41 @@ message TestEnumMessage {
         size_bytes: 1
     };
 
-    TestEnum type = 1 [(com.blerpc.range) = {
+    TestEnum test_enum = 1 [(com.blerpc.range) = {
         from_byte: 0
         to_byte: 1
     }];
 }
 
-message TestNonPrimitiveMessage {
+message TestEmbeddedMessage {
     option (com.blerpc.size) = {
-        size_bytes: 4
+        size_bytes: 8
     };
 
-    TestIntegerMessage valueMessage = 1 [(com.blerpc.range) = {
+    int32 value = 1 [(com.blerpc.range) = {
         from_byte: 0
         to_byte: 4
+    }];
+
+    TestIntegerMessage embedded_message = 2 [(com.blerpc.range) = {
+        from_byte: 4
+        to_byte: 8
+    }];
+}
+
+message TestSkippedBytesMessage {
+    option (com.blerpc.size) = {
+        size_bytes: 10
+    };
+
+    int32 value_1 = 1 [(com.blerpc.range) = {
+        from_byte: 0
+        to_byte: 4
+    }];
+
+    int32 value_2 = 2 [(com.blerpc.range) = {
+        from_byte: 6
+        to_byte: 10
     }];
 }
 
@@ -114,17 +99,6 @@ enum TestEnum {
     VALUE_2 = 2;
 }
 
-message TestEmbeddedMessage {
-    option (com.blerpc.size) = {
-        size_bytes: 4
-    };
-
-    int32 value = 1 [(com.blerpc.range) = {
-        from_byte: 0
-        to_byte: 4
-    }];
-}
-
 message TestNoBytesSizeMessage {
     int32 value = 1;
 }
@@ -141,7 +115,7 @@ message TestZeroSizeRangeMessage {
         size_bytes: 10
     };
 
-    int32 metadata = 1 [(com.blerpc.range) = {
+    int32 value = 1 [(com.blerpc.range) = {
         from_byte: 0
         to_byte: 0
     }];
@@ -152,7 +126,7 @@ message TestFromByteBiggerToByteMessage {
         size_bytes: 10
     };
 
-    int32 metadata = 1 [(com.blerpc.range) = {
+    int32 value = 1 [(com.blerpc.range) = {
         from_byte: 1
         to_byte: 0
     }];
@@ -163,7 +137,7 @@ message TestNegativeRangeMessage {
         size_bytes: 10
     };
 
-    int32 metadata = 1 [(com.blerpc.range) = {
+    int32 value = 1 [(com.blerpc.range) = {
         from_byte: -1
         to_byte: 0
     }];
@@ -174,7 +148,7 @@ message TestRangeBiggerThanCountMessage {
         size_bytes: 10
     };
 
-    int32 metadata = 1 [(com.blerpc.range) = {
+    int32 value = 1 [(com.blerpc.range) = {
         from_byte: 0
         to_byte: 11
     }];
@@ -185,12 +159,12 @@ message TestRangesIntersectMessage {
         size_bytes: 10
     };
 
-    int32 value = 1 [(com.blerpc.range) = {
+    int32 value_1 = 1 [(com.blerpc.range) = {
         from_byte: 0
         to_byte: 4
     }];
 
-    int32 metadata = 2 [(com.blerpc.range) = {
+    int32 value_2 = 2 [(com.blerpc.range) = {
         from_byte: 2
         to_byte: 10
     }];
@@ -201,7 +175,7 @@ message TestStringValueMessage {
         size_bytes: 4
     };
 
-    string message = 1 [(com.blerpc.range) = {
+    string value = 1 [(com.blerpc.range) = {
         from_byte: 0
         to_byte: 4
     }];
@@ -212,7 +186,7 @@ message TestFloatValueMessage {
         size_bytes: 4
     };
 
-    float weight = 1 [(com.blerpc.range) = {
+    float value = 1 [(com.blerpc.range) = {
         from_byte: 0
         to_byte: 4
     }];
@@ -223,7 +197,7 @@ message TestDoubleValueMessage {
         size_bytes: 8
     };
 
-    double impedance = 1 [(com.blerpc.range) = {
+    double value = 1 [(com.blerpc.range) = {
         from_byte: 0
         to_byte: 8
     }];
@@ -256,7 +230,7 @@ message TestWrongEnumRangeMessage {
         size_bytes: 5
     };
 
-    TestEnum type = 1 [(com.blerpc.range) = {
+    TestEnum test_enum = 1 [(com.blerpc.range) = {
         from_byte: 0
         to_byte: 5
     }];
@@ -267,7 +241,7 @@ message TestWrongBooleanRangeMessage {
         size_bytes: 2
     };
 
-    bool release = 1 [(com.blerpc.range) = {
+    bool value = 1 [(com.blerpc.range) = {
         from_byte: 0
         to_byte: 2
     }];
