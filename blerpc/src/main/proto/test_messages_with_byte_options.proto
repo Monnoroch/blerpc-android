@@ -8,6 +8,12 @@ package com.blerpc.device.test.proto;
 
 import "blerpc.proto";
 
+enum TestEnum {
+    UNKNOWN_VALUE = 0;
+    VALUE_1 = 1;
+    VALUE_2 = 2;
+}
+
 message TestIntegerMessage {
     option (com.blerpc.size) = {
         size_bytes: 4
@@ -38,6 +44,17 @@ message TestLongMessage {
     int64 long_value = 1 [(com.blerpc.range) = {
         from_byte: 0
         to_byte: 8
+    }];
+}
+
+message TestSevenBytesLongMessage {
+    option (com.blerpc.size) = {
+        size_bytes: 7
+    };
+
+    int64 long_value = 1 [(com.blerpc.range) = {
+        from_byte: 0
+        to_byte: 7
     }];
 }
 
@@ -115,12 +132,6 @@ message TestZeroBytesMessage {
     int32 int_value = 1;
 }
 
-enum TestEnum {
-    UNKNOWN_VALUE = 0;
-    VALUE_1 = 1;
-    VALUE_2 = 2;
-}
-
 message TestNoBytesSizeMessage {
     int32 int_value = 1;
 }
@@ -143,7 +154,7 @@ message TestZeroSizeRangeMessage {
     }];
 }
 
-message TestFromByteBiggerToByteMessage {
+message TestNegativeSizeRangeMessage {
     option (com.blerpc.size) = {
         size_bytes: 1
     };
@@ -154,7 +165,7 @@ message TestFromByteBiggerToByteMessage {
     }];
 }
 
-message TestNegativeRangeMessage {
+message TestNegativeRangeFromMessage {
     option (com.blerpc.size) = {
         size_bytes: 1
     };

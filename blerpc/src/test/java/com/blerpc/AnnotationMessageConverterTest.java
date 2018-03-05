@@ -10,16 +10,17 @@ import com.blerpc.device.test.proto.TestEmptyMessage;
 import com.blerpc.device.test.proto.TestEnum;
 import com.blerpc.device.test.proto.TestEnumMessage;
 import com.blerpc.device.test.proto.TestFloatValueMessage;
-import com.blerpc.device.test.proto.TestFromByteBiggerToByteMessage;
 import com.blerpc.device.test.proto.TestIntegerMessage;
 import com.blerpc.device.test.proto.TestLongMessage;
 import com.blerpc.device.test.proto.TestMessageWithGaps;
-import com.blerpc.device.test.proto.TestNegativeRangeMessage;
+import com.blerpc.device.test.proto.TestNegativeRangeFromMessage;
+import com.blerpc.device.test.proto.TestNegativeSizeRangeMessage;
 import com.blerpc.device.test.proto.TestNoBytesRangeMessage;
 import com.blerpc.device.test.proto.TestNoBytesSizeMessage;
 import com.blerpc.device.test.proto.TestNonPrimitiveFieldMessage;
 import com.blerpc.device.test.proto.TestRangeBiggerThanCountMessage;
 import com.blerpc.device.test.proto.TestRangesIntersectMessage;
+import com.blerpc.device.test.proto.TestSevenBytesLongMessage;
 import com.blerpc.device.test.proto.TestSmallEnumRangeMessage;
 import com.blerpc.device.test.proto.TestStringValueMessage;
 import com.blerpc.device.test.proto.TestThreeBytesEnumMessage;
@@ -30,9 +31,9 @@ import com.blerpc.device.test.proto.TestWrongIntegerRangeMessage;
 import com.blerpc.device.test.proto.TestWrongLongRangeMessage;
 import com.blerpc.device.test.proto.TestZeroBytesMessage;
 import com.blerpc.device.test.proto.TestZeroSizeRangeMessage;
+import com.google.common.primitives.Bytes;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.Arrays;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -53,7 +54,7 @@ public class AnnotationMessageConverterTest {
     AnnotationMessageConverter converterLittleEndian = new AnnotationMessageConverter(ByteOrder.LITTLE_ENDIAN);
 
     @Test
-    public void serializeRequestTest_integer() throws Exception {
+    public void serializeRequest_integer() throws Exception {
         assertThat(converter.serializeRequest(null, TestIntegerMessage.newBuilder()
                 .setIntValue(intFrom(TEST_INT_BYTE_ARRAY))
                 .build()))
@@ -65,7 +66,7 @@ public class AnnotationMessageConverterTest {
     }
 
     @Test
-    public void serializeRequestTest_long() throws Exception {
+    public void serializeRequest_long() throws Exception {
         assertThat(converter.serializeRequest(null, TestLongMessage.newBuilder()
                 .setLongValue(longFrom(TEST_LONG_BYTE_ARRAY))
                 .build()))
@@ -77,7 +78,7 @@ public class AnnotationMessageConverterTest {
     }
 
     @Test
-    public void serializeRequestTest_enum() throws Exception {
+    public void serializeRequest_enum() throws Exception {
         assertThat(converter.serializeRequest(null, TestEnumMessage.newBuilder()
                 .setEnumValue(TestEnum.forNumber(intFrom(TEST_ENUM_BYTE_ARRAY)))
                 .build()))
@@ -89,7 +90,7 @@ public class AnnotationMessageConverterTest {
     }
 
     @Test
-    public void serializeRequestTest_boolean() throws Exception {
+    public void serializeRequest_boolean() throws Exception {
         assertThat(converter.serializeRequest(null, TestBoolMessage.newBuilder()
                 .setBoolValue(booleanFrom(TEST_BOOL_BYTE_ARRAY))
                 .build()))
@@ -101,7 +102,7 @@ public class AnnotationMessageConverterTest {
     }
 
     @Test
-    public void serializeRequestTest_nonPrimitiveFieldMessage() throws Exception {
+    public void serializeRequest_nonPrimitiveFieldMessage() throws Exception {
         assertThat(converter.serializeRequest(null, TestNonPrimitiveFieldMessage.newBuilder()
                 .setIntValue(intFrom(TEST_INT_BYTE_ARRAY))
                 .setEmbeddedMessage(TestLongMessage.newBuilder()
@@ -117,7 +118,7 @@ public class AnnotationMessageConverterTest {
     }
 
     @Test
-    public void serializeRequestTest_withGaps() throws Exception {
+    public void serializeRequest_withGaps() throws Exception {
         assertThat(converter.serializeRequest(null, TestMessageWithGaps.newBuilder()
                 .setIntValue(intFrom(TEST_INT_BYTE_ARRAY))
                 .setLongValue(longFrom(TEST_LONG_BYTE_ARRAY))
@@ -126,73 +127,80 @@ public class AnnotationMessageConverterTest {
     }
 
     @Test
-    public void serializeRequestTest_threeBytesInteger() throws Exception {
+    public void serializeRequest_sevenBytesLong() throws Exception {
+        converter.serializeRequest(null, TestSevenBytesLongMessage.newBuilder()
+                .setLongValue(5000000000L)
+                .build());
+    }
+
+    @Test
+    public void serializeRequest_threeBytesInteger() throws Exception {
         converter.serializeRequest(null, TestThreeBytesIntegerMessage.newBuilder()
                 .setIntValue(5000)
                 .build());
     }
 
     @Test
-    public void serializeRequestTest_threeBytesEnum() throws Exception {
+    public void serializeRequest_threeBytesEnum() throws Exception {
         converter.serializeRequest(null, TestThreeBytesEnumMessage.newBuilder()
                 .setEnumValue(TestEnum.VALUE_1)
                 .build());
     }
 
     @Test
-    public void serializeRequestTest_empty() throws Exception {
+    public void serializeRequest_empty() throws Exception {
         assertThat(converter.serializeRequest(null, TestEmptyMessage.getDefaultInstance())).isEmpty();
     }
 
     @Test
-    public void serializeRequestTest_zeroBytes() throws Exception {
+    public void serializeRequest_zeroBytes() throws Exception {
         assertThat(converter.serializeRequest(null, TestZeroBytesMessage.getDefaultInstance())).isEmpty();
     }
 
     @Test
-    public void serializeRequestTest_messageWithFieldAndWithoutByteSize() throws Exception {
+    public void serializeRequest_messageWithFieldAndWithoutByteSize() throws Exception {
         assertError(() -> converter.serializeRequest(null, TestNoBytesSizeMessage.getDefaultInstance()),
                 "A non empty message TestNoBytesSizeMessage doesn't have com.blerpc.message_size annotation.");
     }
 
     @Test
-    public void serializeRequestTest_noByteRange() throws Exception {
+    public void serializeRequest_noByteRange() throws Exception {
         assertError(() -> converter.serializeRequest(null, TestNoBytesRangeMessage.getDefaultInstance()),
                 "Proto field int_value doesn't have com.blerpc.field_bytes annotation");
     }
 
     @Test
-    public void serializeRequestTest_zeroSizeRange() throws Exception {
+    public void serializeRequest_zeroSizeRange() throws Exception {
         assertError(() -> converter.serializeRequest(null, TestZeroSizeRangeMessage.getDefaultInstance()),
                 "Field int_value has from_bytes = 0 which must be less than to_bytes = 0");
     }
 
     @Test
-    public void serializeRequestTest_negativeSizeRange() throws Exception {
-        assertError(() -> converter.serializeRequest(null, TestFromByteBiggerToByteMessage.getDefaultInstance()),
+    public void serializeRequest_negativeSizeRange() throws Exception {
+        assertError(() -> converter.serializeRequest(null, TestNegativeSizeRangeMessage.getDefaultInstance()),
                 "Field int_value has from_bytes = 1 which must be less than to_bytes = 0");
     }
 
     @Test
-    public void serializeRequestTest_negativeFrom() throws Exception {
-        assertError(() -> converter.serializeRequest(null, TestNegativeRangeMessage.getDefaultInstance()),
+    public void serializeRequest_negativeFrom() throws Exception {
+        assertError(() -> converter.serializeRequest(null, TestNegativeRangeFromMessage.getDefaultInstance()),
                 "Field int_value has from_bytes = -1 which is less than zero");
     }
 
     @Test
-    public void serializeRequestTest_rangeBiggerThanCount() throws Exception {
+    public void serializeRequest_rangeBiggerThanCount() throws Exception {
         assertError(() -> converter.serializeRequest(null, TestRangeBiggerThanCountMessage.getDefaultInstance()),
                 "Field int_value has to_bytes = 11 which is bigger than message bytes size = 10");
     }
 
     @Test
-    public void serializeRequestTest_rangesIntersect() throws Exception {
+    public void serializeRequest_rangesIntersect() throws Exception {
         assertError(() -> converter.serializeRequest(null, TestRangesIntersectMessage.getDefaultInstance()),
                 "Field int_value_1 bytes range [0, 4] intersects with another field int_value_2 bytes range [2, 10]");
     }
 
     @Test
-    public void serializeRequestTest_unsupportedTypes() throws Exception {
+    public void serializeRequest_unsupportedTypes() throws Exception {
         assertError(() -> converter.serializeRequest(null, TestStringValueMessage.newBuilder()
                 .setStringValue("Message")
                 .build()), "Unsupported field type: STRING");
@@ -205,7 +213,7 @@ public class AnnotationMessageConverterTest {
     }
 
     @Test
-    public void serializeRequestTest_wrongIntegerRange() throws Exception {
+    public void serializeRequest_wrongIntegerRange() throws Exception {
         assertError(() -> converter.serializeRequest(null, TestWrongIntegerRangeMessage.newBuilder()
                 .setIntValue(20)
                 .build()),
@@ -213,7 +221,7 @@ public class AnnotationMessageConverterTest {
     }
 
     @Test
-    public void serializeRequestTest_wrongLongRange() throws Exception {
+    public void serializeRequest_wrongLongRange() throws Exception {
         assertError(() -> converter.serializeRequest(null, TestWrongLongRangeMessage.newBuilder()
                 .setLongValue(100000)
                 .build()),
@@ -221,7 +229,7 @@ public class AnnotationMessageConverterTest {
     }
 
     @Test
-    public void serializeRequestTest_wrongEnumRange() throws Exception {
+    public void serializeRequest_wrongEnumRange() throws Exception {
         assertError(() -> converter.serializeRequest(null, TestWrongEnumRangeMessage.newBuilder()
                 .setEnumValue(TestEnum.VALUE_1)
                 .build()),
@@ -229,7 +237,7 @@ public class AnnotationMessageConverterTest {
     }
 
     @Test
-    public void serializeRequestTest_wrongBooleanRange() throws Exception {
+    public void serializeRequest_wrongBooleanRange() throws Exception {
         assertError(() -> converter.serializeRequest(null, TestWrongBooleanRangeMessage.newBuilder()
                 .setBoolValue(true)
                 .build()),
@@ -237,7 +245,7 @@ public class AnnotationMessageConverterTest {
     }
 
     @Test
-    public void serializeRequestTest_notEnoughRangeForEnum() throws Exception {
+    public void serializeRequest_notEnoughRangeForEnum() throws Exception {
         assertError(() -> converter.serializeRequest(null, TestSmallEnumRangeMessage.newBuilder()
                 .setEnumValue(TestBigValueEnum.ENUM_VALUE_1)
                 .build()),
@@ -245,7 +253,7 @@ public class AnnotationMessageConverterTest {
     }
 
     @Test
-    public void deserializeResponseTest_integer() throws Exception {
+    public void deserializeResponse_integer() throws Exception {
         assertThat(converter.deserializeResponse(null, TestIntegerMessage.getDefaultInstance(),
                 TEST_INT_BYTE_ARRAY))
                 .isEqualTo(TestIntegerMessage.newBuilder()
@@ -259,7 +267,7 @@ public class AnnotationMessageConverterTest {
     }
 
     @Test
-    public void deserializeResponseTest_long() throws Exception {
+    public void deserializeResponse_long() throws Exception {
         assertThat(converter.deserializeResponse(null, TestLongMessage.getDefaultInstance(),
                 TEST_LONG_BYTE_ARRAY))
                 .isEqualTo(TestLongMessage.newBuilder()
@@ -273,7 +281,7 @@ public class AnnotationMessageConverterTest {
     }
 
     @Test
-    public void deserializeResponseTest_enum() throws Exception {
+    public void deserializeResponse_enum() throws Exception {
         assertThat(converter.deserializeResponse(null, TestEnumMessage.getDefaultInstance(),
                 TEST_ENUM_BYTE_ARRAY))
                 .isEqualTo(TestEnumMessage.newBuilder()
@@ -287,7 +295,7 @@ public class AnnotationMessageConverterTest {
     }
 
     @Test
-    public void deserializeResponseTest_boolean() throws Exception {
+    public void deserializeResponse_boolean() throws Exception {
         assertThat(converter.deserializeResponse(null, TestBoolMessage.getDefaultInstance(),
                 TEST_BOOL_BYTE_ARRAY))
                 .isEqualTo(TestBoolMessage.newBuilder()
@@ -301,7 +309,7 @@ public class AnnotationMessageConverterTest {
     }
 
     @Test
-    public void deserializeResponseTest_embeddedMessage() throws Exception {
+    public void deserializeResponse_embeddedMessage() throws Exception {
         assertThat(converter.deserializeResponse(null, TestNonPrimitiveFieldMessage.getDefaultInstance(),
                 concatArrays(TEST_INT_BYTE_ARRAY, TEST_LONG_BYTE_ARRAY)))
                 .isEqualTo(TestNonPrimitiveFieldMessage.newBuilder()
@@ -319,7 +327,7 @@ public class AnnotationMessageConverterTest {
     }
 
     @Test
-    public void deserializeResponseTest_withGaps() throws Exception {
+    public void deserializeResponse_withGaps() throws Exception {
         assertThat(converter.deserializeResponse(null, TestMessageWithGaps.getDefaultInstance(),
                 concatArrays(TEST_INT_BYTE_ARRAY, new byte[]{0, 0}, TEST_LONG_BYTE_ARRAY)))
                 .isEqualTo(TestMessageWithGaps.newBuilder()
@@ -329,19 +337,19 @@ public class AnnotationMessageConverterTest {
     }
 
     @Test
-    public void deserializeResponseTest_emptyMessage() throws Exception {
+    public void deserializeResponse_emptyMessage() throws Exception {
         assertThat(converter.deserializeResponse(null, TestEmptyMessage.getDefaultInstance(), new byte[0]))
                 .isEqualTo(TestEmptyMessage.getDefaultInstance());
     }
 
     @Test
-    public void deserializeResponseTest_wrongMessageByteSize() throws Exception {
+    public void deserializeResponse_wrongMessageByteSize() throws Exception {
         assertError(() -> converter.deserializeResponse(null, TestIntegerMessage.getDefaultInstance(), new byte[10]),
                 "Declared size 4 of message TestIntegerMessage is not equal to device response size 10");
     }
 
     @Test
-    public void deserializeResponseTest_messageWithFieldAndWithoutByteSize() throws Exception {
+    public void deserializeResponse_messageWithFieldAndWithoutByteSize() throws Exception {
         assertError(() -> converter.deserializeResponse(null,
                 TestNoBytesSizeMessage.getDefaultInstance(),
                 TEST_BOOL_BYTE_ARRAY),
@@ -349,31 +357,31 @@ public class AnnotationMessageConverterTest {
     }
 
     @Test
-    public void deserializeResponseTest_noByteRangeMessage() throws Exception {
+    public void deserializeResponse_noByteRangeMessage() throws Exception {
         assertError(() -> converter.deserializeResponse(null, TestNoBytesRangeMessage.getDefaultInstance(), new byte[2]),
                 "Proto field int_value doesn't have com.blerpc.field_bytes annotation");
     }
 
     @Test
-    public void deserializeResponseTest_zeroSizeRangeMessage() throws Exception {
+    public void deserializeResponse_zeroSizeRangeMessage() throws Exception {
         assertError(() -> converter.deserializeResponse(null, TestZeroSizeRangeMessage.getDefaultInstance(), new byte[1]),
                 "Field int_value has from_bytes = 0 which must be less than to_bytes = 0");
     }
 
     @Test
-    public void deserializeResponseTest_negativeRangeMessage() throws Exception {
-        assertError(() -> converter.deserializeResponse(null, TestNegativeRangeMessage.getDefaultInstance(), new byte[1]),
+    public void deserializeResponse_negativeRangeMessage() throws Exception {
+        assertError(() -> converter.deserializeResponse(null, TestNegativeRangeFromMessage.getDefaultInstance(), new byte[1]),
                 "Field int_value has from_bytes = -1 which is less than zero");
     }
 
     @Test
-    public void deserializeResponseTest_rangeBiggerThanCountMessage() throws Exception {
+    public void deserializeResponse_rangeBiggerThanCountMessage() throws Exception {
         assertError(() -> converter.deserializeResponse(null, TestRangeBiggerThanCountMessage.getDefaultInstance(), new byte[10]),
                 "Field int_value has to_bytes = 11 which is bigger than message bytes size = 10");
     }
 
     @Test
-    public void deserializeResponseTest_unsupportedTypes() throws Exception {
+    public void deserializeResponse_unsupportedTypes() throws Exception {
         assertError(() -> converter.deserializeResponse(null, TestStringValueMessage.getDefaultInstance(), new byte[4]),
                 "Unsupported field type: STRING");
         assertError(() -> converter.deserializeResponse(null, TestFloatValueMessage.getDefaultInstance(), new byte[4]),
@@ -383,25 +391,25 @@ public class AnnotationMessageConverterTest {
     }
 
     @Test
-    public void deserializeResponseTest_wrongIntegerRange() throws Exception {
+    public void deserializeResponse_wrongIntegerRange() throws Exception {
         assertError(() -> converter.deserializeResponse(null, TestWrongIntegerRangeMessage.getDefaultInstance(), new byte[5]),
                 "Int32 field int_value has unsupported size 5. Only sizes in [1, 4] are supported.");
     }
 
     @Test
-    public void deserializeResponseTest_wrongLongRange() throws Exception {
+    public void deserializeResponse_wrongLongRange() throws Exception {
         assertError(() -> converter.deserializeResponse(null, TestWrongLongRangeMessage.getDefaultInstance(), new byte[9]),
                 "Int64 field long_value has unsupported size 9. Only sizes in [1, 8] are supported.");
     }
 
     @Test
-    public void deserializeResponseTest_wrongEnumRange() throws Exception {
+    public void deserializeResponse_wrongEnumRange() throws Exception {
         assertError(() -> converter.deserializeResponse(null, TestWrongEnumRangeMessage.getDefaultInstance(), new byte[5]),
                 "Enum TestEnum field enum_value has unsupported size 5. Only sizes in [1, 4] are supported.");
     }
 
     @Test
-    public void deserializeResponseTest_wrongBooleanRange() throws Exception {
+    public void deserializeResponse_wrongBooleanRange() throws Exception {
         assertError(() -> converter.deserializeResponse(null, TestWrongBooleanRangeMessage.getDefaultInstance(), new byte[2]),
                 "Boolean field bool_value has unsupported size 2. Only sizes 1 are supported.");
     }
@@ -427,16 +435,10 @@ public class AnnotationMessageConverterTest {
     }
 
     private static byte[] concatArrays(byte[] firstArray, byte[]... arrays) {
-        int totalLength = firstArray.length;
+        byte[] assembledArray = firstArray;
         for (byte[] array : arrays) {
-            totalLength += array.length;
+            assembledArray = Bytes.concat(assembledArray, array);
         }
-        byte[] result = Arrays.copyOf(firstArray, totalLength);
-        int offset = firstArray.length;
-        for (byte[] array : arrays) {
-            System.arraycopy(array, 0, result, offset, array.length);
-            offset += array.length;
-        }
-        return result;
+        return assembledArray;
     }
 }
