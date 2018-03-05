@@ -1,5 +1,6 @@
 package com.blerpc;
 
+import static com.blerpc.Assert.assertError;
 import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -28,9 +29,9 @@ import com.blerpc.device.test.proto.TestBleSubscribeRequest;
 import com.blerpc.device.test.proto.TestBleSubscribeResponse;
 import com.blerpc.device.test.proto.TestBleWriteRequest;
 import com.blerpc.device.test.proto.TestBleWriteResponse;
+import com.blerpc.device.test.proto.TestIntegerEmbeddedMessage;
+import com.blerpc.device.test.proto.TestValuesEnum;
 import com.blerpc.proto.Blerpc;
-import com.google.protobuf.Descriptors.MethodDescriptor;
-import com.google.protobuf.Message;
 import com.google.protobuf.RpcCallback;
 import java.util.UUID;
 import java.util.logging.Logger;
@@ -50,7 +51,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 public class TestServiceTest {
 
     private static final UUID TEST_SERVICE = UUID.fromString(TestBleService.getDescriptor().getOptions()
-        .getExtension(Blerpc.service).getUuid());
+            .getExtension(Blerpc.service).getUuid());
     private static final UUID TEST_CHARACTERISTIC = UUID.fromString(
         TestBleService.getDescriptor().findMethodByName("TestWriteChar").getOptions()
             .getExtension(Blerpc.characteristic).getUuid());
@@ -58,26 +59,42 @@ public class TestServiceTest {
         TestBleService.getDescriptor().findMethodByName("TestSubscribeChar").getOptions()
             .getExtension(Blerpc.characteristic).getDescriptorUuid());
     private static final TestBleReadRequest TEST_READ_REQUEST = TestBleReadRequest.newBuilder()
-        .setValue("TEST_READ_REQUEST")
-        .build();
+            .setIntValue(1000)
+            .build();
+    private static final byte[] TEST_READ_RESPONSE_BYTES = new byte[]{0, 0, 0, 45};
+    private static final byte[] TEST_READ_INVALID_RESPONSE_BYTES = new byte[]{0, 0, 0};
     private static final TestBleReadResponse TEST_READ_RESPONSE = TestBleReadResponse.newBuilder()
-        .setValue("TEST_READ_RESPONSE")
-        .build();
+            .setIntValue(45)
+            .build();
+    private static byte[] TEST_WRITE_REQUEST_BYTES = new byte[]{0, 0, 0, 50, 0, 0, 0, 0, 0, 0, 0, 80, 1, 0, 2, 0, 0, 0, 0, 100};
     private static final TestBleWriteRequest TEST_WRITE_REQUEST = TestBleWriteRequest.newBuilder()
-        .setValue("TEST_WRITE_REQUEST")
-        .build();
+            .setIntValue(50)
+            .setLongValue(80)
+            .setBoolValue(true)
+            .setEnumValue(TestValuesEnum.VALUE_2)
+            .setMessageValue(TestIntegerEmbeddedMessage.newBuilder()
+                    .setIntValue(100))
+            .build();
+    private static byte[] TEST_WRITE_RESPONSE_BYTES = new byte[]{0, 0, 0, 60, 0, 0, 0, 0, 0, 0, 0, 95, 1, 0, 1, 0, 0, 0, 0, 115};
     private static final TestBleWriteResponse TEST_WRITE_RESPONSE = TestBleWriteResponse.newBuilder()
-        .setValue("TEST_WRITE_RESPONSE")
-        .build();
+            .setIntValue(60)
+            .setLongValue(95)
+            .setBoolValue(true)
+            .setEnumValue(TestValuesEnum.VALUE_1)
+            .setMessageValue(TestIntegerEmbeddedMessage.newBuilder()
+                    .setIntValue(115))
+            .build();
     private static final TestBleSubscribeRequest TEST_SUBSCRIBE_REQUEST = TestBleSubscribeRequest.newBuilder()
-        .setValue("TEST_SUBSCRIBE_REQUEST")
-        .build();
+            .setIntValue(5000)
+            .build();
+    private static byte[] TEST_SUBSCRIBE_RESPONSE1_BYTES = new byte[]{0, 0, 0, 80};
     private static final TestBleSubscribeResponse TEST_SUBSCRIBE_RESPONSE1 = TestBleSubscribeResponse.newBuilder()
-        .setValue("TEST_SUBSCRIBE_RESPONSE1")
-        .build();
+            .setIntValue(80)
+            .build();
+    private static byte[] TEST_SUBSCRIBE_RESPONSE2_BYTES = new byte[]{0, 0, 0, 90};
     private static final TestBleSubscribeResponse TEST_SUBSCRIBE_RESPONSE2 = TestBleSubscribeResponse.newBuilder()
-        .setValue("TEST_SUBSCRIBE_RESPONSE2")
-        .build();
+            .setIntValue(90)
+            .build();
 
     @Mock private RpcCallback<TestBleReadResponse> callbackRead;
     @Mock private RpcCallback<TestBleWriteResponse> callbackWrite;
@@ -90,6 +107,7 @@ public class TestServiceTest {
     @Mock private BluetoothGattDescriptor descriptor;
 
     private BleRpcController controller = new BleRpcController();
+    private AnnotationMessageConverter messageConverter = new AnnotationMessageConverter();
     private TestBleService testService;
     private ArgumentCaptor<BluetoothGattCallback> bluetoothCallback =
         ArgumentCaptor.forClass(BluetoothGattCallback.class);
@@ -159,7 +177,7 @@ public class TestServiceTest {
         when(descriptor.setValue(any(byte[].class))).thenReturn(true);
         when(descriptor.getUuid()).thenReturn(TEST_DESCRIPTOR);
 
-        BleRpcChannel channel = new BleRpcChannel(bluetoothDevice, context, new TestMessageConverter(), workHandler,
+        BleRpcChannel channel = new BleRpcChannel(bluetoothDevice, context, messageConverter, workHandler,
             listenerHandler, Logger.getGlobal());
         testService = TestBleService.newStub(channel);
     }
@@ -181,7 +199,7 @@ public class TestServiceTest {
 
     @Test
     public void testRead() throws Exception {
-        when(characteristic.getValue()).thenReturn(TEST_READ_RESPONSE.toByteArray());
+        when(characteristic.getValue()).thenReturn(TEST_READ_RESPONSE_BYTES);
         testService.testReadChar(controller, TEST_READ_REQUEST, callbackRead);
         connectAndRun();
         assertCallSucceeded(controller);
@@ -189,11 +207,19 @@ public class TestServiceTest {
     }
 
     @Test
+    public void testRead_invalidDeviceResponse() throws Exception {
+        when(characteristic.getValue()).thenReturn(TEST_READ_INVALID_RESPONSE_BYTES);
+        testService.testReadChar(controller, TEST_READ_REQUEST, callbackRead);
+        assertError(this::connectAndRun, "Declared size 4 of message TestBleReadResponse is not equal to device response size 3");
+    }
+
+    @Test
     public void testWrite() throws Exception {
-        when(characteristic.getValue()).thenReturn(TEST_WRITE_RESPONSE.toByteArray());
+        when(characteristic.getValue()).thenReturn(TEST_WRITE_RESPONSE_BYTES);
         testService.testWriteChar(controller, TEST_WRITE_REQUEST, callbackWrite);
         connectAndRun();
         assertCallSucceeded(controller);
+        verify(characteristic).setValue(TEST_WRITE_REQUEST_BYTES);
         verify(callbackWrite).run(TEST_WRITE_RESPONSE);
     }
 
@@ -208,16 +234,17 @@ public class TestServiceTest {
 
     @Test
     public void testTwoCalls() throws Exception {
-        when(characteristic.getValue()).thenReturn(TEST_READ_RESPONSE.toByteArray());
+        when(characteristic.getValue()).thenReturn(TEST_READ_RESPONSE_BYTES);
         testService.testReadChar(controller, TEST_READ_REQUEST, callbackRead);
         connectAndRun();
         assertCallSucceeded(controller);
         verify(callbackRead).run(TEST_READ_RESPONSE);
 
-        when(characteristic.getValue()).thenReturn(TEST_WRITE_RESPONSE.toByteArray());
+        when(characteristic.getValue()).thenReturn(TEST_WRITE_RESPONSE_BYTES);
         testService.testWriteChar(controller, TEST_WRITE_REQUEST, callbackWrite);
         assertCallSucceeded(controller);
         verify(callbackWrite).run(TEST_WRITE_RESPONSE);
+        verify(characteristic).setValue(TEST_WRITE_REQUEST_BYTES);
     }
 
     @Test
@@ -227,10 +254,10 @@ public class TestServiceTest {
         connectAndRun();
         verify(bleRpcController).onSubscribeSuccess();
         verify(callbackSubscribe, never()).run(any());
-        sendUpdate(TEST_SUBSCRIBE_RESPONSE1);
+        sendUpdate(TEST_SUBSCRIBE_RESPONSE1_BYTES);
         assertCallSucceeded(controller);
         verify(callbackSubscribe, times(1)).run(TEST_SUBSCRIBE_RESPONSE1);
-        sendUpdate(TEST_SUBSCRIBE_RESPONSE2);
+        sendUpdate(TEST_SUBSCRIBE_RESPONSE2_BYTES);
         assertCallSucceeded(controller);
         verify(callbackSubscribe, times(1)).run(TEST_SUBSCRIBE_RESPONSE2);
 
@@ -244,7 +271,7 @@ public class TestServiceTest {
         doAnswer(invocation -> true).when(bluetoothGatt).writeDescriptor(any(BluetoothGattDescriptor.class));
         testService.testSubscribeChar(controller, TEST_SUBSCRIBE_REQUEST, callbackSubscribe);
         connectAndRun();
-        sendUpdate(TEST_SUBSCRIBE_RESPONSE1);
+        sendUpdate(TEST_SUBSCRIBE_RESPONSE1_BYTES);
         // If fail - java.lang.IllegalArgumentException: The characteristic f0cdaa72-0451-4000-b000-000000000000 is not subscribed.
         verify(callbackSubscribe, never()).run(any());
     }
@@ -256,8 +283,8 @@ public class TestServiceTest {
         doAnswer(invocation -> true).when(bluetoothGatt).writeDescriptor(any(BluetoothGattDescriptor.class));
         controller.startCancel();
         // first sendUpdate to remove canceled subscriptions and start unsubscribing.
-        sendUpdate(TEST_SUBSCRIBE_RESPONSE1);
-        sendUpdate(TEST_SUBSCRIBE_RESPONSE1);
+        sendUpdate(TEST_SUBSCRIBE_RESPONSE1_BYTES);
+        sendUpdate(TEST_SUBSCRIBE_RESPONSE1_BYTES);
         // If fail - java.lang.IllegalArgumentException: The characteristic f0cdaa72-0451-4000-b000-000000000000 is not subscribed.
         verify(callbackSubscribe, never()).run(any());
     }
@@ -276,61 +303,22 @@ public class TestServiceTest {
         testService.testSubscribeChar(controller, TEST_SUBSCRIBE_REQUEST, callbackSubscribe);
         connectAndRun();
         verify(callbackSubscribe, never()).run(any());
-        sendUpdate(TEST_SUBSCRIBE_RESPONSE1);
+        sendUpdate(TEST_SUBSCRIBE_RESPONSE1_BYTES);
         assertCallSucceeded(controller);
         verify(callbackSubscribe, times(1)).run(TEST_SUBSCRIBE_RESPONSE1);
         controller.startCancel();
-        sendUpdate(TEST_SUBSCRIBE_RESPONSE2);
+        sendUpdate(TEST_SUBSCRIBE_RESPONSE2_BYTES);
         assertCallSucceeded(controller);
         verify(callbackSubscribe, never()).run(TEST_SUBSCRIBE_RESPONSE2);
     }
 
-    void sendUpdate(Message message) {
-        when(characteristic.getValue()).thenReturn(message.toByteArray());
+    void sendUpdate(byte[] bytes) throws CouldNotConvertMessageException {
+        when(characteristic.getValue()).thenReturn(bytes);
         bluetoothCallback.getValue().onCharacteristicChanged(bluetoothGatt, characteristic);
     }
 
     void assertCallSucceeded(BleRpcController controller) {
         assertThat(controller.failed()).isFalse();
         assertThat(controller.errorText()).isNull();
-    }
-
-    private static class TestMessageConverter implements MessageConverter {
-
-        private static final MethodDescriptorEqualsWrapper METHOD_READ =
-            wrapper(TestBleService.getDescriptor().findMethodByName("TestReadChar"));
-        private static final MethodDescriptorEqualsWrapper METHOD_WRITE =
-            wrapper(TestBleService.getDescriptor().findMethodByName("TestWriteChar"));
-        private static final MethodDescriptorEqualsWrapper METHOD_SUBSCRIBE =
-            wrapper(TestBleService.getDescriptor().findMethodByName("TestSubscribeChar"));
-
-        @Override
-        public byte[] serializeRequest(MethodDescriptor methodDescriptor, Message message)
-            throws CouldNotConvertMessageException {
-            return message.toByteArray();
-        }
-
-        @Override
-        public Message deserializeResponse(MethodDescriptor methodDescriptor, Message responsePrototype, byte[] value)
-            throws CouldNotConvertMessageException {
-            MethodDescriptorEqualsWrapper descriptor = wrapper(methodDescriptor);
-            try {
-                if (METHOD_READ.equals(descriptor)) {
-                    return TestBleReadResponse.parseFrom(value);
-                } else if (METHOD_WRITE.equals(descriptor)) {
-                    return TestBleWriteResponse.parseFrom(value);
-                } else if (METHOD_SUBSCRIBE.equals(descriptor)) {
-                    return TestBleSubscribeResponse.parseFrom(value);
-                }
-            } catch (Exception exception) {
-                throw CouldNotConvertMessageException.deserializeResponse(exception);
-            }
-            throw CouldNotConvertMessageException.deserializeResponse("unsupported method %s",
-                methodDescriptor.getFullName());
-        }
-
-        private static MethodDescriptorEqualsWrapper wrapper(MethodDescriptor methodDescriptor) {
-            return new MethodDescriptorEqualsWrapper(methodDescriptor);
-        }
     }
 }
