@@ -19,6 +19,17 @@ message TestIntegerMessage {
     }];
 }
 
+message TestThreeBytesIntegerMessage {
+    option (com.blerpc.size) = {
+        size_bytes: 3
+    };
+
+    int32 int_value = 1 [(com.blerpc.range) = {
+        from_byte: 0
+        to_byte: 3
+    }];
+}
+
 message TestLongMessage {
     option (com.blerpc.size) = {
         size_bytes: 8
@@ -43,18 +54,29 @@ message TestBoolMessage {
 
 message TestEnumMessage {
     option (com.blerpc.size) = {
-        size_bytes: 2
+        size_bytes: 4
     };
 
     TestEnum enum_value = 1 [(com.blerpc.range) = {
         from_byte: 0
-        to_byte: 2
+        to_byte: 4
     }];
 }
 
-message TestEmbeddedMessage {
+message TestThreeBytesEnumMessage {
     option (com.blerpc.size) = {
-        size_bytes: 8
+        size_bytes: 3
+    };
+
+    TestEnum enum_value = 1 [(com.blerpc.range) = {
+        from_byte: 0
+        to_byte: 3
+    }];
+}
+
+message TestNonPrimitiveFieldMessage {
+    option (com.blerpc.size) = {
+        size_bytes: 12
     };
 
     int32 int_value = 1 [(com.blerpc.range) = {
@@ -62,25 +84,25 @@ message TestEmbeddedMessage {
         to_byte: 4
     }];
 
-    TestIntegerMessage embedded_message = 2 [(com.blerpc.range) = {
+    TestLongMessage embedded_message = 2 [(com.blerpc.range) = {
         from_byte: 4
-        to_byte: 8
+        to_byte: 12
     }];
 }
 
-message TestSkippedBytesMessage {
+message TestMessageWithGaps {
     option (com.blerpc.size) = {
-        size_bytes: 10
+        size_bytes: 14
     };
 
-    int32 int_value_1 = 1 [(com.blerpc.range) = {
+    int32 int_value = 1 [(com.blerpc.range) = {
         from_byte: 0
         to_byte: 4
     }];
 
-    int32 int_value_2 = 2 [(com.blerpc.range) = {
+    int64 long_value = 2 [(com.blerpc.range) = {
         from_byte: 6
-        to_byte: 10
+        to_byte: 14
     }];
 }
 
@@ -112,7 +134,7 @@ message TestNoBytesRangeMessage {
 
 message TestZeroSizeRangeMessage {
     option (com.blerpc.size) = {
-        size_bytes: 10
+        size_bytes: 1
     };
 
     int32 int_value = 1 [(com.blerpc.range) = {
@@ -123,7 +145,7 @@ message TestZeroSizeRangeMessage {
 
 message TestFromByteBiggerToByteMessage {
     option (com.blerpc.size) = {
-        size_bytes: 10
+        size_bytes: 1
     };
 
     int32 int_value = 1 [(com.blerpc.range) = {
@@ -134,7 +156,7 @@ message TestFromByteBiggerToByteMessage {
 
 message TestNegativeRangeMessage {
     option (com.blerpc.size) = {
-        size_bytes: 10
+        size_bytes: 1
     };
 
     int32 int_value = 1 [(com.blerpc.range) = {
@@ -247,18 +269,18 @@ message TestWrongBooleanRangeMessage {
     }];
 }
 
-message TestSmallFourBytesEnumRangeMessage {
+message TestSmallEnumRangeMessage {
     option (com.blerpc.size) = {
         size_bytes: 3
     };
 
-    TestFourBytesEnum enum_value = 1 [(com.blerpc.range) = {
+    TestBigValueEnum enum_value = 1 [(com.blerpc.range) = {
         from_byte: 0
         to_byte: 3
     }];
 }
 
-enum TestFourBytesEnum {
-    UNKNOWN_FOUR_BYTES_ENUM_VALUE = 0;
-    FOUR_BYTES_ENUM_VALUE_3 = 222222222;
+enum TestBigValueEnum {
+    UNKNOWN_ENUM_VALUE = 0;
+    ENUM_VALUE_1 = 222222222;
 }

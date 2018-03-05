@@ -56,7 +56,7 @@ public class BleRpcChannelTest {
 
     private static final byte[] TEST_READ_RESPONSE_BYTES = new byte[]{30, 35};
     private static final TestBleReadResponse TEST_READ_RESPONSE = TestBleReadResponse.newBuilder()
-        .setValue(1000)
+        .setIntValue(1000)
         .build();
     private static final TestBleWriteRequest TEST_WRITE_REQUEST = TestBleWriteRequest.newBuilder()
         .setIntValue(2000)
@@ -72,11 +72,11 @@ public class BleRpcChannelTest {
         .build();
     private static final byte[] TEST_SUBSCRIBE_RESPONSE_BYTES = new byte[]{70, 75};
     private static final TestBleSubscribeResponse TEST_SUBSCRIBE_RESPONSE = TestBleSubscribeResponse.newBuilder()
-        .setValue(5000)
+        .setIntValue(5000)
         .build();
     private static final byte[] TEST_SUBSCRIBE_RESPONSE_BYTES2 = new byte[]{80, 85};
     private static final TestBleSubscribeResponse TEST_SUBSCRIBE_RESPONSE2 = TestBleSubscribeResponse.newBuilder()
-        .setValue(6000)
+        .setIntValue(6000)
         .build();
     private static final int TEST_UNKNOWN_STATE =
         BluetoothProfile.STATE_CONNECTED + BluetoothProfile.STATE_DISCONNECTED + 1;

@@ -117,7 +117,7 @@ public class AnnotationMessageConverter implements MessageConverter {
     private void serializeBoolean(byte[] messageBytes, boolean fieldValue, ByteRange bytesRange, String fieldName) {
         int bytesSize = bytesRange.getToByte() - bytesRange.getFromByte();
         checkArgument(bytesSize == 1,
-                "Boolean field %s has bytes size = %s, but has to be of size 1",
+                "Boolean field %s has unsupported size %s. Only sizes 1 are supported.",
                 fieldName,
                 bytesSize);
         messageBytes[bytesRange.getFromByte()] = fieldValue ? (byte) 1 : (byte) 0;
@@ -224,7 +224,7 @@ public class AnnotationMessageConverter implements MessageConverter {
     private boolean deserializeBoolean(byte[] bytes, ByteRange bytesRange, String fieldName) {
         int bytesSize = bytesRange.getToByte() - bytesRange.getFromByte();
         checkArgument(bytesSize == 1,
-                "Boolean field %s has bytes size = %s, but has to be of size 1",
+                "Boolean field %s has unsupported size %s. Only sizes 1 are supported.",
                 fieldName,
                 bytesSize);
         return bytes[bytesRange.getFromByte()] != 0;

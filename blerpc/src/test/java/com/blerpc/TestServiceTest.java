@@ -59,12 +59,12 @@ public class TestServiceTest {
         TestBleService.getDescriptor().findMethodByName("TestSubscribeChar").getOptions()
             .getExtension(Blerpc.characteristic).getDescriptorUuid());
     private static final TestBleReadRequest TEST_READ_REQUEST = TestBleReadRequest.newBuilder()
-            .setValue(1000)
+            .setIntValue(1000)
             .build();
     private static final byte[] TEST_READ_RESPONSE_BYTES = new byte[]{0, 0, 0, 45};
     private static final byte[] TEST_READ_INVALID_RESPONSE_BYTES = new byte[]{0, 0, 0};
     private static final TestBleReadResponse TEST_READ_RESPONSE = TestBleReadResponse.newBuilder()
-            .setValue(45)
+            .setIntValue(45)
             .build();
     private static byte[] TEST_WRITE_REQUEST_BYTES = new byte[]{0, 0, 0, 50, 0, 0, 0, 0, 0, 0, 0, 80, 1, 0, 2, 0, 0, 0, 0, 100};
     private static final TestBleWriteRequest TEST_WRITE_REQUEST = TestBleWriteRequest.newBuilder()
@@ -73,7 +73,7 @@ public class TestServiceTest {
             .setBoolValue(true)
             .setEnumValue(TestValuesEnum.VALUE_2)
             .setMessageValue(TestIntegerEmbeddedMessage.newBuilder()
-                    .setValue(100))
+                    .setIntValue(100))
             .build();
     private static byte[] TEST_WRITE_RESPONSE_BYTES = new byte[]{0, 0, 0, 60, 0, 0, 0, 0, 0, 0, 0, 95, 1, 0, 1, 0, 0, 0, 0, 115};
     private static final TestBleWriteResponse TEST_WRITE_RESPONSE = TestBleWriteResponse.newBuilder()
@@ -82,18 +82,18 @@ public class TestServiceTest {
             .setBoolValue(true)
             .setEnumValue(TestValuesEnum.VALUE_1)
             .setMessageValue(TestIntegerEmbeddedMessage.newBuilder()
-                    .setValue(115))
+                    .setIntValue(115))
             .build();
     private static final TestBleSubscribeRequest TEST_SUBSCRIBE_REQUEST = TestBleSubscribeRequest.newBuilder()
-            .setValue(5000)
+            .setIntValue(5000)
             .build();
     private static byte[] TEST_SUBSCRIBE_RESPONSE1_BYTES = new byte[]{0, 0, 0, 80};
     private static final TestBleSubscribeResponse TEST_SUBSCRIBE_RESPONSE1 = TestBleSubscribeResponse.newBuilder()
-            .setValue(80)
+            .setIntValue(80)
             .build();
     private static byte[] TEST_SUBSCRIBE_RESPONSE2_BYTES = new byte[]{0, 0, 0, 90};
     private static final TestBleSubscribeResponse TEST_SUBSCRIBE_RESPONSE2 = TestBleSubscribeResponse.newBuilder()
-            .setValue(90)
+            .setIntValue(90)
             .build();
 
     @Mock private RpcCallback<TestBleReadResponse> callbackRead;

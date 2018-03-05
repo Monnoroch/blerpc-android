@@ -68,7 +68,7 @@ message TestBleReadRequest {
         size_bytes: 4
     };
 
-    int32 value = 1 [(com.blerpc.range) = {
+    int32 int_value = 1 [(com.blerpc.range) = {
         from_byte: 0
         to_byte: 4
     }];
@@ -79,7 +79,7 @@ message TestBleReadResponse {
         size_bytes: 4
     };
 
-    int32 value = 1 [(com.blerpc.range) = {
+    int32 int_value = 1 [(com.blerpc.range) = {
         from_byte: 0
         to_byte: 4
     }];
@@ -90,7 +90,7 @@ message TestBleSubscribeRequest {
         size_bytes: 4
     };
 
-    int32 value = 1 [(com.blerpc.range) = {
+    int32 int_value = 1 [(com.blerpc.range) = {
         from_byte: 0
         to_byte: 4
     }];
@@ -101,7 +101,7 @@ message TestBleSubscribeResponse {
         size_bytes: 4
     };
 
-    int32 value = 1 [(com.blerpc.range) = {
+    int32 int_value = 1 [(com.blerpc.range) = {
         from_byte: 0
         to_byte: 4
     }];
@@ -112,7 +112,7 @@ message TestIntegerEmbeddedMessage {
         size_bytes: 4
     };
 
-    int32 value = 1 [(com.blerpc.range) = {
+    int32 int_value = 1 [(com.blerpc.range) = {
         from_byte: 0
         to_byte: 4
     }];

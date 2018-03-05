@@ -3,9 +3,9 @@ package com.blerpc;
 import static com.blerpc.Assert.assertError;
 import static com.google.common.truth.Truth.assertThat;
 
+import com.blerpc.device.test.proto.TestBigValueEnum;
 import com.blerpc.device.test.proto.TestBoolMessage;
 import com.blerpc.device.test.proto.TestDoubleValueMessage;
-import com.blerpc.device.test.proto.TestEmbeddedMessage;
 import com.blerpc.device.test.proto.TestEmptyMessage;
 import com.blerpc.device.test.proto.TestEnum;
 import com.blerpc.device.test.proto.TestEnumMessage;
@@ -13,14 +13,17 @@ import com.blerpc.device.test.proto.TestFloatValueMessage;
 import com.blerpc.device.test.proto.TestFromByteBiggerToByteMessage;
 import com.blerpc.device.test.proto.TestIntegerMessage;
 import com.blerpc.device.test.proto.TestLongMessage;
+import com.blerpc.device.test.proto.TestMessageWithGaps;
 import com.blerpc.device.test.proto.TestNegativeRangeMessage;
 import com.blerpc.device.test.proto.TestNoBytesRangeMessage;
 import com.blerpc.device.test.proto.TestNoBytesSizeMessage;
+import com.blerpc.device.test.proto.TestNonPrimitiveFieldMessage;
 import com.blerpc.device.test.proto.TestRangeBiggerThanCountMessage;
 import com.blerpc.device.test.proto.TestRangesIntersectMessage;
-import com.blerpc.device.test.proto.TestSkippedBytesMessage;
-import com.blerpc.device.test.proto.TestSmallFourBytesEnumRangeMessage;
+import com.blerpc.device.test.proto.TestSmallEnumRangeMessage;
 import com.blerpc.device.test.proto.TestStringValueMessage;
+import com.blerpc.device.test.proto.TestThreeBytesEnumMessage;
+import com.blerpc.device.test.proto.TestThreeBytesIntegerMessage;
 import com.blerpc.device.test.proto.TestWrongBooleanRangeMessage;
 import com.blerpc.device.test.proto.TestWrongEnumRangeMessage;
 import com.blerpc.device.test.proto.TestWrongIntegerRangeMessage;
@@ -40,17 +43,17 @@ import org.mockito.junit.MockitoJUnitRunner;
 @RunWith(MockitoJUnitRunner.class)
 public class AnnotationMessageConverterTest {
 
-    private static final byte[] TEST_INT_BYTE_ARRAY = new byte[]{0, 1, -122, -96};
-    private static final byte[] TEST_LONG_BYTE_ARRAY = new byte[]{0, 0, 0, 2, 84, 11, -28, 0};
+    private static final byte[] TEST_INT_BYTE_ARRAY = new byte[]{15, 1, -122, -96};
+    private static final byte[] TEST_LONG_BYTE_ARRAY = new byte[]{2, 6, 8, 2, 84, 11, -28, 0};
     private static final byte[] TEST_BOOL_BYTE_ARRAY = new byte[]{1};
-    private static final byte[] TEST_ENUM_BYTE_ARRAY = new byte[]{0, 2};
-    private static final byte[] TEST_LITTLE_ENDIAN_ENUM_BYTE_ARRAY = new byte[]{2, 0};
+    private static final byte[] TEST_ENUM_BYTE_ARRAY = new byte[]{0, 0, 0, 2};
+    private static final byte[] TEST_LITTLE_ENDIAN_ENUM_BYTE_ARRAY = new byte[]{2, 0, 0, 0};
 
     AnnotationMessageConverter converter = new AnnotationMessageConverter();
     AnnotationMessageConverter converterLittleEndian = new AnnotationMessageConverter(ByteOrder.LITTLE_ENDIAN);
 
     @Test
-    public void serializeRequestTest_primitiveVariables() throws Exception {
+    public void serializeRequestTest_integer() throws Exception {
         assertThat(converter.serializeRequest(null, TestIntegerMessage.newBuilder()
                 .setIntValue(intFrom(TEST_INT_BYTE_ARRAY))
                 .build()))
@@ -59,6 +62,10 @@ public class AnnotationMessageConverterTest {
                 .setIntValue(littleEndianIntFrom(TEST_INT_BYTE_ARRAY))
                 .build()))
                 .isEqualTo(TEST_INT_BYTE_ARRAY);
+    }
+
+    @Test
+    public void serializeRequestTest_long() throws Exception {
         assertThat(converter.serializeRequest(null, TestLongMessage.newBuilder()
                 .setLongValue(longFrom(TEST_LONG_BYTE_ARRAY))
                 .build()))
@@ -67,14 +74,22 @@ public class AnnotationMessageConverterTest {
                 .setLongValue(littleEndianLongFrom(TEST_LONG_BYTE_ARRAY))
                 .build()))
                 .isEqualTo(TEST_LONG_BYTE_ARRAY);
+    }
+
+    @Test
+    public void serializeRequestTest_enum() throws Exception {
         assertThat(converter.serializeRequest(null, TestEnumMessage.newBuilder()
-                .setEnumValue(TestEnum.forNumber(shortFrom(TEST_ENUM_BYTE_ARRAY)))
+                .setEnumValue(TestEnum.forNumber(intFrom(TEST_ENUM_BYTE_ARRAY)))
                 .build()))
                 .isEqualTo(TEST_ENUM_BYTE_ARRAY);
         assertThat(converterLittleEndian.serializeRequest(null, TestEnumMessage.newBuilder()
-                .setEnumValue(TestEnum.forNumber(littleEndianShortFrom(TEST_LITTLE_ENDIAN_ENUM_BYTE_ARRAY)))
+                .setEnumValue(TestEnum.forNumber(littleEndianIntFrom(TEST_LITTLE_ENDIAN_ENUM_BYTE_ARRAY)))
                 .build()))
                 .isEqualTo(TEST_LITTLE_ENDIAN_ENUM_BYTE_ARRAY);
+    }
+
+    @Test
+    public void serializeRequestTest_boolean() throws Exception {
         assertThat(converter.serializeRequest(null, TestBoolMessage.newBuilder()
                 .setBoolValue(booleanFrom(TEST_BOOL_BYTE_ARRAY))
                 .build()))
@@ -86,43 +101,51 @@ public class AnnotationMessageConverterTest {
     }
 
     @Test
-    public void serializeRequestTest_embeddedMessage() throws Exception {
-        assertThat(converter.serializeRequest(null, TestEmbeddedMessage.newBuilder()
+    public void serializeRequestTest_nonPrimitiveFieldMessage() throws Exception {
+        assertThat(converter.serializeRequest(null, TestNonPrimitiveFieldMessage.newBuilder()
                 .setIntValue(intFrom(TEST_INT_BYTE_ARRAY))
-                .setEmbeddedMessage(TestIntegerMessage.newBuilder()
-                        .setIntValue(intFrom(TEST_INT_BYTE_ARRAY)))
+                .setEmbeddedMessage(TestLongMessage.newBuilder()
+                        .setLongValue(longFrom(TEST_LONG_BYTE_ARRAY)))
                 .build()))
-                .isEqualTo(concatArrays(TEST_INT_BYTE_ARRAY, TEST_INT_BYTE_ARRAY));
-        assertThat(converterLittleEndian.serializeRequest(null, TestEmbeddedMessage.newBuilder()
+                .isEqualTo(concatArrays(TEST_INT_BYTE_ARRAY, TEST_LONG_BYTE_ARRAY));
+        assertThat(converterLittleEndian.serializeRequest(null, TestNonPrimitiveFieldMessage.newBuilder()
                 .setIntValue(littleEndianIntFrom(TEST_INT_BYTE_ARRAY))
-                .setEmbeddedMessage(TestIntegerMessage.newBuilder()
-                        .setIntValue(littleEndianIntFrom(TEST_INT_BYTE_ARRAY)))
+                .setEmbeddedMessage(TestLongMessage.newBuilder()
+                        .setLongValue(littleEndianLongFrom(TEST_LONG_BYTE_ARRAY)))
                 .build()))
-                .isEqualTo(concatArrays(TEST_INT_BYTE_ARRAY, TEST_INT_BYTE_ARRAY));
+                .isEqualTo(concatArrays(TEST_INT_BYTE_ARRAY, TEST_LONG_BYTE_ARRAY));
     }
 
     @Test
-    public void serializeRequestTest_skippedBytes() throws Exception {
-        assertThat(converter.serializeRequest(null, TestSkippedBytesMessage.newBuilder()
-                .setIntValue1(intFrom(TEST_INT_BYTE_ARRAY))
-                .setIntValue2(intFrom(TEST_INT_BYTE_ARRAY))
+    public void serializeRequestTest_withGaps() throws Exception {
+        assertThat(converter.serializeRequest(null, TestMessageWithGaps.newBuilder()
+                .setIntValue(intFrom(TEST_INT_BYTE_ARRAY))
+                .setLongValue(longFrom(TEST_LONG_BYTE_ARRAY))
                 .build()))
-                .isEqualTo(concatArrays(TEST_INT_BYTE_ARRAY, new byte[]{0, 0}, TEST_INT_BYTE_ARRAY));
-
-        assertThat(converterLittleEndian.serializeRequest(null, TestSkippedBytesMessage.newBuilder()
-                .setIntValue1(littleEndianIntFrom(TEST_INT_BYTE_ARRAY))
-                .setIntValue2(littleEndianIntFrom(TEST_INT_BYTE_ARRAY))
-                .build()))
-                .isEqualTo(concatArrays(TEST_INT_BYTE_ARRAY,  new byte[]{0, 0}, TEST_INT_BYTE_ARRAY));
+                .isEqualTo(concatArrays(TEST_INT_BYTE_ARRAY, new byte[]{0, 0}, TEST_LONG_BYTE_ARRAY));
     }
 
     @Test
-    public void serializeRequestTest_emptyMessage() throws Exception {
+    public void serializeRequestTest_threeBytesInteger() throws Exception {
+        converter.serializeRequest(null, TestThreeBytesIntegerMessage.newBuilder()
+                .setIntValue(5000)
+                .build());
+    }
+
+    @Test
+    public void serializeRequestTest_threeBytesEnum() throws Exception {
+        converter.serializeRequest(null, TestThreeBytesEnumMessage.newBuilder()
+                .setEnumValue(TestEnum.VALUE_1)
+                .build());
+    }
+
+    @Test
+    public void serializeRequestTest_empty() throws Exception {
         assertThat(converter.serializeRequest(null, TestEmptyMessage.getDefaultInstance())).isEmpty();
     }
 
     @Test
-    public void serializeRequestTest_zeroBytesMessage() throws Exception {
+    public void serializeRequestTest_zeroBytes() throws Exception {
         assertThat(converter.serializeRequest(null, TestZeroBytesMessage.getDefaultInstance())).isEmpty();
     }
 
@@ -133,37 +156,37 @@ public class AnnotationMessageConverterTest {
     }
 
     @Test
-    public void serializeRequestTest_noByteRangeMessage() throws Exception {
+    public void serializeRequestTest_noByteRange() throws Exception {
         assertError(() -> converter.serializeRequest(null, TestNoBytesRangeMessage.getDefaultInstance()),
                 "Proto field int_value doesn't have com.blerpc.field_bytes annotation");
     }
 
     @Test
-    public void serializeRequestTest_zeroSizeRangeMessage() throws Exception {
+    public void serializeRequestTest_zeroSizeRange() throws Exception {
         assertError(() -> converter.serializeRequest(null, TestZeroSizeRangeMessage.getDefaultInstance()),
                 "Field int_value has from_bytes = 0 which must be less than to_bytes = 0");
     }
 
     @Test
-    public void serializeRequestTest_fromByteBiggerToByteMessage() throws Exception {
+    public void serializeRequestTest_negativeSizeRange() throws Exception {
         assertError(() -> converter.serializeRequest(null, TestFromByteBiggerToByteMessage.getDefaultInstance()),
                 "Field int_value has from_bytes = 1 which must be less than to_bytes = 0");
     }
 
     @Test
-    public void serializeRequestTest_negativeRangeMessage() throws Exception {
+    public void serializeRequestTest_negativeFrom() throws Exception {
         assertError(() -> converter.serializeRequest(null, TestNegativeRangeMessage.getDefaultInstance()),
                 "Field int_value has from_bytes = -1 which is less than zero");
     }
 
     @Test
-    public void serializeRequestTest_rangeBiggerThanCountMessage() throws Exception {
+    public void serializeRequestTest_rangeBiggerThanCount() throws Exception {
         assertError(() -> converter.serializeRequest(null, TestRangeBiggerThanCountMessage.getDefaultInstance()),
                 "Field int_value has to_bytes = 11 which is bigger than message bytes size = 10");
     }
 
     @Test
-    public void serializeRequestTest_rangeIntersectMessage() throws Exception {
+    public void serializeRequestTest_rangesIntersect() throws Exception {
         assertError(() -> converter.serializeRequest(null, TestRangesIntersectMessage.getDefaultInstance()),
                 "Field int_value_1 bytes range [0, 4] intersects with another field int_value_2 bytes range [2, 10]");
     }
@@ -210,19 +233,19 @@ public class AnnotationMessageConverterTest {
         assertError(() -> converter.serializeRequest(null, TestWrongBooleanRangeMessage.newBuilder()
                 .setBoolValue(true)
                 .build()),
-                "Boolean field bool_value has bytes size = 2, but has to be of size 1");
+                "Boolean field bool_value has unsupported size 2. Only sizes 1 are supported.");
     }
 
     @Test
     public void serializeRequestTest_notEnoughRangeForEnum() throws Exception {
-        assertError(() -> converter.serializeRequest(null, TestSmallFourBytesEnumRangeMessage.newBuilder()
-                .setEnumValueValue(2)
+        assertError(() -> converter.serializeRequest(null, TestSmallEnumRangeMessage.newBuilder()
+                .setEnumValue(TestBigValueEnum.ENUM_VALUE_1)
                 .build()),
-                "3 byte(s) not enough for TestFourBytesEnum enum that has 222222222 max number");
+                "3 byte(s) not enough for TestBigValueEnum enum that has 222222222 max number");
     }
 
     @Test
-    public void deserializeResponseTest_primitiveVariables() throws Exception {
+    public void deserializeResponseTest_integer() throws Exception {
         assertThat(converter.deserializeResponse(null, TestIntegerMessage.getDefaultInstance(),
                 TEST_INT_BYTE_ARRAY))
                 .isEqualTo(TestIntegerMessage.newBuilder()
@@ -233,6 +256,10 @@ public class AnnotationMessageConverterTest {
                 .isEqualTo(TestIntegerMessage.newBuilder()
                         .setIntValue(littleEndianIntFrom(TEST_INT_BYTE_ARRAY))
                         .build());
+    }
+
+    @Test
+    public void deserializeResponseTest_long() throws Exception {
         assertThat(converter.deserializeResponse(null, TestLongMessage.getDefaultInstance(),
                 TEST_LONG_BYTE_ARRAY))
                 .isEqualTo(TestLongMessage.newBuilder()
@@ -243,16 +270,24 @@ public class AnnotationMessageConverterTest {
                 .isEqualTo(TestLongMessage.newBuilder()
                         .setLongValue(littleEndianLongFrom(TEST_LONG_BYTE_ARRAY))
                         .build());
+    }
+
+    @Test
+    public void deserializeResponseTest_enum() throws Exception {
         assertThat(converter.deserializeResponse(null, TestEnumMessage.getDefaultInstance(),
                 TEST_ENUM_BYTE_ARRAY))
                 .isEqualTo(TestEnumMessage.newBuilder()
-                        .setEnumValue(TestEnum.forNumber(shortFrom(TEST_ENUM_BYTE_ARRAY)))
+                        .setEnumValue(TestEnum.forNumber(intFrom(TEST_ENUM_BYTE_ARRAY)))
                         .build());
         assertThat(converterLittleEndian.deserializeResponse(null, TestEnumMessage.getDefaultInstance(),
                 TEST_LITTLE_ENDIAN_ENUM_BYTE_ARRAY))
                 .isEqualTo(TestEnumMessage.newBuilder()
-                        .setEnumValue(TestEnum.forNumber(littleEndianShortFrom(TEST_LITTLE_ENDIAN_ENUM_BYTE_ARRAY)))
+                        .setEnumValue(TestEnum.forNumber(littleEndianIntFrom(TEST_LITTLE_ENDIAN_ENUM_BYTE_ARRAY)))
                         .build());
+    }
+
+    @Test
+    public void deserializeResponseTest_boolean() throws Exception {
         assertThat(converter.deserializeResponse(null, TestBoolMessage.getDefaultInstance(),
                 TEST_BOOL_BYTE_ARRAY))
                 .isEqualTo(TestBoolMessage.newBuilder()
@@ -267,35 +302,29 @@ public class AnnotationMessageConverterTest {
 
     @Test
     public void deserializeResponseTest_embeddedMessage() throws Exception {
-        assertThat(converter.deserializeResponse(null, TestEmbeddedMessage.getDefaultInstance(),
-                concatArrays(TEST_INT_BYTE_ARRAY, TEST_INT_BYTE_ARRAY)))
-                .isEqualTo(TestEmbeddedMessage.newBuilder()
+        assertThat(converter.deserializeResponse(null, TestNonPrimitiveFieldMessage.getDefaultInstance(),
+                concatArrays(TEST_INT_BYTE_ARRAY, TEST_LONG_BYTE_ARRAY)))
+                .isEqualTo(TestNonPrimitiveFieldMessage.newBuilder()
                         .setIntValue(intFrom(TEST_INT_BYTE_ARRAY))
-                        .setEmbeddedMessage(TestIntegerMessage.newBuilder()
-                                .setIntValue(intFrom(TEST_INT_BYTE_ARRAY)))
+                        .setEmbeddedMessage(TestLongMessage.newBuilder()
+                                .setLongValue(longFrom(TEST_LONG_BYTE_ARRAY)))
                         .build());
-        assertThat(converterLittleEndian.deserializeResponse(null, TestEmbeddedMessage.getDefaultInstance(),
-                concatArrays(TEST_INT_BYTE_ARRAY, TEST_INT_BYTE_ARRAY)))
-                .isEqualTo(TestEmbeddedMessage.newBuilder()
+        assertThat(converterLittleEndian.deserializeResponse(null, TestNonPrimitiveFieldMessage.getDefaultInstance(),
+                concatArrays(TEST_INT_BYTE_ARRAY, TEST_LONG_BYTE_ARRAY)))
+                .isEqualTo(TestNonPrimitiveFieldMessage.newBuilder()
                         .setIntValue(littleEndianIntFrom(TEST_INT_BYTE_ARRAY))
-                        .setEmbeddedMessage(TestIntegerMessage.newBuilder()
-                                .setIntValue(littleEndianIntFrom(TEST_INT_BYTE_ARRAY)))
+                        .setEmbeddedMessage(TestLongMessage.newBuilder()
+                                .setLongValue(littleEndianLongFrom(TEST_LONG_BYTE_ARRAY)))
                         .build());
     }
 
     @Test
-    public void deserializeResponseTest_skippedBytes() throws Exception {
-        assertThat(converter.deserializeResponse(null, TestSkippedBytesMessage.getDefaultInstance(),
-                concatArrays(TEST_INT_BYTE_ARRAY, new byte[]{0, 0}, TEST_INT_BYTE_ARRAY)))
-                .isEqualTo(TestSkippedBytesMessage.newBuilder()
-                        .setIntValue1(intFrom(TEST_INT_BYTE_ARRAY))
-                        .setIntValue2(intFrom(TEST_INT_BYTE_ARRAY))
-                        .build());
-        assertThat(converterLittleEndian.deserializeResponse(null, TestSkippedBytesMessage.getDefaultInstance(),
-                concatArrays(TEST_INT_BYTE_ARRAY, new byte[]{0, 0}, TEST_INT_BYTE_ARRAY)))
-                .isEqualTo(TestSkippedBytesMessage.newBuilder()
-                        .setIntValue1(littleEndianIntFrom(TEST_INT_BYTE_ARRAY))
-                        .setIntValue2(littleEndianIntFrom(TEST_INT_BYTE_ARRAY))
+    public void deserializeResponseTest_withGaps() throws Exception {
+        assertThat(converter.deserializeResponse(null, TestMessageWithGaps.getDefaultInstance(),
+                concatArrays(TEST_INT_BYTE_ARRAY, new byte[]{0, 0}, TEST_LONG_BYTE_ARRAY)))
+                .isEqualTo(TestMessageWithGaps.newBuilder()
+                        .setIntValue(intFrom(TEST_INT_BYTE_ARRAY))
+                        .setLongValue(longFrom(TEST_LONG_BYTE_ARRAY))
                         .build());
     }
 
@@ -327,13 +356,13 @@ public class AnnotationMessageConverterTest {
 
     @Test
     public void deserializeResponseTest_zeroSizeRangeMessage() throws Exception {
-        assertError(() -> converter.deserializeResponse(null, TestZeroSizeRangeMessage.getDefaultInstance(), new byte[10]),
+        assertError(() -> converter.deserializeResponse(null, TestZeroSizeRangeMessage.getDefaultInstance(), new byte[1]),
                 "Field int_value has from_bytes = 0 which must be less than to_bytes = 0");
     }
 
     @Test
     public void deserializeResponseTest_negativeRangeMessage() throws Exception {
-        assertError(() -> converter.deserializeResponse(null, TestNegativeRangeMessage.getDefaultInstance(), new byte[10]),
+        assertError(() -> converter.deserializeResponse(null, TestNegativeRangeMessage.getDefaultInstance(), new byte[1]),
                 "Field int_value has from_bytes = -1 which is less than zero");
     }
 
@@ -374,15 +403,7 @@ public class AnnotationMessageConverterTest {
     @Test
     public void deserializeResponseTest_wrongBooleanRange() throws Exception {
         assertError(() -> converter.deserializeResponse(null, TestWrongBooleanRangeMessage.getDefaultInstance(), new byte[2]),
-                "Boolean field bool_value has bytes size = 2, but has to be of size 1");
-    }
-
-    private static short shortFrom(byte[] bytes) {
-        return ByteBuffer.wrap(bytes).getShort();
-    }
-
-    private static short littleEndianShortFrom(byte[] bytes) {
-        return ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).getShort();
+                "Boolean field bool_value has unsupported size 2. Only sizes 1 are supported.");
     }
 
     private static int intFrom(byte[] bytes) {
