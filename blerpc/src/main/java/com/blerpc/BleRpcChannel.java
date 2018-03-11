@@ -2,7 +2,6 @@ package com.blerpc;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
@@ -283,12 +282,13 @@ public class BleRpcChannel implements RpcChannel {
         subscriptions.remove(subscription.characteristicUuid);
     }
 
-    @SuppressLint("NewApi")
     private void failAllAndReset(String format, Object ... args) {
-        FluentIterable.from(calls)
-            .filter(rpcCall -> !rpcCall.isUnsubscribeCall)
-            .filter(rpcCall -> !skipFailedCall(rpcCall))
-            .forEach(rpcCall -> notifyCallFailed(rpcCall, format, args));
+        FluentIterable<RpcCall> callsToNotify = FluentIterable.from(calls)
+                .filter(rpcCall -> !rpcCall.isUnsubscribeCall)
+                .filter(rpcCall -> !skipFailedCall(rpcCall));
+        for (RpcCall call : callsToNotify) {
+            notifyCallFailed(call, format, args);
+        }
         for (RpcCall call : Sets.difference(allSubscriptionCalls(), ImmutableSet.copyOf(calls))) {
             notifyCallFailed(call, format, args);
         }
