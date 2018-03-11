@@ -69,6 +69,17 @@ message TestBoolMessage {
     }];
 }
 
+message TestByteStringMessage {
+    option (com.blerpc.size) = {
+        size_bytes: 8
+    };
+
+    bytes byte_string_value = 1 [(com.blerpc.range) = {
+        from_byte: 0
+        to_byte: 8
+    }];
+}
+
 message TestEnumMessage {
     option (com.blerpc.size) = {
         size_bytes: 4

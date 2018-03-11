@@ -5,6 +5,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import com.blerpc.device.test.proto.TestBigValueEnum;
 import com.blerpc.device.test.proto.TestBoolMessage;
+import com.blerpc.device.test.proto.TestByteStringMessage;
 import com.blerpc.device.test.proto.TestDoubleValueMessage;
 import com.blerpc.device.test.proto.TestEmptyMessage;
 import com.blerpc.device.test.proto.TestEnum;
@@ -32,6 +33,7 @@ import com.blerpc.device.test.proto.TestWrongLongRangeMessage;
 import com.blerpc.device.test.proto.TestZeroBytesMessage;
 import com.blerpc.device.test.proto.TestZeroSizeRangeMessage;
 import com.google.common.primitives.Bytes;
+import com.google.protobuf.ByteString;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import org.junit.Test;
@@ -47,6 +49,7 @@ public class AnnotationMessageConverterTest {
     private static final byte[] TEST_INT_BYTE_ARRAY = new byte[]{15, 1, -122, -96};
     private static final byte[] TEST_LONG_BYTE_ARRAY = new byte[]{2, 6, 8, 2, 84, 11, -28, 0};
     private static final byte[] TEST_BOOL_BYTE_ARRAY = new byte[]{1};
+    private static final byte[] TEST_BYTE_STRING_BYTE_ARRAY = new byte[]{1, 2, 3, 4, 5, 6, 7, 8};
     private static final byte[] TEST_ENUM_BYTE_ARRAY = new byte[]{0, 0, 0, 2};
     private static final byte[] TEST_LITTLE_ENDIAN_ENUM_BYTE_ARRAY = new byte[]{2, 0, 0, 0};
 
@@ -99,6 +102,18 @@ public class AnnotationMessageConverterTest {
                 .setBoolValue(booleanFrom(TEST_BOOL_BYTE_ARRAY))
                 .build()))
                 .isEqualTo(TEST_BOOL_BYTE_ARRAY);
+    }
+
+    @Test
+    public void serializeRequest_byteString() throws Exception {
+        assertThat(converter.serializeRequest(null, TestByteStringMessage.newBuilder()
+                .setByteStringValue(ByteString.copyFrom(TEST_BYTE_STRING_BYTE_ARRAY))
+                .build()))
+                .isEqualTo(TEST_BYTE_STRING_BYTE_ARRAY);
+        assertThat(converterLittleEndian.serializeRequest(null, TestByteStringMessage.newBuilder()
+                .setByteStringValue(ByteString.copyFrom(TEST_BYTE_STRING_BYTE_ARRAY))
+                .build()))
+                .isEqualTo(TEST_BYTE_STRING_BYTE_ARRAY);
     }
 
     @Test
@@ -155,6 +170,14 @@ public class AnnotationMessageConverterTest {
     @Test
     public void serializeRequest_zeroBytes() throws Exception {
         assertThat(converter.serializeRequest(null, TestZeroBytesMessage.getDefaultInstance())).isEmpty();
+    }
+
+    @Test
+    public void serializeRequest_wrongByteStringSize() throws Exception {
+        assertError(() -> converter.serializeRequest(null, TestByteStringMessage.newBuilder()
+                .setByteStringValue(ByteString.copyFrom(new byte[]{1, 2, 3, 4}))
+                .build()
+        ), "Declared size 8 of ByteString byte_string_value is not equal to ByteString real size 4");
     }
 
     @Test
@@ -305,6 +328,20 @@ public class AnnotationMessageConverterTest {
                 TEST_BOOL_BYTE_ARRAY))
                 .isEqualTo(TestBoolMessage.newBuilder()
                         .setBoolValue(booleanFrom(TEST_BOOL_BYTE_ARRAY))
+                        .build());
+    }
+
+    @Test
+    public void deserializeResponse_byteString() throws Exception {
+        assertThat(converter.deserializeResponse(null, TestByteStringMessage.getDefaultInstance(),
+                TEST_BYTE_STRING_BYTE_ARRAY))
+                .isEqualTo(TestByteStringMessage.newBuilder()
+                        .setByteStringValue(ByteString.copyFrom(TEST_BYTE_STRING_BYTE_ARRAY))
+                        .build());
+        assertThat(converterLittleEndian.deserializeResponse(null, TestByteStringMessage.getDefaultInstance(),
+                TEST_BYTE_STRING_BYTE_ARRAY))
+                .isEqualTo(TestByteStringMessage.newBuilder()
+                        .setByteStringValue(ByteString.copyFrom(TEST_BYTE_STRING_BYTE_ARRAY))
                         .build());
     }
 
