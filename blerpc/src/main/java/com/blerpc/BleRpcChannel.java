@@ -283,12 +283,13 @@ public class BleRpcChannel implements RpcChannel {
         subscriptions.remove(subscription.characteristicUuid);
     }
 
-    @SuppressLint("NewApi")
     private void failAllAndReset(String format, Object ... args) {
-        FluentIterable.from(calls)
-            .filter(rpcCall -> !rpcCall.isUnsubscribeCall)
-            .filter(rpcCall -> !skipFailedCall(rpcCall))
-            .forEach(rpcCall -> notifyCallFailed(rpcCall, format, args));
+        for (RpcCall call : calls) {
+            if (call.isUnsubscribeCall || skipFailedCall(call)) {
+                continue;
+            }
+            notifyCallFailed(call, format, args);
+        }
         for (RpcCall call : Sets.difference(allSubscriptionCalls(), ImmutableSet.copyOf(calls))) {
             notifyCallFailed(call, format, args);
         }
