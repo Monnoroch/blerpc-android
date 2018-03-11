@@ -32,6 +32,7 @@ import com.blerpc.device.test.proto.TestBleWriteResponse;
 import com.blerpc.device.test.proto.TestIntegerEmbeddedMessage;
 import com.blerpc.device.test.proto.TestValuesEnum;
 import com.blerpc.proto.Blerpc;
+import com.google.protobuf.ByteString;
 import com.google.protobuf.RpcCallback;
 import java.util.UUID;
 import java.util.logging.Logger;
@@ -66,20 +67,22 @@ public class TestServiceTest {
     private static final TestBleReadResponse TEST_READ_RESPONSE = TestBleReadResponse.newBuilder()
             .setIntValue(45)
             .build();
-    private static byte[] TEST_WRITE_REQUEST_BYTES = new byte[]{0, 0, 0, 50, 0, 0, 0, 0, 0, 0, 0, 80, 1, 0, 2, 0, 0, 0, 0, 100};
+    private static byte[] TEST_WRITE_REQUEST_BYTES = new byte[]{0, 0, 0, 50, 0, 0, 0, 0, 0, 0, 0, 80, 1, 0, 1, 2, 3, 4, 2, 0, 0, 0, 0, 100};
     private static final TestBleWriteRequest TEST_WRITE_REQUEST = TestBleWriteRequest.newBuilder()
             .setIntValue(50)
             .setLongValue(80)
             .setBoolValue(true)
+            .setByteStringValue(ByteString.copyFrom(new byte[]{1, 2, 3, 4}))
             .setEnumValue(TestValuesEnum.VALUE_2)
             .setMessageValue(TestIntegerEmbeddedMessage.newBuilder()
                     .setIntValue(100))
             .build();
-    private static byte[] TEST_WRITE_RESPONSE_BYTES = new byte[]{0, 0, 0, 60, 0, 0, 0, 0, 0, 0, 0, 95, 1, 0, 1, 0, 0, 0, 0, 115};
+    private static byte[] TEST_WRITE_RESPONSE_BYTES = new byte[]{0, 0, 0, 60, 0, 0, 0, 0, 0, 0, 0, 95, 1, 0, 5, 6, 7, 8, 1, 0, 0, 0, 0, 115};
     private static final TestBleWriteResponse TEST_WRITE_RESPONSE = TestBleWriteResponse.newBuilder()
             .setIntValue(60)
             .setLongValue(95)
             .setBoolValue(true)
+            .setByteStringValue(ByteString.copyFrom(new byte[]{5, 6, 7, 8}))
             .setEnumValue(TestValuesEnum.VALUE_1)
             .setMessageValue(TestIntegerEmbeddedMessage.newBuilder()
                     .setIntValue(115))

@@ -11,7 +11,7 @@ import "blerpc.proto";
 
 message TestBleWriteRequest {
     option (com.blerpc.size) = {
-        size_bytes: 20
+        size_bytes: 24
     };
 
     int32 int_value = 1 [(com.blerpc.range) = {
@@ -26,19 +26,23 @@ message TestBleWriteRequest {
         from_byte: 12
         to_byte: 13
     }];
-    TestValuesEnum enum_value = 4 [(com.blerpc.range) = {
+    bytes byte_string_value = 4 [(com.blerpc.range) = {
         from_byte: 14
-        to_byte: 15
+        to_byte: 18
     }];
-    TestIntegerEmbeddedMessage message_value = 5 [(com.blerpc.range) = {
-        from_byte: 16
-        to_byte: 20
+    TestValuesEnum enum_value = 5 [(com.blerpc.range) = {
+        from_byte: 18
+        to_byte: 19
+    }];
+    TestIntegerEmbeddedMessage message_value = 6 [(com.blerpc.range) = {
+        from_byte: 20
+        to_byte: 24
     }];
 }
 
 message TestBleWriteResponse {
     option (com.blerpc.size) = {
-        size_bytes: 20
+        size_bytes: 24
     };
 
     int32 int_value = 1 [(com.blerpc.range) = {
@@ -53,13 +57,17 @@ message TestBleWriteResponse {
         from_byte: 12
         to_byte: 13
     }];
-    TestValuesEnum enum_value = 4 [(com.blerpc.range) = {
+    bytes byte_string_value = 4 [(com.blerpc.range) = {
         from_byte: 14
-        to_byte: 15
+        to_byte: 18
     }];
-    TestIntegerEmbeddedMessage message_value = 5 [(com.blerpc.range) = {
-        from_byte: 16
-        to_byte: 20
+    TestValuesEnum enum_value = 5 [(com.blerpc.range) = {
+        from_byte: 18
+        to_byte: 19
+    }];
+    TestIntegerEmbeddedMessage message_value = 6 [(com.blerpc.range) = {
+        from_byte: 20
+        to_byte: 24
     }];
 }
 

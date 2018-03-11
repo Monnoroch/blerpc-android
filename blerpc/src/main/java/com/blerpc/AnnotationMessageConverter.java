@@ -5,6 +5,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import com.blerpc.proto.Blerpc;
 import com.blerpc.proto.ByteRange;
 import com.google.common.math.LongMath;
+import com.google.protobuf.ByteString;
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.EnumDescriptor;
 import com.google.protobuf.Descriptors.EnumValueDescriptor;
@@ -78,7 +79,10 @@ public class AnnotationMessageConverter implements MessageConverter {
                 case BOOLEAN:
                     serializeBoolean(requestBytes, (Boolean) fieldValue, relativeFieldBytesRange, fieldName);
                     break;
-                // TODO(#5): Add support of ByteString, String, Float and Double.
+                case BYTE_STRING:
+                    serializeByteString(requestBytes, (ByteString) fieldValue, relativeFieldBytesRange, fieldName);
+                    break;
+                // TODO(#5): Add support of String, Float and Double.
                 default:
                     throw new IllegalArgumentException(String.format("Unsupported field type: %s, field name: %s",
                             fieldType.name(),
@@ -121,6 +125,16 @@ public class AnnotationMessageConverter implements MessageConverter {
                 fieldName,
                 bytesSize);
         messageBytes[bytesRange.getFromByte()] = fieldValue ? (byte) 1 : (byte) 0;
+    }
+
+    private void serializeByteString(byte[] messageBytes, ByteString byteString, ByteRange bytesRange, String fieldName) {
+        int bytesSize = bytesRange.getToByte() - bytesRange.getFromByte();
+        checkArgument(bytesSize == byteString.size(),
+                "Declared size %s of ByteString %s is not equal to ByteString real size %s",
+                bytesSize,
+                fieldName,
+                byteString.size());
+        byteString.copyTo(messageBytes, bytesRange.getFromByte());
     }
 
     private void serializeEnum(byte[] messageBytes, EnumValueDescriptor enumDescriptor, ByteRange bytesRange, String fieldName) {
@@ -172,7 +186,10 @@ public class AnnotationMessageConverter implements MessageConverter {
                 case BOOLEAN:
                     messageBuilder.setField(fieldDescriptor, deserializeBoolean(value, relativeFieldBytesRange, fieldName));
                     break;
-                // TODO(#5): Add support of ByteString, String, Float and Double.
+                case BYTE_STRING:
+                    messageBuilder.setField(fieldDescriptor, deserializeByteString(value, relativeFieldBytesRange));
+                    break;
+                // TODO(#5): Add support of String, Float and Double.
                 default:
                     throw new IllegalArgumentException(String.format("Unsupported field type: %s, field name: %s",
                             fieldType.name(),
@@ -228,6 +245,11 @@ public class AnnotationMessageConverter implements MessageConverter {
                 fieldName,
                 bytesSize);
         return bytes[bytesRange.getFromByte()] != 0;
+    }
+
+    private ByteString deserializeByteString(byte[] bytes, ByteRange bytesRange) {
+        int byteSize = bytesRange.getToByte() - bytesRange.getFromByte();
+        return ByteString.copyFrom(bytes, bytesRange.getFromByte(), byteSize);
     }
 
     private static int getMessageBytesSize(Message message) {
