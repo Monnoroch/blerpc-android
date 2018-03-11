@@ -26,15 +26,15 @@ message TestBleWriteRequest {
         from_byte: 12
         to_byte: 13
     }];
-    bytes byte_string_value = 4 [(com.blerpc.range) = {
+    TestValuesEnum enum_value = 4 [(com.blerpc.range) = {
         from_byte: 14
-        to_byte: 18
+        to_byte: 15
     }];
-    TestValuesEnum enum_value = 5 [(com.blerpc.range) = {
-        from_byte: 18
-        to_byte: 19
+    TestIntegerEmbeddedMessage message_value = 5 [(com.blerpc.range) = {
+        from_byte: 16
+        to_byte: 20
     }];
-    TestIntegerEmbeddedMessage message_value = 6 [(com.blerpc.range) = {
+    bytes byte_string_value = 6 [(com.blerpc.range) = {
         from_byte: 20
         to_byte: 24
     }];
@@ -57,15 +57,15 @@ message TestBleWriteResponse {
         from_byte: 12
         to_byte: 13
     }];
-    bytes byte_string_value = 4 [(com.blerpc.range) = {
+    TestValuesEnum enum_value = 4 [(com.blerpc.range) = {
         from_byte: 14
-        to_byte: 18
+        to_byte: 15
     }];
-    TestValuesEnum enum_value = 5 [(com.blerpc.range) = {
-        from_byte: 18
-        to_byte: 19
+    TestIntegerEmbeddedMessage message_value = 5 [(com.blerpc.range) = {
+        from_byte: 16
+        to_byte: 20
     }];
-    TestIntegerEmbeddedMessage message_value = 6 [(com.blerpc.range) = {
+    bytes byte_string_value = 6 [(com.blerpc.range) = {
         from_byte: 20
         to_byte: 24
     }];

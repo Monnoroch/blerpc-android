@@ -128,6 +128,7 @@ public class AnnotationMessageConverter implements MessageConverter {
     }
 
     private void serializeByteString(byte[] messageBytes, ByteString byteString, ByteRange bytesRange, String fieldName) {
+        // TODO(#5): support for variable-length byte strings.
         int bytesSize = bytesRange.getToByte() - bytesRange.getFromByte();
         checkArgument(bytesSize == byteString.size(),
                 "Declared size %s of ByteString %s is not equal to ByteString real size %s",
@@ -248,6 +249,7 @@ public class AnnotationMessageConverter implements MessageConverter {
     }
 
     private ByteString deserializeByteString(byte[] bytes, ByteRange bytesRange) {
+        // TODO(#5): support for variable-length byte strings.
         int byteSize = bytesRange.getToByte() - bytesRange.getFromByte();
         return ByteString.copyFrom(bytes, bytesRange.getFromByte(), byteSize);
     }
