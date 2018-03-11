@@ -65,7 +65,7 @@ publish {
     groupId = 'com.github.monnoroch'
     repoName = 'blerpc-android'
     artifactId = 'blerpc-android'
-    publishVersion = '0.2.1'
+    publishVersion = '0.2.2'
     desc = 'A library for simplifying working with blutooth low energy devices.'
     licences = ['MIT']
     website = 'https://github.com/monnoroch/blerpc-android'

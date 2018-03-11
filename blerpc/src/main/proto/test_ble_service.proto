@@ -11,7 +11,7 @@ import "blerpc.proto";
 
 message TestBleWriteRequest {
     option (com.blerpc.size) = {
-        size_bytes: 20
+        size_bytes: 24
     };
 
     int32 int_value = 1 [(com.blerpc.range) = {
@@ -33,12 +33,16 @@ message TestBleWriteRequest {
     TestIntegerEmbeddedMessage message_value = 5 [(com.blerpc.range) = {
         from_byte: 16
         to_byte: 20
+    }];
+    bytes byte_string_value = 6 [(com.blerpc.range) = {
+        from_byte: 20
+        to_byte: 24
     }];
 }
 
 message TestBleWriteResponse {
     option (com.blerpc.size) = {
-        size_bytes: 20
+        size_bytes: 24
     };
 
     int32 int_value = 1 [(com.blerpc.range) = {
@@ -60,6 +64,10 @@ message TestBleWriteResponse {
     TestIntegerEmbeddedMessage message_value = 5 [(com.blerpc.range) = {
         from_byte: 16
         to_byte: 20
+    }];
+    bytes byte_string_value = 6 [(com.blerpc.range) = {
+        from_byte: 20
+        to_byte: 24
     }];
 }
 
