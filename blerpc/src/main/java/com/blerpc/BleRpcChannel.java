@@ -17,6 +17,7 @@ import com.blerpc.proto.MethodType;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Optional;
 import com.google.common.collect.FluentIterable;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.protobuf.Descriptors.MethodDescriptor;
@@ -284,10 +285,11 @@ public class BleRpcChannel implements RpcChannel {
     }
 
     private void failAllAndReset(String format, Object ... args) {
-        for (RpcCall call : calls) {
-            if (call.isUnsubscribeCall || skipFailedCall(call)) {
-                continue;
-            }
+        ImmutableList<RpcCall> callsToNotify = FluentIterable.from(calls)
+                .filter(rpcCall -> !rpcCall.isUnsubscribeCall)
+                .filter(rpcCall -> !skipFailedCall(rpcCall))
+                .toList();
+        for (RpcCall call : callsToNotify) {
             notifyCallFailed(call, format, args);
         }
         for (RpcCall call : Sets.difference(allSubscriptionCalls(), ImmutableSet.copyOf(calls))) {
