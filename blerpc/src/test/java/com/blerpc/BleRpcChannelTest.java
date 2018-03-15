@@ -746,7 +746,7 @@ public class BleRpcChannelTest {
     }
 
     @Test
-    public void testDontCallCallbackIfCancelled() throws Exception {
+    public void testCallCallbackIfCancelled() throws Exception {
         reset(listenerHandler);
         when(listenerHandler.post(any())).thenReturn(true);
         callSubscribeMethod(methodSubscribeChar, controller, callback);
@@ -757,7 +757,7 @@ public class BleRpcChannelTest {
         verify(listenerHandler).post(callCallback.capture());
         controller.startCancel();
         callCallback.getValue().run();
-        verifyNoCalls(callback);
+        verify(callback).run(any());
     }
 
     @Test
@@ -792,7 +792,7 @@ public class BleRpcChannelTest {
     }
 
     @Test
-    public void testDontCallCallbackWhenFailedIfCancelled() throws Exception {
+    public void testCallCallbackWhenFailedIfCancelled() throws Exception {
         reset(listenerHandler);
         when(listenerHandler.post(any())).thenReturn(true);
         when(bluetoothGatt.getService(TEST_SERVICE)).thenReturn(null);
@@ -803,7 +803,7 @@ public class BleRpcChannelTest {
         controller.startCancel();
         callCallback.getValue().run();
         assertCallFailed(controller);
-        verifyNoCalls(callback);
+        verify(callback).run(any());
     }
 
     void setUpSubscriptionDesetializeFailure(BluetoothGattCharacteristic characteristic) throws Exception {
