@@ -643,11 +643,7 @@ public class BleRpcChannel implements RpcChannel {
 
     private void notifyCallFailed(RpcCall rpcCall, String format, Object ... args) {
         rpcCall.controller.setFailed(String.format(format, args));
-        listenerHandler.post(() -> {
-            if (!callCallbackIfNotCancelled(rpcCall, rpcCall.responsePrototype.getDefaultInstanceForType())) {
-                logger.info("Subscribe call failed after being cancelled: " + String.format(format, args));
-            }
-        });
+        callCallback(rpcCall, rpcCall.responsePrototype.getDefaultInstanceForType());
     }
 
     private void notifyDefaultResultForCall(RpcCall rpcCall) {
@@ -655,28 +651,16 @@ public class BleRpcChannel implements RpcChannel {
     }
 
     private void notifyResultForCall(RpcCall rpcCall, Message message) {
-        listenerHandler.post(() -> {
-            callCallbackIfNotCancelled(rpcCall, message);
-        });
+        callCallback(rpcCall, message);
     }
 
-    private static boolean callCallbackIfNotCancelled(RpcCall rpcCall, Message message) {
-        if (rpcCall.getMethodType() != MethodType.SUBSCRIBE) {
-            rpcCall.done.run(message);
-            return true;
-        }
-
-        // Normally this does not happen, but the call might get cancelled in between the
-        // notifyResultForCall call and the moment when this closure actually gets executen in the
-        // handler thread. In that case we don't want to call the callback, because cancelling should
-        // "almost guarantee" that the callback will not be called again.
-        // The call still might get canceled after isCanceled returned false and before the callback is called,
-        // but the probability of that is extremely low and nothing can be done about it.
-        boolean isNotCanceled = !rpcCall.controller.isCanceled();
-        if (isNotCanceled) {
-            rpcCall.done.run(message);
-        }
-        return isNotCanceled;
+    private void callCallback(RpcCall rpcCall, Message message) {
+        // There is no check on canceling call, because call might get canceled after
+        // isCanceled returned false and before the callback is called, the probability of that
+        // is extremely low, but nothing can be done about it. To prevent this rear case, callback
+        // will be called independently on canceling and value after cancel should be ignored by
+        // class that implement callback.
+        listenerHandler.post(() -> rpcCall.done.run(message));
     }
 
     private static BluetoothGattService getService(BluetoothGatt gatt, UUID serviceUuid) {
