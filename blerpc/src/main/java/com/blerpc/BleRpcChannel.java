@@ -180,6 +180,11 @@ public class BleRpcChannel implements RpcChannel {
     } else if (Arrays.equals(value, DISABLE_NOTIFICATION_VALUE)) {
       SubscriptionCallsGroup subscription = getUnsubscribingSubscription(characteristicUuid);
       subscription.status = SubscriptionStatus.UNSUBSCRIBED;
+      subscription.clearCanceled();
+      if (!subscription.hasAnySubscriber()) {
+        subscriptions.remove(subscription.characteristicUuid);
+        return;
+      }
     } else {
       checkArgument(false, "Unexpected value \"%s\" of the subscription state.", Arrays.toString(value));
     }
