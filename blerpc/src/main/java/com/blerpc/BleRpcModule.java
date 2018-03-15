@@ -15,29 +15,32 @@ import javax.inject.Singleton;
 @Module
 public class BleRpcModule {
 
-    /**
-     * Provide service stub factory.
-     */
-    @Provides
-    @Singleton
-    ServiceStubFactory provideServiceStubFactory(
-            @BleRpc Context context,
-            @BleRpc MessageConverter messageConverter,
-            @WorkHandler Handler workHandler,
-            @ListenerHandler Handler listenerHandler,
-            @BleRpc Logger logger) {
-        return ServiceStubFactory.getInstance(context, messageConverter, workHandler, listenerHandler, logger);
-    }
+  /**
+   * Provide service stub factory.
+   */
+  @Provides
+  @Singleton
+  ServiceStubFactory provideServiceStubFactory(
+      @BleRpc Context context,
+      @BleRpc MessageConverter messageConverter,
+      @WorkHandler Handler workHandler,
+      @ListenerHandler Handler listenerHandler,
+      @BleRpc Logger logger) {
+    return ServiceStubFactory.getInstance(context, messageConverter, workHandler, listenerHandler, logger);
+  }
 
-    @Qualifier
-    @Retention(RetentionPolicy.RUNTIME)
-    public @interface ListenerHandler {}
+  @Qualifier
+  @Retention(RetentionPolicy.RUNTIME)
+  public @interface ListenerHandler {
+  }
 
-    @Qualifier
-    @Retention(RetentionPolicy.RUNTIME)
-    public @interface WorkHandler {}
+  @Qualifier
+  @Retention(RetentionPolicy.RUNTIME)
+  public @interface WorkHandler {
+  }
 
-    @Qualifier
-    @Retention(RetentionPolicy.RUNTIME)
-    public @interface BleRpc {}
+  @Qualifier
+  @Retention(RetentionPolicy.RUNTIME)
+  public @interface BleRpc {
+  }
 }
