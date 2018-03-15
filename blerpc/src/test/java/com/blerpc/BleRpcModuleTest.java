@@ -22,67 +22,67 @@ import org.mockito.junit.MockitoJUnitRunner;
 @RunWith(MockitoJUnitRunner.class)
 public class BleRpcModuleTest {
 
-    private TestAppComponent testAppComponent;
+  private TestAppComponent testAppComponent;
 
-    /**
-     * Set up.
-     */
-    @Before
-    public void setUp() {
-        testAppComponent = DaggerBleRpcModuleTest_TestAppComponent.create();
+  /**
+   * Set up.
+   */
+  @Before
+  public void setUp() {
+    testAppComponent = DaggerBleRpcModuleTest_TestAppComponent.create();
+  }
+
+  /**
+   * Tear down.
+   */
+  @After
+  public void tearDown() {
+    ServiceStubFactory.clearInstance();
+  }
+
+  @Singleton
+  @Component(modules = {TestModule.class, BleRpcModule.class})
+  interface TestAppComponent {
+    ServiceStubFactory getServiceStubFactory();
+  }
+
+  @Module
+  static class TestModule {
+    @Provides
+    @BleRpcModule.BleRpc
+    public Context provideContext() {
+      return mock(Context.class);
     }
 
-    /**
-     * Tear down.
-     */
-    @After
-    public void tearDown() {
-        ServiceStubFactory.clearInstance();
+    @Provides
+    @BleRpcModule.BleRpc
+    public MessageConverter provideMessageConverter() {
+      return mock(MessageConverter.class);
     }
 
-    @Singleton
-    @Component(modules = {TestModule.class, BleRpcModule.class})
-    interface TestAppComponent {
-        ServiceStubFactory getServiceStubFactory();
+    @Provides
+    @BleRpcModule.WorkHandler
+    public Handler provideWorkHandler() {
+      return mock(Handler.class);
     }
 
-    @Module
-    static class TestModule {
-        @Provides
-        @BleRpcModule.BleRpc
-        public Context provideContext() {
-            return mock(Context.class);
-        }
-
-        @Provides
-        @BleRpcModule.BleRpc
-        public MessageConverter provideMessageConverter() {
-            return mock(MessageConverter.class);
-        }
-
-        @Provides
-        @BleRpcModule.WorkHandler
-        public Handler provideWorkHandler() {
-            return mock(Handler.class);
-        }
-
-        @Provides
-        @BleRpcModule.ListenerHandler
-        public Handler provideListenerHandler() {
-            return mock(Handler.class);
-        }
-
-        @Provides
-        @BleRpcModule.BleRpc
-        public Logger provideLogger() {
-            return Logger.getGlobal();
-        }
+    @Provides
+    @BleRpcModule.ListenerHandler
+    public Handler provideListenerHandler() {
+      return mock(Handler.class);
     }
 
-    @Test
-    public void provideServiceStubFactorySingleton() {
-        ServiceStubFactory serviceStubFactory = testAppComponent.getServiceStubFactory();
-        assertThat(serviceStubFactory).isNotNull();
-        assertThat(testAppComponent.getServiceStubFactory()).isEqualTo(serviceStubFactory);
+    @Provides
+    @BleRpcModule.BleRpc
+    public Logger provideLogger() {
+      return Logger.getGlobal();
     }
+  }
+
+  @Test
+  public void provideServiceStubFactorySingleton() {
+    ServiceStubFactory serviceStubFactory = testAppComponent.getServiceStubFactory();
+    assertThat(serviceStubFactory).isNotNull();
+    assertThat(testAppComponent.getServiceStubFactory()).isEqualTo(serviceStubFactory);
+  }
 }

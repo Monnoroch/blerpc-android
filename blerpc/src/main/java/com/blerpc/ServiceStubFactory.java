@@ -18,99 +18,99 @@ import java.util.logging.Logger;
  */
 public class ServiceStubFactory {
 
-    private static ServiceStubFactory serviceStubFactory = null;
-    private static ConcurrentHashMap<String, BleRpcChannel> bleRpcChannels = new ConcurrentHashMap<>();
+  private static ServiceStubFactory serviceStubFactory = null;
+  private static ConcurrentHashMap<String, BleRpcChannel> bleRpcChannels = new ConcurrentHashMap<>();
 
-    private Context context;
-    private MessageConverter messageConverter;
-    private Handler workHandler;
-    private Handler listenerHandler;
-    private Logger logger;
+  private Context context;
+  private MessageConverter messageConverter;
+  private Handler workHandler;
+  private Handler listenerHandler;
+  private Logger logger;
 
-    private ServiceStubFactory(Context context,
-                               MessageConverter messageConverter,
-                               Handler workHandler,
-                               Handler listenerHandler,
-                               Logger logger
-    ) {
-        this.context = context;
-        this.messageConverter = messageConverter;
-        this.workHandler = workHandler;
-        this.listenerHandler = listenerHandler;
-        this.logger = logger;
+  private ServiceStubFactory(Context context,
+                             MessageConverter messageConverter,
+                             Handler workHandler,
+                             Handler listenerHandler,
+                             Logger logger
+  ) {
+    this.context = context;
+    this.messageConverter = messageConverter;
+    this.workHandler = workHandler;
+    this.listenerHandler = listenerHandler;
+    this.logger = logger;
+  }
+
+  /**
+   * Get a {@link ServiceStubFactory}.
+   *
+   * @param context          an application context.
+   * @param messageConverter a {@link MessageConverter} for serializing requests and deserializing responses.
+   * @param workHandler      a handler to run all channel's code.
+   * @param listenerHandler  a handler run rpc callbacks.
+   * @param logger           a logger for debug logging.
+   * @return {@link ServiceStubFactory} object.
+   */
+  public static synchronized ServiceStubFactory getInstance(Context context,
+                                                            MessageConverter messageConverter,
+                                                            Handler workHandler,
+                                                            Handler listenerHandler,
+                                                            Logger logger
+  ) {
+    Preconditions.checkState(serviceStubFactory == null, "Factory instance already exists");
+    serviceStubFactory = new ServiceStubFactory(
+        context, messageConverter, workHandler, listenerHandler, logger
+    );
+    return serviceStubFactory;
+  }
+
+  /**
+   * Disconnect from all devices and clear a {@link ServiceStubFactory} instance.
+   */
+  public static void clearInstance() {
+    Preconditions.checkNotNull(serviceStubFactory, "Factory instance doesn't exist");
+    disconnectAll();
+    serviceStubFactory = null;
+  }
+
+  /**
+   * Get com.google.protobuf.Service object.
+   *
+   * @param bluetoothDevice - a {@link BluetoothDevice} to connect to.
+   * @param serviceClass    - class for creating new stub.
+   * @return - com.google.protobuf.Service object.
+   */
+  public Service provideService(BluetoothDevice bluetoothDevice, Class<?> serviceClass) {
+    String deviceAddress = bluetoothDevice.getAddress();
+    if (!bleRpcChannels.containsKey(deviceAddress)) {
+      bleRpcChannels.putIfAbsent(
+          deviceAddress,
+          new BleRpcChannel(bluetoothDevice, context, messageConverter, workHandler, listenerHandler, logger)
+      );
     }
-
-    /**
-     * Get a {@link ServiceStubFactory}.
-     *
-     * @param context          an application context.
-     * @param messageConverter a {@link MessageConverter} for serializing requests and deserializing responses.
-     * @param workHandler      a handler to run all channel's code.
-     * @param listenerHandler  a handler run rpc callbacks.
-     * @param logger           a logger for debug logging.
-     * @return {@link ServiceStubFactory} object.
-     */
-    public static synchronized ServiceStubFactory getInstance(Context context,
-                                                 MessageConverter messageConverter,
-                                                 Handler workHandler,
-                                                 Handler listenerHandler,
-                                                 Logger logger
-    ) {
-        Preconditions.checkState(serviceStubFactory == null, "Factory instance already exists");
-        serviceStubFactory = new ServiceStubFactory(
-                context, messageConverter, workHandler, listenerHandler, logger
-        );
-        return serviceStubFactory;
+    try {
+      Method newStub = serviceClass.getMethod("newStub", new Class[]{RpcChannel.class});
+      return (Service) newStub.invoke(null, bleRpcChannels.get(deviceAddress));
+    } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException exception) {
+      throw new RuntimeException("Service class is incorrect");
     }
+  }
 
-    /**
-     * Disconnect from all devices and clear a {@link ServiceStubFactory} instance.
-     */
-    public static void clearInstance() {
-        Preconditions.checkNotNull(serviceStubFactory, "Factory instance doesn't exist");
-        disconnectAll();
-        serviceStubFactory = null;
-    }
+  /**
+   * Close channel with bluetooth device connection.
+   *
+   * @param deviceAddress - bluetooth device mac address to disconnect from.
+   */
+  public void disconnect(String deviceAddress) {
+    Preconditions.checkState(bleRpcChannels.containsKey(deviceAddress),
+        String.format("Chanel with bluetooth device %s doesn't exist", deviceAddress));
+    bleRpcChannels.get(deviceAddress).reset();
+    bleRpcChannels.remove(deviceAddress);
+  }
 
-    /**
-     * Get com.google.protobuf.Service object.
-     *
-     * @param bluetoothDevice - a {@link BluetoothDevice} to connect to.
-     * @param serviceClass - class for creating new stub.
-     * @return - com.google.protobuf.Service object.
-     */
-    public Service provideService(BluetoothDevice bluetoothDevice, Class<?> serviceClass) {
-        String deviceAddress = bluetoothDevice.getAddress();
-        if (!bleRpcChannels.containsKey(deviceAddress)) {
-            bleRpcChannels.putIfAbsent(
-                    deviceAddress,
-                    new BleRpcChannel(bluetoothDevice, context, messageConverter, workHandler, listenerHandler, logger)
-            );
-        }
-        try {
-            Method newStub = serviceClass.getMethod("newStub", new Class[]{RpcChannel.class});
-            return (Service) newStub.invoke(null, bleRpcChannels.get(deviceAddress));
-        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException exception) {
-            throw new RuntimeException("Service class is incorrect");
-        }
+  private static void disconnectAll() {
+    for (BleRpcChannel channel : bleRpcChannels.values()) {
+      channel.reset();
     }
-
-    /**
-     * Close channel with bluetooth device connection.
-     *
-     * @param deviceAddress - bluetooth device mac address to disconnect from.
-     */
-    public void disconnect(String deviceAddress) {
-        Preconditions.checkState(bleRpcChannels.containsKey(deviceAddress),
-                String.format("Chanel with bluetooth device %s doesn't exist", deviceAddress));
-        bleRpcChannels.get(deviceAddress).reset();
-        bleRpcChannels.remove(deviceAddress);
-    }
-
-    private static void disconnectAll() {
-        for (BleRpcChannel channel : bleRpcChannels.values()) {
-            channel.reset();
-        }
-        bleRpcChannels.clear();
-    }
+    bleRpcChannels.clear();
+  }
 }

@@ -14,62 +14,62 @@ import "google/protobuf/descriptor.proto";
 // A method can interact with a characteristic in three ways: it can write to it, read from it and
 // subscribe to it's updates.
 enum MethodType {
-    // Unknown method type.
-    UNKNOWN = 0;
-    // A method with this type is allowed to write to a characteristic.
-    WRITE = 1;
-    // A method with this type is allowed to read the value of a characteristic.
-    READ = 2;
-    // A method with this type is allowed to subscribe to a characteristic's updates.
-    SUBSCRIBE = 3;
+  // Unknown method type.
+  UNKNOWN = 0;
+  // A method with this type is allowed to write to a characteristic.
+  WRITE = 1;
+  // A method with this type is allowed to read the value of a characteristic.
+  READ = 2;
+  // A method with this type is allowed to subscribe to a characteristic's updates.
+  SUBSCRIBE = 3;
 }
 
 // BLE characteristic data.
 message BleCharacteristicRule {
-    // Characteristic UUID.
-    string uuid = 1;
-    // Descriptor UUID.
-    string descriptor_uuid = 3;
-    // The method's interaction type with the characteristic.
-    MethodType type = 2;
+  // Characteristic UUID.
+  string uuid = 1;
+  // Descriptor UUID.
+  string descriptor_uuid = 3;
+  // The method's interaction type with the characteristic.
+  MethodType type = 2;
 }
 
 message BleServiceRule {
-    // Service UUID.
-    string uuid = 1;
+  // Service UUID.
+  string uuid = 1;
 }
 
 // A description of a message size in bytes.
 message MessageSize {
-    // Message size in bytes.
-    int32 size_bytes = 1;
+  // Message size in bytes.
+  int32 size_bytes = 1;
 }
 
 // A description of a byte range within a message the field is mapped to.
 message ByteRange {
-    // The number of the first byte within a message for a field.
-    int32 from_byte = 1;
-    // The number of the last byte within a message for a field.
-    // This bound is excluded, i.e. {from = 3, to = 5} describes a two-byte field.
-    int32 to_byte = 2;
+  // The number of the first byte within a message for a field.
+  int32 from_byte = 1;
+  // The number of the last byte within a message for a field.
+  // This bound is excluded, i.e. {from = 3, to = 5} describes a two-byte field.
+  int32 to_byte = 2;
 }
 
 // Allow annotating fields with com.blerpc.range annotation to specify which bytes this field should map to.
 extend google.protobuf.FieldOptions {
-    ByteRange range = 82595722;
+  ByteRange range = 82595722;
 }
 
 // Allow annotating messages with com.blerpc.size annotation to specify how many bytes this message should be serialized to.
 extend google.protobuf.MessageOptions {
-    MessageSize size = 82595723;
+  MessageSize size = 82595723;
 }
 
 // Add `characteristic` method option for attaching the method to a BLE characteristic.
 extend google.protobuf.MethodOptions {
-    BleCharacteristicRule characteristic = 82595724;
+  BleCharacteristicRule characteristic = 82595724;
 }
 
 // Add `service` service option for attaching the service to a BLE service.
 extend google.protobuf.ServiceOptions {
-    BleServiceRule service = 82595725;
+  BleServiceRule service = 82595725;
 }

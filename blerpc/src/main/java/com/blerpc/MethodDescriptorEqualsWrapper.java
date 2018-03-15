@@ -8,31 +8,31 @@ import com.google.protobuf.Descriptors.MethodDescriptor;
  */
 class MethodDescriptorEqualsWrapper {
 
-    private final MethodDescriptor methodDescriptor;
+  private final MethodDescriptor methodDescriptor;
 
-    /**
-     * Create a {@link MethodDescriptorEqualsWrapper}.
-     *
-     * @param methodDescriptor - {@link MethodDescriptor} object.
-     */
-    public MethodDescriptorEqualsWrapper(MethodDescriptor methodDescriptor) {
-        this.methodDescriptor = methodDescriptor;
-    }
+  /**
+   * Create a {@link MethodDescriptorEqualsWrapper}.
+   *
+   * @param methodDescriptor - {@link MethodDescriptor} object.
+   */
+  public MethodDescriptorEqualsWrapper(MethodDescriptor methodDescriptor) {
+    this.methodDescriptor = methodDescriptor;
+  }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof MethodDescriptorEqualsWrapper)) {
-            return false;
-        }
-        return methodDescriptor.getFullName()
-            .equals(((MethodDescriptorEqualsWrapper) o).methodDescriptor.getFullName());
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
     }
+    if (!(o instanceof MethodDescriptorEqualsWrapper)) {
+      return false;
+    }
+    return methodDescriptor.getFullName()
+        .equals(((MethodDescriptorEqualsWrapper) o).methodDescriptor.getFullName());
+  }
 
-    @Override
-    public int hashCode() {
-        return methodDescriptor.getFullName().hashCode();
-    }
+  @Override
+  public int hashCode() {
+    return methodDescriptor.getFullName().hashCode();
+  }
 }
