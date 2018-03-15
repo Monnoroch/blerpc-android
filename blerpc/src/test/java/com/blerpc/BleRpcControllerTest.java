@@ -15,7 +15,8 @@ import org.mockito.junit.MockitoJUnitRunner;
 public class BleRpcControllerTest {
 
   private static final String TEST_FAIL_MESSAGE = "TEST_FAIL_MESSAGE";
-  private static final RpcCallback<Object> TEST_RPC_CALLBACK = parameter -> {};
+  private static final RpcCallback<Object> TEST_RPC_CALLBACK = parameter -> {
+  };
 
   private final BleRpcController bleRpcController = new BleRpcController();
 

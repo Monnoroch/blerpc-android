@@ -1,8 +1,6 @@
 package com.blerpc;
 
-/**
- * An exception to be thrown if serializing or deserializing bytes to or from messages fails.
- */
+/** An exception to be thrown if serializing or deserializing bytes to or from messages fails. */
 public class CouldNotConvertMessageException extends Exception {
 
   private CouldNotConvertMessageException(Exception reason) {

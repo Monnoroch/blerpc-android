@@ -3,9 +3,7 @@ package com.blerpc;
 import com.google.protobuf.Descriptors.MethodDescriptor;
 import com.google.protobuf.Message;
 
-/**
- * Represents a service that allows you to interact with the sensor via the Android BLE API.
- */
+/** Represents a service that allows you to interact with the sensor via the Android BLE API. */
 public interface MessageConverter {
   /**
    * Provides a way to convert a top level request to the byte representation
