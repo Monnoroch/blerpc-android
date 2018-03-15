@@ -746,21 +746,6 @@ public class BleRpcChannelTest {
     }
 
     @Test
-    public void testCallCallbackIfCancelled() throws Exception {
-        reset(listenerHandler);
-        when(listenerHandler.post(any())).thenReturn(true);
-        callSubscribeMethod(methodSubscribeChar, controller, callback);
-        finishSubscribing(descriptor);
-        when(messageConverter.deserializeResponse(eq(methodSubscribeChar), any(Message.class), any())).thenReturn(null);
-        onCharacteristicChanged(characteristic);
-        ArgumentCaptor<Runnable> callCallback = ArgumentCaptor.forClass(Runnable.class);
-        verify(listenerHandler).post(callCallback.capture());
-        controller.startCancel();
-        callCallback.getValue().run();
-        verify(callback).run(any());
-    }
-
-    @Test
     public void testValueChangedBeforeOnDescriptorWriteSubscribe() {
         callSubscribeMethod(controller, callback);
         finishConnecting();
@@ -789,21 +774,6 @@ public class BleRpcChannelTest {
         // If fail - java.lang.IllegalArgumentException: There is no subscription calls group for characteristic
         // f0cdaa72-0451-4000-b000-000000000000.
         verifyNoCalls(callback);
-    }
-
-    @Test
-    public void testCallCallbackWhenFailedIfCancelled() throws Exception {
-        reset(listenerHandler);
-        when(listenerHandler.post(any())).thenReturn(true);
-        when(bluetoothGatt.getService(TEST_SERVICE)).thenReturn(null);
-        callSubscribeMethod(methodSubscribeChar, controller, callback);
-        finishConnecting();
-        ArgumentCaptor<Runnable> callCallback = ArgumentCaptor.forClass(Runnable.class);
-        verify(listenerHandler).post(callCallback.capture());
-        controller.startCancel();
-        callCallback.getValue().run();
-        assertCallFailed(controller);
-        verify(callback).run(any());
     }
 
     void setUpSubscriptionDesetializeFailure(BluetoothGattCharacteristic characteristic) throws Exception {

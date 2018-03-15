@@ -643,7 +643,7 @@ public class BleRpcChannel implements RpcChannel {
 
     private void notifyCallFailed(RpcCall rpcCall, String format, Object ... args) {
         rpcCall.controller.setFailed(String.format(format, args));
-        listenerHandler.post(() -> callCallback(rpcCall, rpcCall.responsePrototype.getDefaultInstanceForType()));
+        callCallback(rpcCall, rpcCall.responsePrototype.getDefaultInstanceForType());
     }
 
     private void notifyDefaultResultForCall(RpcCall rpcCall) {
@@ -651,16 +651,16 @@ public class BleRpcChannel implements RpcChannel {
     }
 
     private void notifyResultForCall(RpcCall rpcCall, Message message) {
-        listenerHandler.post(() -> callCallback(rpcCall, message));
+        callCallback(rpcCall, message);
     }
 
-    private static void callCallback(RpcCall rpcCall, Message message) {
+    private void callCallback(RpcCall rpcCall, Message message) {
         // There is no check on canceling call, because call might get canceled after
         // isCanceled returned false and before the callback is called, the probability of that
         // is extremely low, but nothing can be done about it. To prevent this rear case, callback
         // will be called independently on canceling and value after cancel should be ignored by
         // class that implement callback.
-        rpcCall.done.run(message);
+        listenerHandler.post(() -> rpcCall.done.run(message));
     }
 
     private static BluetoothGattService getService(BluetoothGatt gatt, UUID serviceUuid) {
