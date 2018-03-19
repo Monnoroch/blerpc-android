@@ -115,6 +115,25 @@ public class BleRpcChannel implements RpcChannel {
     });
   }
 
+  /**
+   * Cancel subscription and start unsubscribing from characteristic if there isn't other
+   * subscriptions for this characteristic.
+   *
+   * @param controller - for identify subscription for cancel.
+   */
+  void cancelSubscription(RpcController controller) {
+    for(SubscriptionCallsGroup callsGroup : subscriptions.values()) {
+      if (!FluentIterable.from(callsGroup.calls).anyMatch(call -> call.controller.equals(controller))) {
+        continue;
+      }
+      callsGroup.clearCanceled();
+      if (!callsGroup.hasAnySubscriber() && callsGroup.status == SubscriptionStatus.SUBSCRIBED) {
+        startUnsubscribing(callsGroup);
+      }
+      break;
+    }
+  }
+
   private void addCall(RpcCall rpcCall) {
     calls.add(rpcCall);
     if (rpcCall.getMethodType() != MethodType.SUBSCRIBE) {

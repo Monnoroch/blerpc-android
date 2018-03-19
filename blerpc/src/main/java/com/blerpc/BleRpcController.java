@@ -2,6 +2,9 @@ package com.blerpc;
 
 import com.google.protobuf.RpcCallback;
 import com.google.protobuf.RpcController;
+import com.google.protobuf.Service;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -9,9 +12,24 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class BleRpcController implements RpcController {
 
+  private final BleRpcChannel bleRpcChannel;
   private AtomicBoolean canceled = new AtomicBoolean(false);
   private boolean failed = false;
   private String failMassage = null;
+
+  /**
+   * Create {@link BleRpcController} instance.
+   *
+   * @param serviceStub - protobuf service stub that contains {@link BleRpcChannel}.
+   */
+  public BleRpcController(Service serviceStub) {
+    try {
+      Method getChannel = serviceStub.getClass().getMethod("getChannel");
+      bleRpcChannel = (BleRpcChannel) getChannel.invoke(serviceStub);
+    } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException exception) {
+      throw new RuntimeException("Service stub must contain getChannel method");
+    }
+  }
 
   @Override
   public void reset() {
@@ -39,6 +57,7 @@ public class BleRpcController implements RpcController {
   @Override
   public void startCancel() {
     canceled.set(true);
+    bleRpcChannel.cancelSubscription(this);
   }
 
   @Override
