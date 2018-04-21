@@ -779,10 +779,14 @@ public class BleRpcChannelTest {
   }
 
   @Test
-  public void testValueChangedAfterReset() throws Exception {
+  public void testValueChangedAfterUnsubscribe() throws Exception {
     callSubscribeMethod(controller, callback);
     finishSubscribing(descriptor);
-    channel.reset();
+    // Will cause onCharacteristicChanged to unsubscribe.
+    setUpSubscriptionDesetializeFailure(characteristic);
+    onCharacteristicChanged(characteristic);
+    onUnsubscribe(descriptor);
+    reset(callback);
     onCharacteristicChanged(characteristic);
     // If fail - java.lang.IllegalArgumentException: There is no subscription calls group for characteristic
     // f0cdaa72-0451-4000-b000-000000000000.
