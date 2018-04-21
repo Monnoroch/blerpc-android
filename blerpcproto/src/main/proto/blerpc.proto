@@ -62,24 +62,18 @@ enum ByteOrder {
   LITTLE_ENDIAN = 1;
 }
 
-// Allow annotating fields with com.blerpc.range annotation to specify which bytes this field should map to.
+// Allow annotating fields with com.blerpc.range annotation to specify which bytes this field should
+// map to and which bytes order should be after serialization to bytes.
 extend google.protobuf.FieldOptions {
   ByteRange range = 82595722;
+  ByteOrder field_byte_order = 82595726;
 }
 
-// Allow annotating fields with com.blerpc.fieldOrder annotation to specify which bytes order should be after serialization to bytes.
-extend google.protobuf.FieldOptions {
-  ByteOrder field_order = 82595726;
-}
-
-// Allow annotating messages with com.blerpc.size annotation to specify how many bytes this message should be serialized to.
+// Allow annotating messages with com.blerpc.size annotation to specify how many bytes this message
+// should be serialized to and which bytes order should be after serialization to bytes.
 extend google.protobuf.MessageOptions {
   MessageSize size = 82595723;
-}
-
-// Allow annotating messages with com.blerpc.messageOrder annotation to specify which bytes order should be after serialization to bytes.
-extend google.protobuf.MessageOptions {
-  ByteOrder message_order = 82595727;
+  ByteOrder message_byte_order = 82595727;
 }
 
 // Add `characteristic` method option for attaching the method to a BLE characteristic.
