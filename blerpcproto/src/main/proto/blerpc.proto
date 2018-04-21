@@ -54,14 +54,34 @@ message ByteRange {
   int32 to_byte = 2;
 }
 
+// Byte order type of message or field converted to bytes.
+enum ByteOrder {
+  // Unknown order type.
+  UNKNOWN_ORDER = 0;
+  // Big endian byte order. Count "50" converter to 2 bytes must be "0 50".
+  BIG_ENDIAN = 1;
+  // Little endian byte order. Count "50" converter to 2 bytes must be "50 0".
+  LITTLE_ENDIAN = 2;
+}
+
 // Allow annotating fields with com.blerpc.range annotation to specify which bytes this field should map to.
 extend google.protobuf.FieldOptions {
   ByteRange range = 82595722;
 }
 
+// Allow annotating fields with com.blerpc.fieldOrder annotation to specify which bytes order should be after serialization to bytes.
+extend google.protobuf.FieldOptions {
+  ByteOrder field_order = 82595726;
+}
+
 // Allow annotating messages with com.blerpc.size annotation to specify how many bytes this message should be serialized to.
 extend google.protobuf.MessageOptions {
   MessageSize size = 82595723;
+}
+
+// Allow annotating messages with com.blerpc.messageOrder annotation to specify which bytes order should be after serialization to bytes.
+extend google.protobuf.MessageOptions {
+  ByteOrder message_order = 82595727;
 }
 
 // Add `characteristic` method option for attaching the method to a BLE characteristic.
