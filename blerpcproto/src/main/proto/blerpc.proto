@@ -39,19 +39,23 @@ message BleServiceRule {
   string uuid = 1;
 }
 
-// A description of a message size in bytes.
-message MessageSize {
+// A description of a message for annotation converter.
+message Message {
   // Message size in bytes.
   int32 size_bytes = 1;
+  // Message bytes order that should be after serialization to bytes.
+  ByteOrder byte_order = 2;
 }
 
-// A description of a byte range within a message the field is mapped to.
-message ByteRange {
+// A description of a field for annotation converter.
+message Field {
   // The number of the first byte within a message for a field.
   int32 from_byte = 1;
   // The number of the last byte within a message for a field.
   // This bound is excluded, i.e. {from = 3, to = 5} describes a two-byte field.
   int32 to_byte = 2;
+  // Field bytes order that should be after serialization to bytes.
+  ByteOrder byte_order = 3;
 }
 
 // Byte order type of message or field converted to bytes.
@@ -63,18 +67,14 @@ enum ByteOrder {
   LITTLE_ENDIAN = 1;
 }
 
-// Allow annotating fields with com.blerpc.range annotation to specify which bytes this field should
-// map to and which bytes order should be after serialization to bytes.
+// Allow annotating fields with com.blerpc.field annotation to specify parameters for annotation converter.
 extend google.protobuf.FieldOptions {
-  ByteRange range = 82595722;
-  ByteOrder field_byte_order = 82595726;
+  Field field = 82595722;
 }
 
-// Allow annotating messages with com.blerpc.size annotation to specify how many bytes this message
-// should be serialized to and which bytes order should be after serialization to bytes.
+// Allow annotating messages with com.blerpc.message annotation to specify parameters for annotation converter.
 extend google.protobuf.MessageOptions {
-  MessageSize size = 82595723;
-  ByteOrder message_byte_order = 82595727;
+  Message message = 82595723;
 }
 
 // Add `characteristic` method option for attaching the method to a BLE characteristic.
