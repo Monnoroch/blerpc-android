@@ -39,29 +39,44 @@ message BleServiceRule {
   string uuid = 1;
 }
 
-// A description of a message size in bytes.
-message MessageSize {
+// A description of a message for automatic converter.
+message MessageExtension {
   // Message size in bytes.
   int32 size_bytes = 1;
+  // Byte order for the message.
+  // Default byte order for the message is BIG_ENDIAN.
+  ByteOrder byte_order = 2;
 }
 
-// A description of a byte range within a message the field is mapped to.
-message ByteRange {
+// A description of a field for automatic converter.
+message FieldExtension {
   // The number of the first byte within a message for a field.
   int32 from_byte = 1;
   // The number of the last byte within a message for a field.
   // This bound is excluded, i.e. {from = 3, to = 5} describes a two-byte field.
   int32 to_byte = 2;
+  // Byte order for the field.
+  // Default byte order for the field is BIG_ENDIAN.
+  ByteOrder byte_order = 3;
 }
 
-// Allow annotating fields with com.blerpc.range annotation to specify which bytes this field should map to.
+// Byte order type of message or field converted to bytes.
+enum ByteOrder {
+  // Big endian byte order. Short number "50" is converted into 2 bytes {0, 50}.
+  // This is a default byte order.
+  BIG_ENDIAN = 0;
+  // Little endian byte order. Short number "50" is converter into 2 bytes {50, 0}".
+  LITTLE_ENDIAN = 1;
+}
+
+// Allow annotating fields with com.blerpc.field annotation to specify parameters for automatic converter.
 extend google.protobuf.FieldOptions {
-  ByteRange range = 82595722;
+  FieldExtension field = 82595722;
 }
 
-// Allow annotating messages with com.blerpc.size annotation to specify how many bytes this message should be serialized to.
+// Allow annotating messages with com.blerpc.message annotation to specify parameters for automatic converter.
 extend google.protobuf.MessageOptions {
-  MessageSize size = 82595723;
+  MessageExtension message = 82595723;
 }
 
 // Add `characteristic` method option for attaching the method to a BLE characteristic.
