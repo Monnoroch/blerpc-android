@@ -43,7 +43,8 @@ message BleServiceRule {
 message MessageExtension {
   // Message size in bytes.
   int32 size_bytes = 1;
-  // Bytes order that should be after serialization to bytes.
+  // Byte order for the message.
+  // Default byte order for the message is BIG_ENDIAN.
   ByteOrder byte_order = 2;
 }
 
@@ -54,16 +55,17 @@ message FieldExtension {
   // The number of the last byte within a message for a field.
   // This bound is excluded, i.e. {from = 3, to = 5} describes a two-byte field.
   int32 to_byte = 2;
-  // Bytes order that should be after serialization to bytes.
+  // Byte order for the field.
+  // Default byte order for the field is BIG_ENDIAN.
   ByteOrder byte_order = 3;
 }
 
 // Byte order type of message or field converted to bytes.
 enum ByteOrder {
-  // Big endian byte order. Number "50" is converted into 2 bytes {0, 50}.
+  // Big endian byte order. Short number "50" is converted into 2 bytes {0, 50}.
   // This is a default byte order.
   BIG_ENDIAN = 0;
-  // Little endian byte order. Number "50" is converter into 2 bytes {50, 0}".
+  // Little endian byte order. Short number "50" is converter into 2 bytes {50, 0}".
   LITTLE_ENDIAN = 1;
 }
 
