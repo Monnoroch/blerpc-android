@@ -56,12 +56,10 @@ message ByteRange {
 
 // Byte order type of message or field converted to bytes.
 enum ByteOrder {
-  // Unknown order type.
-  UNKNOWN_ORDER = 0;
   // Big endian byte order. Count "50" converter to 2 bytes must be "0 50".
-  BIG_ENDIAN = 1;
+  BIG_ENDIAN = 0;
   // Little endian byte order. Count "50" converter to 2 bytes must be "50 0".
-  LITTLE_ENDIAN = 2;
+  LITTLE_ENDIAN = 1;
 }
 
 // Allow annotating fields with com.blerpc.range annotation to specify which bytes this field should map to.
