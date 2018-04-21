@@ -56,9 +56,10 @@ message ByteRange {
 
 // Byte order type of message or field converted to bytes.
 enum ByteOrder {
-  // Big endian byte order. Count "50" converter to 2 bytes must be "0 50".
+  // Big endian byte order. Number "50" is converted into 2 bytes {0, 50}.
+  // This is a default byte order.
   BIG_ENDIAN = 0;
-  // Little endian byte order. Count "50" converter to 2 bytes must be "50 0".
+  // Little endian byte order. Number "50" is converter into 2 bytes {50, 0}".
   LITTLE_ENDIAN = 1;
 }
 
