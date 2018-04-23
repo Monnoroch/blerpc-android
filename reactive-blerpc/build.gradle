@@ -1,11 +1,39 @@
-group 'com.github.monnoroch'
-version '0.0.1'
-
 apply plugin: 'java'
+apply plugin: 'net.ltgt.errorprone'
+apply plugin: 'com.novoda.bintray-release'
 
-defaultTasks 'jar'
+repositories {
+    maven { url "https://plugins.gradle.org/m2/" }
+}
+
+sourceCompatibility = JavaVersion.VERSION_1_8
+targetCompatibility = JavaVersion.VERSION_1_8
+
+sourceSets {
+    main {
+        java {
+            srcDirs 'build/generated/source/proto/main/java'
+        }
+    }
+}
+
+configurations.all {
+    resolutionStrategy {
+        force 'com.google.code.findbugs:jsr305:3.0.0'
+    }
+}
+
+dependencies {
+    compile group: 'findbugs', name: 'annotations', version: '1.0.0'
+    compile 'com.github.monnoroch:blerpcproto-android:0.2.1'
+    compile 'com.salesforce.servicelibs:jprotoc:0.8.0'
+}
 
 jar {
+    sourceSets.all { sourceSet ->
+        from sourceSet.output
+        dependsOn sourceSet.getCompileTaskName('java')
+    }
     from {
         (configurations.runtime).collect {
             it.isDirectory() ? it : zipTree(it)
@@ -16,21 +44,12 @@ jar {
     }
 }
 
-sourceCompatibility = 1.8
-[compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
-
-if (!hasProperty('mainClass')) {
-    ext.mainClass = 'com.blerpc.reactive.ReactiveBleRpcGenerator'
-}
-
-repositories {
-    mavenCentral()
-    jcenter()
-}
-
-dependencies {
-    compile 'com.salesforce.servicelibs:jprotoc:0.8.0'
-    compile 'com.github.monnoroch:blerpcproto-android:0.2.1'
-    compile 'com.github.monnoroch:blerpc-android:0.2.2'
-    testCompile group: 'junit', name: 'junit', version: '4.12'
+publish {
+    groupId = 'com.github.monnoroch'
+    repoName = 'blerpc-android'
+    artifactId = 'reactive-blerpc'
+    publishVersion = '0.0.1'
+    desc = 'Protobuf plugin for generating RxJava wrappers for BleRpc services.'
+    licences = ['MIT']
+    website = 'https://github.com/monnoroch/blerpc-android'
 }

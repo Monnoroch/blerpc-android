@@ -16,7 +16,7 @@ licenses:
 before_install:
   - linters/install-linters.sh
 script:
-  - (cd reactive-blerpc && gradle assemble)
+  - gradle reactive-blerpc:assemble
   - gradle blerpcproto:assemble
   - gradle assembleRelease --stacktrace --no-daemon
   - gradle testReleaseUnitTest --info

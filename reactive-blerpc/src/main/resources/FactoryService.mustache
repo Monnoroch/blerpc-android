@@ -1,0 +1,35 @@
+package com.blerpc.reactive;
+
+/** Factory for creating aura ble services. */
+public class BleServiceFactory {
+
+  private final com.blerpc.ServiceStubFactory serviceStubFactory;
+  private final java.util.logging.Logger logger;
+
+  /**
+   * Create {@link BleServiceFactory}.
+   *
+   * @param serviceStubFactory {@link BleServiceFactory} object.
+   * @param logger - for logging errors.
+   */
+  public BleServiceFactory(com.blerpc.ServiceStubFactory serviceStubFactory, java.util.logging.Logger logger) {
+    this.serviceStubFactory = serviceStubFactory;
+    this.logger = logger;
+  }
+
+  {{#services}}
+  /**
+   * Create {@link {{packageName}}.{{className}}}.
+   *
+   * @param bluetoothDevice - current bluetooth device for connection.
+   * @return {@link {{packageName}}.{{className}}} object.
+   */
+  public {{packageName}}.{{className}} create{{serviceName}}(android.bluetooth.BluetoothDevice bluetoothDevice) {
+    return new {{packageName}}.{{className}}(
+        ({{packageName}}.{{serviceName}})
+            serviceStubFactory.provideService(
+                bluetoothDevice, {{packageName}}.{{serviceName}}.class),
+        logger);
+  }
+  {{/services}}
+}

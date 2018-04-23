@@ -1,2 +1,3 @@
 include ':blerpc'
 include ':blerpcproto'
+include ':reactive-blerpc'

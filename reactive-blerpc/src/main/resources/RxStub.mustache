@@ -2,13 +2,6 @@
 package {{packageName}};
 {{/packageName}}
 
-import com.aura.device.proto.GetBatteryLevelRequest;
-import com.aura.device.proto.GetBatteryLevelResponse;
-import com.blerpc.BleRpcController;
-import io.reactivex.Observable;
-import io.reactivex.Single;
-import java.util.logging.Logger;
-
 {{#javaDoc}}
 {{{javaDoc}}}
 {{/javaDoc}}
@@ -18,9 +11,9 @@ import java.util.logging.Logger;
 public class {{className}} {
 
   private final {{packageName}}.{{serviceName}} service;
-  private final Logger logger;
+  private final java.util.logging.Logger logger;
 
-  public {{className}}({{packageName}}.{{serviceName}} service, Logger logger) {
+  public {{className}}({{packageName}}.{{serviceName}} service, java.util.logging.Logger logger) {
     this.service = service;
     this.logger = logger;
   }
@@ -33,21 +26,21 @@ public class {{className}} {
       {{#deprecated}}
     @java.lang.Deprecated
       {{/deprecated}}
-    public Observable<{{outputType}}> {{methodName}}({{inputType}} request) {
-      return {{methodName}}(request, new BleRpcController());
+    public io.reactivex.Observable<{{outputType}}> {{methodName}}({{inputType}} request) {
+      return {{methodName}}(request, new com.blerpc.BleRpcController());
     }
-  {{/isManyOutput}}
 
+  {{/isManyOutput}}
     {{#javaDoc}}
   {{{javaDoc}}}
     {{/javaDoc}}
     {{#deprecated}}
   @java.lang.Deprecated
     {{/deprecated}}
-  public {{#isManyOutput}}Observable{{/isManyOutput}}{{^isManyOutput}}Single{{/isManyOutput}}<{{outputType}}> {{methodName}}({{inputType}} request{{#isManyOutput}}, BleRpcController controller{{/isManyOutput}}) {
-      return {{#isManyOutput}}Observable{{/isManyOutput}}{{^isManyOutput}}Single{{/isManyOutput}}.create(
+  public {{#isManyOutput}}io.reactivex.Observable{{/isManyOutput}}{{^isManyOutput}}io.reactivex.Single{{/isManyOutput}}<{{outputType}}> {{methodName}}({{inputType}} request{{#isManyOutput}}, com.blerpc.BleRpcController controller{{/isManyOutput}}) {
+      return {{#isManyOutput}}io.reactivex.Observable{{/isManyOutput}}{{^isManyOutput}}io.reactivex.Single{{/isManyOutput}}.create(
           subscriber -> {
-            {{^isManyOutput}}BleRpcController controller = new BleRpcController();{{/isManyOutput}}
+            {{^isManyOutput}}com.blerpc.BleRpcController controller = new com.blerpc.BleRpcController();{{/isManyOutput}}
             service.{{methodName}}(
                 controller,
                 request,
@@ -55,11 +48,12 @@ public class {{className}} {
                   if (!controller.failed()) {
                     subscriber.{{#isManyOutput}}onNext{{/isManyOutput}}{{^isManyOutput}}onSuccess{{/isManyOutput}}(response);
                   } else {
+                    com.blerpc.reactive.RxOnError.loggingUncatchableExceptions(
+                        subscriber, new Exception(controller.errorText()), logger);
                   }
                 });
             subscriber.setCancellable(controller::startCancel);
           });
   }
-
   {{/methods}}
 }
