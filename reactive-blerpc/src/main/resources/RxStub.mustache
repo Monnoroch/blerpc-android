@@ -1,0 +1,65 @@
+{{#packageName}}
+package {{packageName}};
+{{/packageName}}
+
+import com.aura.device.proto.GetBatteryLevelRequest;
+import com.aura.device.proto.GetBatteryLevelResponse;
+import com.blerpc.BleRpcController;
+import io.reactivex.Observable;
+import io.reactivex.Single;
+import java.util.logging.Logger;
+
+{{#javaDoc}}
+{{{javaDoc}}}
+{{/javaDoc}}
+{{#deprecated}}
+@java.lang.Deprecated
+{{/deprecated}}
+public class {{className}} {
+
+  private final {{packageName}}.{{serviceName}} service;
+  private final Logger logger;
+
+  public {{className}}({{packageName}}.{{serviceName}} service, Logger logger) {
+    this.service = service;
+    this.logger = logger;
+  }
+
+  {{#methods}}
+  {{#isManyOutput}}
+      {{#javaDoc}}
+    {{{javaDoc}}}
+      {{/javaDoc}}
+      {{#deprecated}}
+    @java.lang.Deprecated
+      {{/deprecated}}
+    public Observable<{{outputType}}> {{methodName}}({{inputType}} request) {
+      return {{methodName}}(request, new BleRpcController());
+    }
+  {{/isManyOutput}}
+
+    {{#javaDoc}}
+  {{{javaDoc}}}
+    {{/javaDoc}}
+    {{#deprecated}}
+  @java.lang.Deprecated
+    {{/deprecated}}
+  public {{#isManyOutput}}Observable{{/isManyOutput}}{{^isManyOutput}}Single{{/isManyOutput}}<{{outputType}}> {{methodName}}({{inputType}} request{{#isManyOutput}}, BleRpcController controller{{/isManyOutput}}) {
+      return {{#isManyOutput}}Observable{{/isManyOutput}}{{^isManyOutput}}Single{{/isManyOutput}}.create(
+          subscriber -> {
+            {{^isManyOutput}}BleRpcController controller = new BleRpcController();{{/isManyOutput}}
+            service.{{methodName}}(
+                controller,
+                request,
+                response -> {
+                  if (!controller.failed()) {
+                    subscriber.{{#isManyOutput}}onNext{{/isManyOutput}}{{^isManyOutput}}onSuccess{{/isManyOutput}}(response);
+                  } else {
+                  }
+                });
+            subscriber.setCancellable(controller::startCancel);
+          });
+  }
+
+  {{/methods}}
+}
