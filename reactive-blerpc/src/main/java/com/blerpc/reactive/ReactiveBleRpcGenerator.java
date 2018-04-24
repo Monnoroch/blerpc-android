@@ -189,7 +189,7 @@ public class ReactiveBleRpcGenerator extends Generator {
   private boolean isBleRpcService(Pair<FileDescriptorProto, Location> fileLocation) {
     return fileLocation
         .fst
-        .getService(fileLocation.snd.getPath(1))
+        .getService(fileLocation.snd.getPath(SERVICE_NUMBER_OF_PATHS - 1))
         .getOptions()
         .getUnknownFields()
         .hasField(Blerpc.SERVICE_FIELD_NUMBER);
