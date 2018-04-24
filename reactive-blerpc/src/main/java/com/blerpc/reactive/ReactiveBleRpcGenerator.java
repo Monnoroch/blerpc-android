@@ -136,7 +136,7 @@ public class ReactiveBleRpcGenerator extends Generator {
     int methodNumber = location.getPath(METHOD_NUMBER_OF_PATHS - 1);
     MethodDescriptorProto methodProto = serviceProto.getMethod(methodNumber);
     MethodContext methodContext = new MethodContext();
-    methodContext.methodName = changeFirstToLowerCase(methodProto.getName());
+    methodContext.methodName = lowerCaseFirstLetter(methodProto.getName());
     methodContext.inputType = typeMap.toJavaTypeName(methodProto.getInputType());
     methodContext.outputType = typeMap.toJavaTypeName(methodProto.getOutputType());
     methodContext.deprecated =
@@ -149,7 +149,7 @@ public class ReactiveBleRpcGenerator extends Generator {
     return methodContext;
   }
 
-  private String changeFirstToLowerCase(String string) {
+  private String lowerCaseFirstLetter(String string) {
     return Character.toLowerCase(string.charAt(0)) + string.substring(1);
   }
 
