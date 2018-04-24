@@ -48,7 +48,7 @@ public class {{className}} {
                   if (!controller.failed()) {
                     subscriber.{{#isManyOutput}}onNext{{/isManyOutput}}{{^isManyOutput}}onSuccess{{/isManyOutput}}(response);
                   } else {
-                    com.blerpc.reactive.RxOnError.loggingUncatchableExceptions(
+                    com.blerpc.RxOnError.loggingUncatchableExceptions(
                         subscriber, new Exception(controller.errorText()), logger);
                   }
                 });

@@ -24,7 +24,17 @@ import java.util.stream.Stream;
 /** Protoc generator that generate RxJava wrappers for BleRpc services. */
 public class ReactiveBleRpcGenerator extends Generator {
 
+  /**
+   * If {@link Location#getPathCount()} is equals to 4, then it identifies that current part of the
+   * FileDescriptorProto is method.
+   */
   private static final int METHOD_NUMBER_OF_PATHS = 4;
+  /**
+   * If {@link Location#getPathCount()} is equals to 2, then it identifies that current part of the
+   * FileDescriptorProto is service.
+   */
+  private static final int SERVICE_NUMBER_OF_PATHS = 2;
+
   private static final String SERVICE_JAVADOC_PREFIX = "";
   private static final String METHOD_JAVADOC_PREFIX = "  ";
   private static final String CLASS_PREFIX = "Rx";
@@ -48,18 +58,12 @@ public class ReactiveBleRpcGenerator extends Generator {
             .collect(Collectors.toList());
 
     List<ServiceContext> services = findServices(protosToGenerate, typeMap);
-    List<PluginProtos.CodeGeneratorResponse.File> files = generateFiles(services);
-    files.add(
-        PluginProtos.CodeGeneratorResponse.File.newBuilder()
-            .setName("com/blerpc/reactive/RxOnError.java")
-            .setContent(readFileFromResources("RxOnError"))
-            .build());
-    files.add(
-        PluginProtos.CodeGeneratorResponse.File.newBuilder()
+    Stream<PluginProtos.CodeGeneratorResponse.File> files = services.stream().map(this::buildFile);
+    PluginProtos.CodeGeneratorResponse.File factory = PluginProtos.CodeGeneratorResponse.File.newBuilder()
             .setName("com/blerpc/reactive/BleServiceFactory.java")
             .setContent(generateFactoryFile(services))
-            .build());
-    return files.stream();
+            .build();
+    return Stream.concat(files, Stream.of(factory));
   }
 
   private String readFileFromResources(String fileName) {
@@ -92,7 +96,7 @@ public class ReactiveBleRpcGenerator extends Generator {
   }
 
   private boolean locationIsService(Location location) {
-    return location.getPathCount() == 2
+    return location.getPathCount() == SERVICE_NUMBER_OF_PATHS
         && location.getPath(0) == FileDescriptorProto.SERVICE_FIELD_NUMBER;
   }
 
@@ -177,11 +181,6 @@ public class ReactiveBleRpcGenerator extends Generator {
 
   private String lowerCaseFirst(String s) {
     return Character.toLowerCase(s.charAt(0)) + s.substring(1);
-  }
-
-  private List<PluginProtos.CodeGeneratorResponse.File> generateFiles(
-      List<ServiceContext> services) {
-    return services.stream().map(this::buildFile).collect(Collectors.toList());
   }
 
   private String generateFactoryFile(List<ServiceContext> services) {

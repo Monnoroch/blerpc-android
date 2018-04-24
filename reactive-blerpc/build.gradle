@@ -48,7 +48,7 @@ publish {
     groupId = 'com.github.monnoroch'
     repoName = 'blerpc-android'
     artifactId = 'reactive-blerpc'
-    publishVersion = '0.0.1'
+    publishVersion = "${blerpcVersion}"
     desc = 'Protobuf plugin for generating RxJava wrappers for BleRpc services.'
     licences = ['MIT']
     website = 'https://github.com/monnoroch/blerpc-android'
