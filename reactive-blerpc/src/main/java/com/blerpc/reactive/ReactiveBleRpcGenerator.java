@@ -40,12 +40,12 @@ public class ReactiveBleRpcGenerator extends Generator {
    * <p>For describing service we need only to elements in path: [6, 2]. Path shows, that location
    * is third service in the file.
    *
-   * <p>https://developers.google.com/protocol-buffers/docs/reference/java/com/google/protobuf/DescriptorProtos.SourceCodeInfo.Location#getPathCount--
+   * <p>More details at
+   * https://developers.google.com/protocol-buffers/docs/reference/java/com/google/protobuf/DescriptorProtos.SourceCodeInfo.Location#getPathCount--
    */
   private static final int METHOD_NUMBER_OF_PATHS = 4;
 
   private static final int SERVICE_NUMBER_OF_PATHS = 2;
-
   private static final String SERVICE_JAVADOC_PREFIX = "";
   private static final String METHOD_JAVADOC_PREFIX = "  ";
   private static final String CLASS_PREFIX = "Rx";
@@ -75,12 +75,12 @@ public class ReactiveBleRpcGenerator extends Generator {
             .map(fileLocation -> buildServiceContext(fileLocation, typeMap))
             .collect(Collectors.toList());
 
-    PluginProtos.CodeGeneratorResponse.File factory =
+    PluginProtos.CodeGeneratorResponse.File factoryFile =
         PluginProtos.CodeGeneratorResponse.File.newBuilder()
             .setName(SERVICE_FACTORY_PATH)
             .setContent(generateFactoryFile(services))
             .build();
-    return Stream.concat(services.stream().map(this::buildServiceFile), Stream.of(factory));
+    return Stream.concat(services.stream().map(this::buildServiceFile), Stream.of(factoryFile));
   }
 
   private Stream<Pair<FileDescriptorProto, Location>> getFileLocations(FileDescriptorProto file) {
