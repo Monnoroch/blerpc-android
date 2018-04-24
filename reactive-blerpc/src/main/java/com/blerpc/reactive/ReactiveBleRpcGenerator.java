@@ -56,6 +56,7 @@ public class ReactiveBleRpcGenerator extends Generator {
     ProtocPlugin.generate(new ReactiveBleRpcGenerator());
   }
 
+  // TODO: add validation for requests and responses.
   @Override
   public Stream<PluginProtos.CodeGeneratorResponse.File> generate(
       PluginProtos.CodeGeneratorRequest request) throws GeneratorException {
