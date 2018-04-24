@@ -17,7 +17,6 @@ import com.salesforce.jprotoc.ProtocPlugin;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Scanner;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -64,17 +63,6 @@ public class ReactiveBleRpcGenerator extends Generator {
             .setContent(generateFactoryFile(services))
             .build();
     return Stream.concat(files, Stream.of(factory));
-  }
-
-  private String readFileFromResources(String fileName) {
-    StringBuilder result = new StringBuilder();
-    try (Scanner scanner = new Scanner(getClass().getClassLoader().getResourceAsStream(fileName))) {
-      while (scanner.hasNextLine()) {
-        result.append(scanner.nextLine()).append("\n");
-      }
-      scanner.close();
-    }
-    return result.toString();
   }
 
   private List<ServiceContext> findServices(
@@ -179,8 +167,8 @@ public class ReactiveBleRpcGenerator extends Generator {
     serviceContext.methods.add(methodContext);
   }
 
-  private String lowerCaseFirst(String s) {
-    return Character.toLowerCase(s.charAt(0)) + s.substring(1);
+  private String lowerCaseFirst(String string) {
+    return Character.toLowerCase(string.charAt(0)) + string.substring(1);
   }
 
   private String generateFactoryFile(List<ServiceContext> services) {
@@ -190,23 +178,18 @@ public class ReactiveBleRpcGenerator extends Generator {
   }
 
   private PluginProtos.CodeGeneratorResponse.File buildFile(ServiceContext context) {
-    String content = applyTemplate(RX_MUSTACHE_NAME, context);
     return PluginProtos.CodeGeneratorResponse.File.newBuilder()
         .setName(absoluteFileName(context))
-        .setContent(content)
+        .setContent(applyTemplate(RX_MUSTACHE_NAME, context))
         .build();
   }
 
-  private String buildCreateServiceMethod(ServiceContext context) {
-    return applyTemplate(FACTORY_MUSTACHE_NAME, context);
-  }
-
-  private String absoluteFileName(ServiceContext ctx) {
-    String dir = ctx.packageName.replace('.', '/');
+  private String absoluteFileName(ServiceContext context) {
+    String dir = context.packageName.replace('.', '/');
     if (Strings.isNullOrEmpty(dir)) {
-      return ctx.fileName;
+      return context.fileName;
     } else {
-      return dir + "/" + ctx.fileName;
+      return dir + "/" + context.fileName;
     }
   }
 
