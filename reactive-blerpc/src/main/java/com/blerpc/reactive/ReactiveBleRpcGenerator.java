@@ -39,6 +39,8 @@ public class ReactiveBleRpcGenerator extends Generator {
    *
    * <p>For describing service we need only to elements in path: [6, 2]. Path shows, that location
    * is third service in the file.
+   *
+   * <p>https://developers.google.com/protocol-buffers/docs/reference/java/com/google/protobuf/DescriptorProtos.SourceCodeInfo.Location#getPathCount--
    */
   private static final int METHOD_NUMBER_OF_PATHS = 4;
 
@@ -47,8 +49,8 @@ public class ReactiveBleRpcGenerator extends Generator {
   private static final String SERVICE_JAVADOC_PREFIX = "";
   private static final String METHOD_JAVADOC_PREFIX = "  ";
   private static final String CLASS_PREFIX = "Rx";
-  private static final String RX_SERVICE_TEMPLATE_NAME = CLASS_PREFIX + "Stub.mustache";
-  private static final String FACTORY_MUSTACHE_NAME = "FactoryService.mustache";
+  private static final String RX_SERVICE_TEMPLATE_FILE = CLASS_PREFIX + "Stub.mustache";
+  private static final String FACTORY_TEMPLATE_FILE = "FactoryService.mustache";
   private static final String SERVICE_FACTORY_PATH =
       Paths.get("com", "blerpc", "reactive", "BleServiceFactory.java").toString();
 
@@ -62,14 +64,15 @@ public class ReactiveBleRpcGenerator extends Generator {
       PluginProtos.CodeGeneratorRequest request) throws GeneratorException {
     final ProtoTypeMap typeMap = ProtoTypeMap.of(request.getProtoFileList());
 
-    List<ServiceContext> services = request
+    List<ServiceContext> services =
+        request
             .getProtoFileList()
             .stream()
             .filter(file -> request.getFileToGenerateList().contains(file.getName()))
             .flatMap(this::getFileLocations)
-            .filter(fileLocation -> isService(fileLocation.snd))
-            .filter(fileLocation -> isBleRpcService(fileLocation.fst, fileLocation.snd))
-            .map(fileLocation -> buildServiceContext(fileLocation.fst, fileLocation.snd, typeMap))
+            .filter(this::isProtoService)
+            .filter(this::isBleRpcService)
+            .map(fileLocation -> buildServiceContext(fileLocation, typeMap))
             .collect(Collectors.toList());
 
     PluginProtos.CodeGeneratorResponse.File factory =
@@ -81,35 +84,39 @@ public class ReactiveBleRpcGenerator extends Generator {
   }
 
   private Stream<Pair<FileDescriptorProto, Location>> getFileLocations(FileDescriptorProto file) {
-    return file.getSourceCodeInfo().getLocationList().stream().map(location -> Pair.of(file, location));
+    return file.getSourceCodeInfo()
+        .getLocationList()
+        .stream()
+        .map(location -> Pair.of(file, location));
   }
 
   private ServiceContext buildServiceContext(
-      FileDescriptorProto fileProto, Location location, ProtoTypeMap typeMap) {
-    int serviceNumber = location.getPath(1);
-    ServiceContext serviceContext = buildServiceContext(fileProto, typeMap, serviceNumber);
-    serviceContext.javaDoc = getJavaDoc(location.getLeadingComments(), SERVICE_JAVADOC_PREFIX);
-    serviceContext.packageName = extractPackageName(fileProto);
+      Pair<FileDescriptorProto, Location> fileLocation, ProtoTypeMap typeMap) {
+    int serviceNumber = fileLocation.snd.getPath(1);
+    ServiceContext serviceContext = buildServiceContext(fileLocation.fst, typeMap, serviceNumber);
+    serviceContext.javaDoc =
+        getJavaDoc(fileLocation.snd.getLeadingComments(), SERVICE_JAVADOC_PREFIX);
+    serviceContext.packageName = extractPackageName(fileLocation.fst);
     return serviceContext;
   }
 
   private ServiceContext buildServiceContext(
-          FileDescriptorProto fileProto, ProtoTypeMap typeMap, int serviceNumber) {
+      FileDescriptorProto fileProto, ProtoTypeMap typeMap, int serviceNumber) {
     ServiceDescriptorProto serviceProto = fileProto.getService(serviceNumber);
     ServiceContext serviceContext = new ServiceContext();
     serviceContext.serviceName = serviceProto.getName();
-    serviceContext.fileName = CLASS_PREFIX + serviceContext.serviceName + ".java";
     serviceContext.className = CLASS_PREFIX + serviceContext.serviceName;
+    serviceContext.fileName = serviceContext.className + ".java";
     serviceContext.deprecated =
-            serviceProto.getOptions() != null && serviceProto.getOptions().getDeprecated();
+        serviceProto.getOptions() != null && serviceProto.getOptions().getDeprecated();
     serviceContext.methods =
-            fileProto
-                    .getSourceCodeInfo()
-                    .getLocationList()
-                    .stream()
-                    .filter(location -> isMethod(location, serviceNumber))
-                    .map(location -> buildMethodContext(serviceProto, location, typeMap))
-                    .collect(Collectors.toList());
+        fileProto
+            .getSourceCodeInfo()
+            .getLocationList()
+            .stream()
+            .filter(location -> isProtoMethod(location, serviceNumber))
+            .map(location -> buildMethodContext(serviceProto, location, typeMap))
+            .collect(Collectors.toList());
     return serviceContext;
   }
 
@@ -129,7 +136,7 @@ public class ReactiveBleRpcGenerator extends Generator {
     int methodNumber = location.getPath(METHOD_NUMBER_OF_PATHS - 1);
     MethodDescriptorProto methodProto = serviceProto.getMethod(methodNumber);
     MethodContext methodContext = new MethodContext();
-    methodContext.methodName = shiftFirstToLowerCase(methodProto.getName());
+    methodContext.methodName = changeFirstToLowerCase(methodProto.getName());
     methodContext.inputType = typeMap.toJavaTypeName(methodProto.getInputType());
     methodContext.outputType = typeMap.toJavaTypeName(methodProto.getOutputType());
     methodContext.deprecated =
@@ -137,25 +144,25 @@ public class ReactiveBleRpcGenerator extends Generator {
     methodContext.isManyOutput = methodProto.getServerStreaming();
     methodContext.javaDoc = getJavaDoc(location.getLeadingComments(), METHOD_JAVADOC_PREFIX);
     if (methodProto.getClientStreaming()) {
-      throw new RuntimeException("BLE doesn't support client streaming to BLE device.");
+      throw new RuntimeException("BleRpc doesn't support client streaming to BLE device.");
     }
     return methodContext;
   }
 
-  private String shiftFirstToLowerCase(String string) {
+  private String changeFirstToLowerCase(String string) {
     return Character.toLowerCase(string.charAt(0)) + string.substring(1);
   }
 
   private String generateFactoryFile(List<ServiceContext> services) {
     FileContext fileContext = new FileContext();
     fileContext.services = services;
-    return applyTemplate(FACTORY_MUSTACHE_NAME, fileContext);
+    return applyTemplate(FACTORY_TEMPLATE_FILE, fileContext);
   }
 
   private PluginProtos.CodeGeneratorResponse.File buildServiceFile(ServiceContext context) {
     return PluginProtos.CodeGeneratorResponse.File.newBuilder()
         .setName(fullFileName(context))
-        .setContent(applyTemplate(RX_SERVICE_TEMPLATE_NAME, context))
+        .setContent(applyTemplate(RX_SERVICE_TEMPLATE_FILE, context))
         .build();
   }
 
@@ -179,20 +186,21 @@ public class ReactiveBleRpcGenerator extends Generator {
     return null;
   }
 
-  private boolean isService(Location location) {
-    return location.getPathCount() == SERVICE_NUMBER_OF_PATHS
-        && location.getPath(0) == FileDescriptorProto.SERVICE_FIELD_NUMBER;
+  private boolean isProtoService(Pair<FileDescriptorProto, Location> fileLocation) {
+    return fileLocation.snd.getPathCount() == SERVICE_NUMBER_OF_PATHS
+        && fileLocation.snd.getPath(0) == FileDescriptorProto.SERVICE_FIELD_NUMBER;
   }
 
-  private boolean isBleRpcService(FileDescriptorProto fileProto, Location location) {
-    return fileProto
-        .getService(location.getPath(1))
+  private boolean isBleRpcService(Pair<FileDescriptorProto, Location> fileLocation) {
+    return fileLocation
+        .fst
+        .getService(fileLocation.snd.getPath(1))
         .getOptions()
         .getUnknownFields()
         .hasField(Blerpc.SERVICE_FIELD_NUMBER);
   }
 
-  private boolean isMethod(Location location, int serviceNumber) {
+  private boolean isProtoMethod(Location location, int serviceNumber) {
     return location.getPathCount() == METHOD_NUMBER_OF_PATHS
         && location.getPath(0) == FileDescriptorProto.SERVICE_FIELD_NUMBER
         && location.getPath(1) == serviceNumber
