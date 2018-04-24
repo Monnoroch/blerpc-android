@@ -66,7 +66,16 @@ public class ReactiveBleRpcGenerator extends Generator {
             .getProtoFileList()
             .stream()
             .filter(protoFile -> request.getFileToGenerateList().contains(protoFile.getName()))
-            .flatMap(fileProto -> findServicesInFile(fileProto, typeMap));
+            .flatMap(
+                fileProto ->
+                    fileProto
+                        .getSourceCodeInfo()
+                        .getLocationList()
+                        .stream()
+                        .filter(this::isService)
+                        .filter(location -> isBleRpcService(fileProto, location))
+                        .map(location -> buildServiceContext(fileProto, location, typeMap)));
+
     PluginProtos.CodeGeneratorResponse.File factory =
         PluginProtos.CodeGeneratorResponse.File.newBuilder()
             .setName(SERVICE_FACTORY_PATH.toString())
@@ -75,24 +84,15 @@ public class ReactiveBleRpcGenerator extends Generator {
     return Stream.concat(services.map(this::buildServiceFile), Stream.of(factory));
   }
 
-  private Stream<ServiceContext> findServicesInFile(
-      FileDescriptorProto fileProto, ProtoTypeMap typeMap) {
-    List<Location> locations = fileProto.getSourceCodeInfo().getLocationList();
-    return locations
-        .stream()
-        .filter(this::isService)
-        .filter(location -> isBleRpcService(fileProto, location))
-        .map(location -> buildServiceContext(fileProto, locations, location, typeMap));
-  }
-
   private ServiceContext buildServiceContext(
-      FileDescriptorProto fileProto,
-      List<Location> locations,
-      Location location,
-      ProtoTypeMap typeMap) {
+      FileDescriptorProto fileProto, Location location, ProtoTypeMap typeMap) {
     int serviceNumber = location.getPath(1);
     ServiceContext serviceContext =
-        buildServiceContext(fileProto.getService(serviceNumber), typeMap, locations, serviceNumber);
+        buildServiceContext(
+            fileProto.getService(serviceNumber),
+            typeMap,
+            fileProto.getSourceCodeInfo().getLocationList(),
+            serviceNumber);
     serviceContext.javaDoc = getJavaDoc(location.getLeadingComments(), SERVICE_JAVADOC_PREFIX);
     serviceContext.protoName = fileProto.getName();
     serviceContext.packageName = extractPackageName(fileProto);

@@ -40,11 +40,6 @@ public class RxOnErrorTest {
     Single<Optional<Void>> single = Single.create(subscriber -> singleSubscriber = subscriber);
 
     @Test
-    public void loggingUncatchableExceptionsTest_observableSubscriber() throws Exception {
-        loggingUncatchableExceptions_observableSubscriber();
-    }
-
-    @Test
     public void loggingUncatchableExceptions_observableSubscriber_returnHandler() throws Exception {
         RxJavaPlugins.setErrorHandler(errorHandler);
         loggingUncatchableExceptions_observableSubscriber();
@@ -56,11 +51,6 @@ public class RxOnErrorTest {
         testObserver.dispose();
         RxOnError.loggingUncatchableExceptions(observableSubscriber, THROWABLE, logger);
         verify(logger).info(contains(THROWABLE.getMessage()));
-    }
-
-    @Test
-    public void loggingUncatchableExceptionsTest_singleSubscriber() throws Exception {
-        loggingUncatchableExceptions_singleSubscriber();
     }
 
     @Test
