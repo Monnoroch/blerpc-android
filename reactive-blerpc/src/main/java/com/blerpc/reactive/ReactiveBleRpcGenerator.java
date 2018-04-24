@@ -13,10 +13,12 @@ import com.salesforce.jprotoc.Generator;
 import com.salesforce.jprotoc.GeneratorException;
 import com.salesforce.jprotoc.ProtoTypeMap;
 import com.salesforce.jprotoc.ProtocPlugin;
+import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -47,6 +49,8 @@ public class ReactiveBleRpcGenerator extends Generator {
   private static final String CLASS_PREFIX = "Rx";
   private static final String RX_MUSTACHE_NAME = CLASS_PREFIX + "Stub.mustache";
   private static final String FACTORY_MUSTACHE_NAME = "FactoryService.mustache";
+  private static final Path SERVICE_FACTORY_PATH =
+      Paths.get("com", "blerpc", "reactive", "BleServiceFactory.java");
 
   public static void main(String[] args) {
     ProtocPlugin.generate(new ReactiveBleRpcGenerator());
@@ -57,26 +61,18 @@ public class ReactiveBleRpcGenerator extends Generator {
       PluginProtos.CodeGeneratorRequest request) throws GeneratorException {
     final ProtoTypeMap typeMap = ProtoTypeMap.of(request.getProtoFileList());
 
-    Stream<FileDescriptorProto> protosToGenerate =
+    Stream<ServiceContext> services =
         request
             .getProtoFileList()
             .stream()
-            .filter(protoFile -> request.getFileToGenerateList().contains(protoFile.getName()));
-
-    Stream<ServiceContext> services = findServices(protosToGenerate, typeMap);
+            .filter(protoFile -> request.getFileToGenerateList().contains(protoFile.getName()))
+            .flatMap(fileProto -> findServicesInFile(fileProto, typeMap));
     PluginProtos.CodeGeneratorResponse.File factory =
         PluginProtos.CodeGeneratorResponse.File.newBuilder()
-            .setName("com/blerpc/reactive/BleServiceFactory.java")
-            .setContent(generateFactoryFile(services))
+            .setName(SERVICE_FACTORY_PATH.toString())
+            .setContent(generateFactoryFile(services.collect(Collectors.toList())))
             .build();
     return Stream.concat(services.map(this::buildServiceFile), Stream.of(factory));
-  }
-
-  private Stream<ServiceContext> findServices(
-      Stream<FileDescriptorProto> protos, ProtoTypeMap typeMap) {
-    return protos.flatMap(
-        (Function<FileDescriptorProto, Stream<ServiceContext>>)
-            fileProto -> findServicesInFile(fileProto, typeMap));
   }
 
   private Stream<ServiceContext> findServicesInFile(
@@ -84,22 +80,9 @@ public class ReactiveBleRpcGenerator extends Generator {
     List<Location> locations = fileProto.getSourceCodeInfo().getLocationList();
     return locations
         .stream()
-        .filter(this::locationIsService)
+        .filter(this::isService)
         .filter(location -> isBleRpcService(fileProto, location))
         .map(location -> buildServiceContext(fileProto, locations, location, typeMap));
-  }
-
-  private boolean locationIsService(Location location) {
-    return location.getPathCount() == SERVICE_NUMBER_OF_PATHS
-        && location.getPath(0) == FileDescriptorProto.SERVICE_FIELD_NUMBER;
-  }
-
-  private boolean isBleRpcService(FileDescriptorProto fileProto, Location location) {
-    return fileProto
-        .getService(location.getPath(1))
-        .getOptions()
-        .getUnknownFields()
-        .hasField(Blerpc.SERVICE_FIELD_NUMBER);
   }
 
   private ServiceContext buildServiceContext(
@@ -138,26 +121,17 @@ public class ReactiveBleRpcGenerator extends Generator {
     serviceContext.serviceName = serviceProto.getName();
     serviceContext.deprecated =
         serviceProto.getOptions() != null && serviceProto.getOptions().getDeprecated();
-
-    locations
-        .stream()
-        .filter(location -> locationIsMethod(location, serviceNumber))
-        .forEach(location -> buildMethodContext(serviceProto, serviceContext, location, typeMap));
+    serviceContext.methods =
+        locations
+            .stream()
+            .filter(location -> isMethod(location, serviceNumber))
+            .map(location -> buildMethodContext(serviceProto, location, typeMap))
+            .collect(Collectors.toList());
     return serviceContext;
   }
 
-  private boolean locationIsMethod(Location location, int serviceNumber) {
-    return location.getPathCount() == METHOD_NUMBER_OF_PATHS
-        && location.getPath(0) == FileDescriptorProto.SERVICE_FIELD_NUMBER
-        && location.getPath(1) == serviceNumber
-        && location.getPath(2) == ServiceDescriptorProto.METHOD_FIELD_NUMBER;
-  }
-
-  private void buildMethodContext(
-      ServiceDescriptorProto serviceProto,
-      ServiceContext serviceContext,
-      Location location,
-      ProtoTypeMap typeMap) {
+  private MethodContext buildMethodContext(
+      ServiceDescriptorProto serviceProto, Location location, ProtoTypeMap typeMap) {
     int methodNumber = location.getPath(METHOD_NUMBER_OF_PATHS - 1);
     MethodDescriptorProto methodProto = serviceProto.getMethod(methodNumber);
     MethodContext methodContext = new MethodContext();
@@ -170,16 +144,16 @@ public class ReactiveBleRpcGenerator extends Generator {
     methodContext.isManyOutput = methodProto.getServerStreaming();
     methodContext.methodNumber = methodNumber;
     methodContext.javaDoc = getJavaDoc(location.getLeadingComments(), METHOD_JAVADOC_PREFIX);
-    serviceContext.methods.add(methodContext);
+    return methodContext;
   }
 
   private String lowerCaseFirst(String string) {
     return Character.toLowerCase(string.charAt(0)) + string.substring(1);
   }
 
-  private String generateFactoryFile(Stream<ServiceContext> services) {
+  private String generateFactoryFile(List<ServiceContext> services) {
     FileContext fileContext = new FileContext();
-    fileContext.services = services.collect(Collectors.toList());
+    fileContext.services = services;
     return applyTemplate(FACTORY_MUSTACHE_NAME, fileContext);
   }
 
@@ -191,11 +165,11 @@ public class ReactiveBleRpcGenerator extends Generator {
   }
 
   private String absoluteFileName(ServiceContext context) {
-    String dir = context.packageName.replace('.', '/');
+    String dir = context.packageName.replace(".", File.separator);
     if (Strings.isNullOrEmpty(dir)) {
       return context.fileName;
     } else {
-      return dir + "/" + context.fileName;
+      return Paths.get(dir, context.fileName).toString();
     }
   }
 
@@ -208,6 +182,26 @@ public class ReactiveBleRpcGenerator extends Generator {
       return builder.toString();
     }
     return null;
+  }
+
+  private boolean isService(Location location) {
+    return location.getPathCount() == SERVICE_NUMBER_OF_PATHS
+        && location.getPath(0) == FileDescriptorProto.SERVICE_FIELD_NUMBER;
+  }
+
+  private boolean isBleRpcService(FileDescriptorProto fileProto, Location location) {
+    return fileProto
+        .getService(location.getPath(1))
+        .getOptions()
+        .getUnknownFields()
+        .hasField(Blerpc.SERVICE_FIELD_NUMBER);
+  }
+
+  private boolean isMethod(Location location, int serviceNumber) {
+    return location.getPathCount() == METHOD_NUMBER_OF_PATHS
+        && location.getPath(0) == FileDescriptorProto.SERVICE_FIELD_NUMBER
+        && location.getPath(1) == serviceNumber
+        && location.getPath(2) == ServiceDescriptorProto.METHOD_FIELD_NUMBER;
   }
 
   /** Template class that describe protobuf file. */
