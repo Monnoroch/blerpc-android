@@ -92,17 +92,8 @@ public class ReactiveBleRpcGenerator extends Generator {
 
   private ServiceContext buildServiceContext(
       Pair<FileDescriptorProto, Location> fileLocation, ProtoTypeMap typeMap) {
-    int serviceNumber = fileLocation.snd.getPath(1);
-    ServiceContext serviceContext = buildServiceContext(fileLocation.fst, typeMap, serviceNumber);
-    serviceContext.javaDoc =
-        getJavaDoc(fileLocation.snd.getLeadingComments(), SERVICE_JAVADOC_PREFIX);
-    serviceContext.packageName = extractPackageName(fileLocation.fst);
-    return serviceContext;
-  }
-
-  private ServiceContext buildServiceContext(
-      FileDescriptorProto fileProto, ProtoTypeMap typeMap, int serviceNumber) {
-    ServiceDescriptorProto serviceProto = fileProto.getService(serviceNumber);
+    int serviceNumber = fileLocation.snd.getPath(SERVICE_NUMBER_OF_PATHS - 1);
+    ServiceDescriptorProto serviceProto = fileLocation.fst.getService(serviceNumber);
     ServiceContext serviceContext = new ServiceContext();
     serviceContext.serviceName = serviceProto.getName();
     serviceContext.className = CLASS_PREFIX + serviceContext.serviceName;
@@ -110,13 +101,17 @@ public class ReactiveBleRpcGenerator extends Generator {
     serviceContext.deprecated =
         serviceProto.getOptions() != null && serviceProto.getOptions().getDeprecated();
     serviceContext.methods =
-        fileProto
+        fileLocation
+            .fst
             .getSourceCodeInfo()
             .getLocationList()
             .stream()
             .filter(location -> isProtoMethod(location, serviceNumber))
             .map(location -> buildMethodContext(serviceProto, location, typeMap))
             .collect(Collectors.toList());
+    serviceContext.javaDoc =
+        getJavaDoc(fileLocation.snd.getLeadingComments(), SERVICE_JAVADOC_PREFIX);
+    serviceContext.packageName = extractPackageName(fileLocation.fst);
     return serviceContext;
   }
 
