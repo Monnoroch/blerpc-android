@@ -10,117 +10,117 @@ package com.device.test;
 import "blerpc.proto";
 
 message TestBleWriteRequest {
-  option (com.blerpc.size) = {
+  option (com.blerpc.message) = {
         size_bytes: 24
     };
 
-  int32 int_value = 1 [(com.blerpc.range) = {
+  int32 int_value = 1 [(com.blerpc.field) = {
         from_byte: 0
         to_byte: 4
     }];
-  int64 long_value = 2 [(com.blerpc.range) = {
+  int64 long_value = 2 [(com.blerpc.field) = {
         from_byte: 4
         to_byte: 12
     }];
-  bool bool_value = 3 [(com.blerpc.range) = {
+  bool bool_value = 3 [(com.blerpc.field) = {
         from_byte: 12
         to_byte: 13
     }];
-  TestValuesEnum enum_value = 4 [(com.blerpc.range) = {
+  TestValuesEnum enum_value = 4 [(com.blerpc.field) = {
         from_byte: 14
         to_byte: 15
     }];
-  TestIntegerEmbeddedMessage message_value = 5 [(com.blerpc.range) = {
+  TestIntegerEmbeddedMessage message_value = 5 [(com.blerpc.field) = {
         from_byte: 16
         to_byte: 20
     }];
-  bytes byte_string_value = 6 [(com.blerpc.range) = {
+  bytes byte_string_value = 6 [(com.blerpc.field) = {
         from_byte: 20
         to_byte: 24
     }];
 }
 
 message TestBleWriteResponse {
-  option (com.blerpc.size) = {
+  option (com.blerpc.message) = {
         size_bytes: 24
     };
 
-  int32 int_value = 1 [(com.blerpc.range) = {
+  int32 int_value = 1 [(com.blerpc.field) = {
         from_byte: 0
         to_byte: 4
     }];
-  int64 long_value = 2 [(com.blerpc.range) = {
+  int64 long_value = 2 [(com.blerpc.field) = {
         from_byte: 4
         to_byte: 12
     }];
-  bool bool_value = 3 [(com.blerpc.range) = {
+  bool bool_value = 3 [(com.blerpc.field) = {
         from_byte: 12
         to_byte: 13
     }];
-  TestValuesEnum enum_value = 4 [(com.blerpc.range) = {
+  TestValuesEnum enum_value = 4 [(com.blerpc.field) = {
         from_byte: 14
         to_byte: 15
     }];
-  TestIntegerEmbeddedMessage message_value = 5 [(com.blerpc.range) = {
+  TestIntegerEmbeddedMessage message_value = 5 [(com.blerpc.field) = {
         from_byte: 16
         to_byte: 20
     }];
-  bytes byte_string_value = 6 [(com.blerpc.range) = {
+  bytes byte_string_value = 6 [(com.blerpc.field) = {
         from_byte: 20
         to_byte: 24
     }];
 }
 
 message TestBleReadRequest {
-  option (com.blerpc.size) = {
+  option (com.blerpc.message) = {
         size_bytes: 4
     };
 
-  int32 int_value = 1 [(com.blerpc.range) = {
+  int32 int_value = 1 [(com.blerpc.field) = {
         from_byte: 0
         to_byte: 4
     }];
 }
 
 message TestBleReadResponse {
-  option (com.blerpc.size) = {
+  option (com.blerpc.message) = {
         size_bytes: 4
     };
 
-  int32 int_value = 1 [(com.blerpc.range) = {
+  int32 int_value = 1 [(com.blerpc.field) = {
         from_byte: 0
         to_byte: 4
     }];
 }
 
 message TestBleSubscribeRequest {
-  option (com.blerpc.size) = {
+  option (com.blerpc.message) = {
         size_bytes: 4
     };
 
-  int32 int_value = 1 [(com.blerpc.range) = {
+  int32 int_value = 1 [(com.blerpc.field) = {
         from_byte: 0
         to_byte: 4
     }];
 }
 
 message TestBleSubscribeResponse {
-  option (com.blerpc.size) = {
+  option (com.blerpc.message) = {
         size_bytes: 4
     };
 
-  int32 int_value = 1 [(com.blerpc.range) = {
+  int32 int_value = 1 [(com.blerpc.field) = {
         from_byte: 0
         to_byte: 4
     }];
 }
 
 message TestIntegerEmbeddedMessage {
-  option (com.blerpc.size) = {
+  option (com.blerpc.message) = {
         size_bytes: 4
     };
 
-  int32 int_value = 1 [(com.blerpc.range) = {
+  int32 int_value = 1 [(com.blerpc.field) = {
         from_byte: 0
         to_byte: 4
     }];

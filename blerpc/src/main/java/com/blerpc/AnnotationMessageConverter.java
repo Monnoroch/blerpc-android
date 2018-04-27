@@ -3,7 +3,8 @@ package com.blerpc;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import com.blerpc.proto.Blerpc;
-import com.blerpc.proto.ByteRange;
+import com.blerpc.proto.FieldExtension;
+import com.blerpc.proto.MessageExtension;
 import com.google.common.math.LongMath;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Descriptors.Descriptor;
@@ -41,46 +42,46 @@ public class AnnotationMessageConverter implements MessageConverter {
   }
 
   @Override
-  public byte[] serializeRequest(MethodDescriptor methodDescriptor, Message message) throws CouldNotConvertMessageException {
-    checkHasSizeAnnotation(message);
-    int messageBytesSize = getMessageBytesSize(message);
+  public byte[] serializeRequest(MethodDescriptor methodDescriptor, Message message) {
+    checkHasExtension(message);
+    int messageBytesSize = getMessageExtension(message).getSizeBytes();
     if (messageBytesSize == 0) {
       return new byte[0];
     }
     byte[] requestBytes = new byte[messageBytesSize];
-    serializeMessage(requestBytes, message, ByteRange.newBuilder()
+    serializeMessage(requestBytes, message, FieldExtension.newBuilder()
         .setFromByte(0)
         .setToByte(messageBytesSize)
         .build());
     return requestBytes;
   }
 
-  private void serializeMessage(byte[] requestBytes, Message message, ByteRange requestBytesRange) throws CouldNotConvertMessageException {
-    validateMessageSchema(message, requestBytesRange);
+  private void serializeMessage(byte[] requestBytes, Message message, FieldExtension requestFieldExtension) {
+    validateMessageSchema(message, requestFieldExtension);
     for (Map.Entry<FieldDescriptor, Object> entry : message.getAllFields().entrySet()) {
       FieldDescriptor fieldDescriptor = entry.getKey();
       Object fieldValue = entry.getValue();
       String fieldName = fieldDescriptor.getName();
-      ByteRange relativeFieldBytesRange = getRelativeBytesRange(requestBytesRange, fieldDescriptor);
+      FieldExtension relativeBytesRangeFieldExtension = getRelativeBytesRangeFieldExtension(requestFieldExtension, fieldDescriptor);
       JavaType fieldType = fieldDescriptor.getType().getJavaType();
       switch (fieldType) {
         case MESSAGE:
-          serializeMessage(requestBytes, (Message) fieldValue, relativeFieldBytesRange);
+          serializeMessage(requestBytes, (Message) fieldValue, relativeBytesRangeFieldExtension);
           break;
         case INT:
-          serializeInt(requestBytes, (Integer) fieldValue, relativeFieldBytesRange, fieldName);
+          serializeInt(requestBytes, (Integer) fieldValue, relativeBytesRangeFieldExtension, fieldName);
           break;
         case LONG:
-          serializeLong(requestBytes, (Long) fieldValue, relativeFieldBytesRange, fieldName);
+          serializeLong(requestBytes, (Long) fieldValue, relativeBytesRangeFieldExtension, fieldName);
           break;
         case ENUM:
-          serializeEnum(requestBytes, (EnumValueDescriptor) fieldValue, relativeFieldBytesRange, fieldName);
+          serializeEnum(requestBytes, (EnumValueDescriptor) fieldValue, relativeBytesRangeFieldExtension, fieldName);
           break;
         case BOOLEAN:
-          serializeBoolean(requestBytes, (Boolean) fieldValue, relativeFieldBytesRange, fieldName);
+          serializeBoolean(requestBytes, (Boolean) fieldValue, relativeBytesRangeFieldExtension, fieldName);
           break;
         case BYTE_STRING:
-          serializeByteString(requestBytes, (ByteString) fieldValue, relativeFieldBytesRange, fieldName);
+          serializeByteString(requestBytes, (ByteString) fieldValue, relativeBytesRangeFieldExtension, fieldName);
           break;
         // TODO(#5): Add support of String, Float and Double.
         default:
@@ -91,18 +92,18 @@ public class AnnotationMessageConverter implements MessageConverter {
     }
   }
 
-  private void serializeInt(byte[] messageBytes, int fieldValue, ByteRange bytesRange, String fieldName) {
-    int bytesSize = bytesRange.getToByte() - bytesRange.getFromByte();
+  private void serializeInt(byte[] messageBytes, int fieldValue, FieldExtension fieldExtension, String fieldName) {
+    int bytesSize = fieldExtension.getToByte() - fieldExtension.getFromByte();
     checkArgument(bytesSize <= 4,
         "Int32 field %s has unsupported size %s. Only sizes in [1, 4] are supported.",
         fieldName,
         bytesSize);
-    serializeLong(messageBytes, fieldValue, bytesRange, fieldName);
+    serializeLong(messageBytes, fieldValue, fieldExtension, fieldName);
   }
 
-  private void serializeLong(byte[] messageBytes, long fieldValue, ByteRange bytesRange, String fieldName) {
-    int firstByte = bytesRange.getFromByte();
-    int bytesCount = bytesRange.getToByte() - firstByte;
+  private void serializeLong(byte[] messageBytes, long fieldValue, FieldExtension fieldExtension, String fieldName) {
+    int firstByte = fieldExtension.getFromByte();
+    int bytesCount = fieldExtension.getToByte() - firstByte;
     checkArgument(bytesCount <= 8,
         "Int64 field %s has unsupported size %s. Only sizes in [1, 8] are supported.",
         fieldName,
@@ -118,30 +119,30 @@ public class AnnotationMessageConverter implements MessageConverter {
     }
   }
 
-  private void serializeBoolean(byte[] messageBytes, boolean fieldValue, ByteRange bytesRange, String fieldName) {
-    int bytesSize = bytesRange.getToByte() - bytesRange.getFromByte();
+  private void serializeBoolean(byte[] messageBytes, boolean fieldValue, FieldExtension fieldExtension, String fieldName) {
+    int bytesSize = fieldExtension.getToByte() - fieldExtension.getFromByte();
     checkArgument(bytesSize == 1,
         "Boolean field %s has unsupported size %s. Only sizes 1 are supported.",
         fieldName,
         bytesSize);
-    messageBytes[bytesRange.getFromByte()] = fieldValue ? (byte) 1 : (byte) 0;
+    messageBytes[fieldExtension.getFromByte()] = fieldValue ? (byte) 1 : (byte) 0;
   }
 
-  private void serializeByteString(byte[] messageBytes, ByteString byteString, ByteRange bytesRange, String fieldName) {
+  private void serializeByteString(byte[] messageBytes, ByteString byteString, FieldExtension fieldExtension, String fieldName) {
     // TODO(#5): support for variable-length byte strings.
-    int bytesSize = bytesRange.getToByte() - bytesRange.getFromByte();
+    int bytesSize = fieldExtension.getToByte() - fieldExtension.getFromByte();
     checkArgument(bytesSize == byteString.size(),
         "Declared size %s of ByteString %s is not equal to ByteString real size %s",
         bytesSize,
         fieldName,
         byteString.size());
-    byteString.copyTo(messageBytes, bytesRange.getFromByte());
+    byteString.copyTo(messageBytes, fieldExtension.getFromByte());
   }
 
-  private void serializeEnum(byte[] messageBytes, EnumValueDescriptor enumDescriptor, ByteRange bytesRange, String fieldName) {
-    checkEnumBytesRangeValid(enumDescriptor.getType(), bytesRange, fieldName);
-    checkBytesRangeEnoughForEnum(enumDescriptor, bytesRange);
-    serializeLong(messageBytes, enumDescriptor.getNumber(), bytesRange, fieldName);
+  private void serializeEnum(byte[] messageBytes, EnumValueDescriptor enumDescriptor, FieldExtension fieldExtension, String fieldName) {
+    checkEnumBytesRangeValid(enumDescriptor.getType(), fieldExtension, fieldName);
+    checkBytesRangeEnoughForEnum(enumDescriptor, fieldExtension);
+    serializeLong(messageBytes, enumDescriptor.getNumber(), fieldExtension, fieldName);
   }
 
   @Override
@@ -149,46 +150,46 @@ public class AnnotationMessageConverter implements MessageConverter {
     if (value.length == 0) {
       return message.getDefaultInstanceForType();
     }
-    checkHasSizeAnnotation(message);
-    int messageBytesSize = getMessageBytesSize(message);
+    checkHasExtension(message);
+    int messageBytesSize = getMessageExtension(message).getSizeBytes();
     checkArgument(value.length == messageBytesSize,
         "Declared size %s of message %s is not equal to device response size %s",
         messageBytesSize,
         message.getDescriptorForType().getName(),
         value.length);
-    return deserializeMessage(message, value, ByteRange.newBuilder()
+    return deserializeMessage(message, value, FieldExtension.newBuilder()
         .setFromByte(0)
         .setToByte(messageBytesSize)
         .build());
   }
 
-  private Message deserializeMessage(Message message, byte[] value, ByteRange requestBytesRange) {
-    validateMessageSchema(message, requestBytesRange);
+  private Message deserializeMessage(Message message, byte[] value, FieldExtension requestFieldExtension) {
+    validateMessageSchema(message, requestFieldExtension);
     Message.Builder messageBuilder = message.toBuilder();
     for (FieldDescriptor fieldDescriptor : message.getDescriptorForType().getFields()) {
-      ByteRange relativeFieldBytesRange = getRelativeBytesRange(requestBytesRange, fieldDescriptor);
+      FieldExtension relativeBytesRangeFieldExtension = getRelativeBytesRangeFieldExtension(requestFieldExtension, fieldDescriptor);
       String fieldName = fieldDescriptor.getName();
       JavaType fieldType = fieldDescriptor.getType().getJavaType();
       switch (fieldType) {
         case MESSAGE:
           messageBuilder.setField(fieldDescriptor, deserializeMessage((Message) message.getField(fieldDescriptor),
               value,
-              relativeFieldBytesRange));
+                  relativeBytesRangeFieldExtension));
           break;
         case INT:
-          messageBuilder.setField(fieldDescriptor, deserializeInt(value, relativeFieldBytesRange, fieldName));
+          messageBuilder.setField(fieldDescriptor, deserializeInt(value, relativeBytesRangeFieldExtension, fieldName));
           break;
         case LONG:
-          messageBuilder.setField(fieldDescriptor, deserializeLong(value, relativeFieldBytesRange, fieldName));
+          messageBuilder.setField(fieldDescriptor, deserializeLong(value, relativeBytesRangeFieldExtension, fieldName));
           break;
         case ENUM:
-          messageBuilder.setField(fieldDescriptor, deserializeEnum(value, fieldDescriptor, relativeFieldBytesRange));
+          messageBuilder.setField(fieldDescriptor, deserializeEnum(value, fieldDescriptor, relativeBytesRangeFieldExtension));
           break;
         case BOOLEAN:
-          messageBuilder.setField(fieldDescriptor, deserializeBoolean(value, relativeFieldBytesRange, fieldName));
+          messageBuilder.setField(fieldDescriptor, deserializeBoolean(value, relativeBytesRangeFieldExtension, fieldName));
           break;
         case BYTE_STRING:
-          messageBuilder.setField(fieldDescriptor, deserializeByteString(value, relativeFieldBytesRange));
+          messageBuilder.setField(fieldDescriptor, deserializeByteString(value, relativeBytesRangeFieldExtension));
           break;
         // TODO(#5): Add support of String, Float and Double.
         default:
@@ -200,18 +201,18 @@ public class AnnotationMessageConverter implements MessageConverter {
     return messageBuilder.build();
   }
 
-  private int deserializeInt(byte[] bytes, ByteRange bytesRange, String fieldName) {
-    int bytesSize = bytesRange.getToByte() - bytesRange.getFromByte();
+  private int deserializeInt(byte[] bytes, FieldExtension fieldExtension, String fieldName) {
+    int bytesSize = fieldExtension.getToByte() - fieldExtension.getFromByte();
     checkArgument(bytesSize <= 4,
         "Int32 field %s has unsupported size %s. Only sizes in [1, 4] are supported.",
         fieldName,
         bytesSize);
-    return (int) deserializeLong(bytes, bytesRange, fieldName);
+    return (int) deserializeLong(bytes, fieldExtension, fieldName);
   }
 
-  private long deserializeLong(byte[] bytes, ByteRange bytesRange, String fieldName) {
-    int firstByte = bytesRange.getFromByte();
-    int lastByte = bytesRange.getToByte();
+  private long deserializeLong(byte[] bytes, FieldExtension fieldExtension, String fieldName) {
+    int firstByte = fieldExtension.getFromByte();
+    int lastByte = fieldExtension.getToByte();
     int bytesSize = lastByte - firstByte;
     checkArgument(bytesSize <= 8,
         "Int64 field %s has unsupported size %s. Only sizes in [1, 8] are supported.",
@@ -233,55 +234,55 @@ public class AnnotationMessageConverter implements MessageConverter {
     return result;
   }
 
-  private EnumValueDescriptor deserializeEnum(byte[] bytes, FieldDescriptor fieldDescriptor, ByteRange bytesRange) {
-    checkEnumBytesRangeValid(fieldDescriptor.getEnumType(), bytesRange, fieldDescriptor.getName());
+  private EnumValueDescriptor deserializeEnum(byte[] bytes, FieldDescriptor fieldDescriptor, FieldExtension fieldExtension) {
+    checkEnumBytesRangeValid(fieldDescriptor.getEnumType(), fieldExtension, fieldDescriptor.getName());
     return fieldDescriptor.getEnumType()
-        .findValueByNumber((int) deserializeLong(bytes, bytesRange, fieldDescriptor.getName()));
+        .findValueByNumber((int) deserializeLong(bytes, fieldExtension, fieldDescriptor.getName()));
   }
 
-  private boolean deserializeBoolean(byte[] bytes, ByteRange bytesRange, String fieldName) {
-    int bytesSize = bytesRange.getToByte() - bytesRange.getFromByte();
+  private boolean deserializeBoolean(byte[] bytes, FieldExtension fieldExtension, String fieldName) {
+    int bytesSize = fieldExtension.getToByte() - fieldExtension.getFromByte();
     checkArgument(bytesSize == 1,
         "Boolean field %s has unsupported size %s. Only sizes 1 are supported.",
         fieldName,
         bytesSize);
-    return bytes[bytesRange.getFromByte()] != 0;
+    return bytes[fieldExtension.getFromByte()] != 0;
   }
 
-  private ByteString deserializeByteString(byte[] bytes, ByteRange bytesRange) {
+  private ByteString deserializeByteString(byte[] bytes, FieldExtension fieldExtension) {
     // TODO(#5): support for variable-length byte strings.
-    int byteSize = bytesRange.getToByte() - bytesRange.getFromByte();
-    return ByteString.copyFrom(bytes, bytesRange.getFromByte(), byteSize);
+    int byteSize = fieldExtension.getToByte() - fieldExtension.getFromByte();
+    return ByteString.copyFrom(bytes, fieldExtension.getFromByte(), byteSize);
   }
 
-  private static int getMessageBytesSize(Message message) {
-    return message.getDescriptorForType().getOptions().getExtension(Blerpc.size).getSizeBytes();
+  private static MessageExtension getMessageExtension(Message message) {
+    return message.getDescriptorForType().getOptions().getExtension(Blerpc.message);
   }
 
-  private static ByteRange getBytesRange(FieldDescriptor descriptor) {
-    return descriptor.getOptions().getExtension(Blerpc.range);
+  private static FieldExtension getFieldExtension(FieldDescriptor descriptor) {
+    return descriptor.getOptions().getExtension(Blerpc.field);
   }
 
-  private static void validateMessageSchema(Message message, ByteRange messageBytesRange) {
-    checkHasExpectedBytesSize(message, messageBytesRange);
+  private static void validateMessageSchema(Message message, FieldExtension fieldExtension) {
+    checkHasExpectedBytesSize(message, fieldExtension);
     List<FieldDescriptor> fields = message.getDescriptorForType().getFields();
     for (FieldDescriptor field : fields) {
-      checkFieldHasByteRangeOption(field);
-      checkBytesRangeValid(getBytesRange(field), getMessageBytesSize(message), field);
+      checkFieldHasExtension(field);
+      checkBytesRangeValid(getFieldExtension(field), getMessageExtension(message).getSizeBytes(), field);
     }
     checkBytesRangesNotIntersect(fields);
   }
 
-  private static void checkHasSizeAnnotation(Message message) {
+  private static void checkHasExtension(Message message) {
     Descriptor descriptor = message.getDescriptorForType();
-    checkArgument(descriptor.getOptions().hasExtension(Blerpc.size) || descriptor.getFields().isEmpty(),
-        "A non empty message %s doesn't have com.blerpc.message_size annotation.",
+    checkArgument(descriptor.getOptions().hasExtension(Blerpc.message) || descriptor.getFields().isEmpty(),
+        "A non empty message %s doesn't have com.blerpc.message_extension annotation.",
         descriptor.getName());
   }
 
-  private static void checkHasExpectedBytesSize(Message message, ByteRange bytesRange) {
-    int messageBytesSize = getMessageBytesSize(message);
-    int expectedBytesSize = bytesRange.getToByte() - bytesRange.getFromByte();
+  private static void checkHasExpectedBytesSize(Message message, FieldExtension fieldExtension) {
+    int messageBytesSize = getMessageExtension(message).getSizeBytes();
+    int expectedBytesSize = fieldExtension.getToByte() - fieldExtension.getFromByte();
     checkArgument(messageBytesSize == expectedBytesSize,
         "Non-primitive message %s has declared size %s, which is not equal to the size of it's type %s.",
         message.getDescriptorForType().getName(),
@@ -289,16 +290,16 @@ public class AnnotationMessageConverter implements MessageConverter {
         messageBytesSize);
   }
 
-  private static void checkFieldHasByteRangeOption(FieldDescriptor descriptor) {
-    checkArgument(descriptor.getOptions().hasExtension(Blerpc.range),
-        "Proto field %s doesn't have com.blerpc.field_bytes annotation",
+  private static void checkFieldHasExtension(FieldDescriptor descriptor) {
+    checkArgument(descriptor.getOptions().hasExtension(Blerpc.field),
+        "Proto field %s doesn't have com.blerpc.field_extension annotation",
         descriptor.getName());
   }
 
-  private static void checkBytesRangeValid(ByteRange bytesRange, int messageBytesSize, FieldDescriptor descriptor) {
+  private static void checkBytesRangeValid(FieldExtension fieldExtension, int messageBytesSize, FieldDescriptor descriptor) {
     String name = descriptor.getName();
-    int firstByte = bytesRange.getFromByte();
-    int lastByte = bytesRange.getToByte();
+    int firstByte = fieldExtension.getFromByte();
+    int lastByte = fieldExtension.getToByte();
     checkArgument(firstByte < lastByte,
         "Field %s has from_bytes = %s which must be less than to_bytes = %s",
         name,
@@ -318,29 +319,29 @@ public class AnnotationMessageConverter implements MessageConverter {
   private static void checkBytesRangesNotIntersect(List<FieldDescriptor> fields) {
     for (int i = 0; i < fields.size(); i++) {
       for (int j = i + 1; j < fields.size(); j++) {
-        ByteRange firstRange = getBytesRange(fields.get(i));
-        ByteRange secondRange = getBytesRange(fields.get(j));
-        checkArgument(!bytesRangesIntersect(firstRange, secondRange),
+        FieldExtension firstExtension = getFieldExtension(fields.get(i));
+        FieldExtension secondExtension = getFieldExtension(fields.get(j));
+        checkArgument(!bytesRangesIntersect(firstExtension, secondExtension),
             "Field %s bytes range [%s, %s] intersects with another field %s bytes range [%s, %s]",
             fields.get(i).getName(),
-            firstRange.getFromByte(),
-            firstRange.getToByte(),
+            firstExtension.getFromByte(),
+            firstExtension.getToByte(),
             fields.get(j).getName(),
-            secondRange.getFromByte(),
-            secondRange.getToByte());
+            secondExtension.getFromByte(),
+            secondExtension.getToByte());
       }
     }
   }
 
-  private static boolean bytesRangesIntersect(ByteRange firstRange, ByteRange secondRange) {
-    boolean firstRangeBeforeSecondRange = firstRange.getFromByte() < secondRange.getFromByte();
+  private static boolean bytesRangesIntersect(FieldExtension firstExtension, FieldExtension secondExtension) {
+    boolean firstRangeBeforeSecondRange = firstExtension.getFromByte() < secondExtension.getFromByte();
     return firstRangeBeforeSecondRange
-        ? firstRange.getToByte() > secondRange.getFromByte()
-        : secondRange.getToByte() > firstRange.getFromByte();
+        ? firstExtension.getToByte() > secondExtension.getFromByte()
+        : secondExtension.getToByte() > firstExtension.getFromByte();
   }
 
-  private static void checkBytesRangeEnoughForEnum(EnumValueDescriptor enumValueDescriptor, ByteRange bytesRange) {
-    int bytesSize = bytesRange.getToByte() - bytesRange.getFromByte();
+  private static void checkBytesRangeEnoughForEnum(EnumValueDescriptor enumValueDescriptor, FieldExtension fieldExtension) {
+    int bytesSize = fieldExtension.getToByte() - fieldExtension.getFromByte();
     EnumDescriptor enumDescriptor = enumValueDescriptor.getType();
     int maxValueNumber = 0;
     for (EnumValueDescriptor value : enumValueDescriptor.getType().getValues()) {
@@ -353,8 +354,8 @@ public class AnnotationMessageConverter implements MessageConverter {
         maxValueNumber);
   }
 
-  private static void checkEnumBytesRangeValid(EnumDescriptor enumDescriptor, ByteRange bytesRange, String fieldName) {
-    int bytesSize = bytesRange.getToByte() - bytesRange.getFromByte();
+  private static void checkEnumBytesRangeValid(EnumDescriptor enumDescriptor, FieldExtension fieldExtension, String fieldName) {
+    int bytesSize = fieldExtension.getToByte() - fieldExtension.getFromByte();
     checkArgument(bytesSize <= 4,
         "Enum %s field %s has unsupported size %s. Only sizes in [1, 4] are supported.",
         enumDescriptor.getName(),
@@ -362,12 +363,12 @@ public class AnnotationMessageConverter implements MessageConverter {
         bytesSize);
   }
 
-  private ByteRange getRelativeBytesRange(ByteRange requestBytesRange, FieldDescriptor fieldDescriptor) {
-    int firstByte = requestBytesRange.getFromByte();
-    ByteRange fieldBytesRange = getBytesRange(fieldDescriptor);
-    return ByteRange.newBuilder()
-        .setFromByte(fieldBytesRange.getFromByte() + firstByte)
-        .setToByte(fieldBytesRange.getToByte() + firstByte)
+  private FieldExtension getRelativeBytesRangeFieldExtension(FieldExtension fieldExtension, FieldDescriptor fieldDescriptor) {
+    int firstByte = fieldExtension.getFromByte();
+    FieldExtension embeddedFieldExtension = getFieldExtension(fieldDescriptor);
+    return FieldExtension.newBuilder()
+        .setFromByte(embeddedFieldExtension.getFromByte() + firstByte)
+        .setToByte(embeddedFieldExtension.getToByte() + firstByte)
         .build();
   }
 }
