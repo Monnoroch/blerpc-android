@@ -390,10 +390,7 @@ public class AnnotationMessageConverter implements MessageConverter {
   }
 
   private static ByteOrder getFieldByteOrder(FieldExtension fieldExtension, ByteOrder defaultOrder) {
-    boolean hasByteOrderAnnotation = fieldExtension.hasField(FieldExtension
-            .getDescriptor()
-            .findFieldByName("byte_order"));
-    if (!hasByteOrderAnnotation) {
+    if (fieldExtension.getByteOrder().equals(com.blerpc.proto.ByteOrder.DEFAULT)) {
       return defaultOrder;
     }
     return fieldExtension.getByteOrder().equals(com.blerpc.proto.ByteOrder.BIG_ENDIAN)
