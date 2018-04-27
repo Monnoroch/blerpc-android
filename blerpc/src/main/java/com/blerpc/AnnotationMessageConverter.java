@@ -35,10 +35,10 @@ public class AnnotationMessageConverter implements MessageConverter {
   /**
    * Create {@link AnnotationMessageConverter} instance.
    *
-   * @param byteOrder - byte order that will be used while serialize/deserialize field values to bytes.
+   * @param defaultByteOrder - byte order that will be used while serialize/deserialize field values to bytes.
    */
-  public AnnotationMessageConverter(ByteOrder byteOrder) {
-    this.defaultByteOrder = byteOrder;
+  public AnnotationMessageConverter(ByteOrder defaultByteOrder) {
+    this.defaultByteOrder = defaultByteOrder;
   }
 
   @Override
@@ -52,13 +52,13 @@ public class AnnotationMessageConverter implements MessageConverter {
     serializeMessage(requestBytes, message, FieldExtension.newBuilder()
         .setFromByte(0)
         .setToByte(messageBytesSize)
-        .build());
+        .build(), defaultByteOrder);
     return requestBytes;
   }
 
-  private void serializeMessage(byte[] requestBytes, Message message, FieldExtension requestFieldExtension) {
+  private void serializeMessage(byte[] requestBytes, Message message, FieldExtension requestFieldExtension, ByteOrder defaultByteOrder) {
     validateMessageSchema(message, requestFieldExtension);
-    ByteOrder messageBytesOrder = getMessageByteOrder(getMessageExtension(message), defaultByteOrder);
+    ByteOrder messageBytesOrder = getByteOrderOrDefault(getMessageExtension(message).getByteOrder(), defaultByteOrder);
     for (Map.Entry<FieldDescriptor, Object> entry : message.getAllFields().entrySet()) {
       FieldDescriptor fieldDescriptor = entry.getKey();
       Object fieldValue = entry.getValue();
@@ -68,7 +68,7 @@ public class AnnotationMessageConverter implements MessageConverter {
       JavaType fieldType = fieldDescriptor.getType().getJavaType();
       switch (fieldType) {
         case MESSAGE:
-          serializeMessage(requestBytes, (Message) fieldValue, relativeBytesRangeFieldExtension);
+          serializeMessage(requestBytes, (Message) fieldValue, relativeBytesRangeFieldExtension, messageBytesOrder);
           break;
         case INT:
           serializeInt(requestBytes, (Integer) fieldValue, relativeBytesRangeFieldExtension, fieldName);
@@ -162,13 +162,13 @@ public class AnnotationMessageConverter implements MessageConverter {
     return deserializeMessage(message, value, FieldExtension.newBuilder()
         .setFromByte(0)
         .setToByte(messageBytesSize)
-        .build());
+        .build(), defaultByteOrder);
   }
 
-  private Message deserializeMessage(Message message, byte[] value, FieldExtension requestFieldExtension) {
+  private Message deserializeMessage(Message message, byte[] value, FieldExtension requestFieldExtension, ByteOrder defaultByteOrder) {
     validateMessageSchema(message, requestFieldExtension);
     Message.Builder messageBuilder = message.toBuilder();
-    ByteOrder messageBytesOrder = getMessageByteOrder(getMessageExtension(message), defaultByteOrder);
+    ByteOrder messageBytesOrder = getByteOrderOrDefault(getMessageExtension(message).getByteOrder(), defaultByteOrder);
     for (FieldDescriptor fieldDescriptor : message.getDescriptorForType().getFields()) {
       FieldExtension relativeBytesRangeFieldExtension =
           getRelativeBytesRangeFieldExtension(requestFieldExtension, fieldDescriptor, messageBytesOrder);
@@ -178,7 +178,8 @@ public class AnnotationMessageConverter implements MessageConverter {
         case MESSAGE:
           messageBuilder.setField(fieldDescriptor, deserializeMessage((Message) message.getField(fieldDescriptor),
               value,
-                  relativeBytesRangeFieldExtension));
+              relativeBytesRangeFieldExtension,
+              messageBytesOrder));
           break;
         case INT:
           messageBuilder.setField(fieldDescriptor, deserializeInt(value, relativeBytesRangeFieldExtension, fieldName));
@@ -369,22 +370,17 @@ public class AnnotationMessageConverter implements MessageConverter {
 
   private FieldExtension getRelativeBytesRangeFieldExtension(FieldExtension fieldExtension,
                                                              FieldDescriptor fieldDescriptor,
-                                                             ByteOrder defaultOrder) {
+                                                             ByteOrder defaultByteOrder) {
     int firstByte = fieldExtension.getFromByte();
     FieldExtension embeddedFieldExtension = getFieldExtension(fieldDescriptor);
     return FieldExtension.newBuilder()
         .setFromByte(embeddedFieldExtension.getFromByte() + firstByte)
         .setToByte(embeddedFieldExtension.getToByte() + firstByte)
-        .setByteOrder(getFieldByteOrder(embeddedFieldExtension, defaultOrder))
+        .setByteOrder(getByteOrderOrDefault(embeddedFieldExtension.getByteOrder(), defaultByteOrder))
         .build();
   }
 
-  private static ByteOrder getMessageByteOrder(MessageExtension messageExtension, ByteOrder defaultOrder) {
-    return messageExtension.getByteOrder().equals(ByteOrder.DEFAULT) ? defaultOrder : messageExtension.getByteOrder();
-  }
-
-  private static ByteOrder getFieldByteOrder(FieldExtension fieldExtension, ByteOrder defaultOrder) {
-    return fieldExtension.getByteOrder().equals(ByteOrder.DEFAULT) ? defaultOrder : fieldExtension.getByteOrder();
-
+  private static ByteOrder getByteOrderOrDefault(ByteOrder currentByteOrder, ByteOrder defaultByteOrder) {
+    return currentByteOrder.equals(ByteOrder.DEFAULT) ? defaultByteOrder : currentByteOrder;
   }
 }

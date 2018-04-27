@@ -352,6 +352,40 @@ message TestLittleEndianMessageWithBigEndianField {
     }];
 }
 
+message TestLittleEndianNonPrimitiveMessage {
+  option (com.blerpc.message) = {
+        size_bytes: 8
+        byte_order: LITTLE_ENDIAN
+    };
+
+  int32 int_value = 1 [(com.blerpc.field) = {
+        from_byte: 0
+        to_byte: 4
+    }];
+
+  TestIntegerMessage embedded_message = 2 [(com.blerpc.field) = {
+        from_byte: 4
+        to_byte: 8
+    }];
+}
+
+message TestLittleEndianNonPrimitiveMessageWithBigEndianEmbeddedMessage {
+  option (com.blerpc.message) = {
+        size_bytes: 8
+        byte_order: LITTLE_ENDIAN
+    };
+
+  int32 int_value = 1 [(com.blerpc.field) = {
+        from_byte: 0
+        to_byte: 4
+    }];
+
+  TestBigEndianMessage embedded_message = 2 [(com.blerpc.field) = {
+        from_byte: 4
+        to_byte: 8
+    }];
+}
+
 enum TestBigValueEnum {
   UNKNOWN_ENUM_VALUE = 0;
   ENUM_VALUE_1 = 222222222;
