@@ -369,7 +369,6 @@ public class AnnotationMessageConverter implements MessageConverter {
     return FieldExtension.newBuilder()
         .setFromByte(embeddedFieldExtension.getFromByte() + firstByte)
         .setToByte(embeddedFieldExtension.getToByte() + firstByte)
-        .setByteOrder(embeddedFieldExtension.getByteOrder())
         .build();
   }
 }
