@@ -183,13 +183,13 @@ public class AnnotationMessageConverterTest {
   @Test
   public void serializeRequest_messageWithFieldAndWithoutByteSize() throws Exception {
     assertError(() -> converter.serializeRequest(null, TestNoBytesSizeMessage.getDefaultInstance()),
-        "A non empty message TestNoBytesSizeMessage doesn't have com.blerpc.message_size annotation.");
+        "A non empty message TestNoBytesSizeMessage doesn't have com.blerpc.message_extension annotation.");
   }
 
   @Test
   public void serializeRequest_noByteRange() throws Exception {
     assertError(() -> converter.serializeRequest(null, TestNoBytesRangeMessage.getDefaultInstance()),
-        "Proto field int_value doesn't have com.blerpc.field_bytes annotation");
+        "Proto field int_value doesn't have com.blerpc.field_extension annotation");
   }
 
   @Test
@@ -390,13 +390,13 @@ public class AnnotationMessageConverterTest {
     assertError(() -> converter.deserializeResponse(null,
         TestNoBytesSizeMessage.getDefaultInstance(),
         TEST_BOOL_BYTE_ARRAY),
-        "A non empty message TestNoBytesSizeMessage doesn't have com.blerpc.message_size annotation.");
+        "A non empty message TestNoBytesSizeMessage doesn't have com.blerpc.message_extension annotation.");
   }
 
   @Test
   public void deserializeResponse_noByteRangeMessage() throws Exception {
     assertError(() -> converter.deserializeResponse(null, TestNoBytesRangeMessage.getDefaultInstance(), new byte[2]),
-        "Proto field int_value doesn't have com.blerpc.field_bytes annotation");
+        "Proto field int_value doesn't have com.blerpc.field_extension annotation");
   }
 
   @Test
