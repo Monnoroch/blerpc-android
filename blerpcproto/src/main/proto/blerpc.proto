@@ -62,11 +62,13 @@ message FieldExtension {
 
 // Byte order type of message or field converted to bytes.
 enum ByteOrder {
+  // Default byte order that sets when creating com.blerpc.AnnotationMessageConverter.
+  DEFAULT = 0;
   // Big endian byte order. Short number "50" is converted into 2 bytes {0, 50}.
   // This is a default byte order.
-  BIG_ENDIAN = 0;
+  BIG_ENDIAN = 1;
   // Little endian byte order. Short number "50" is converter into 2 bytes {50, 0}".
-  LITTLE_ENDIAN = 1;
+  LITTLE_ENDIAN = 2;
 }
 
 // Allow annotating fields with com.blerpc.field annotation to specify parameters for automatic converter.
