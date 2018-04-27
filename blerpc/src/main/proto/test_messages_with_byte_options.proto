@@ -15,120 +15,120 @@ enum TestEnum {
 }
 
 message TestIntegerMessage {
-  option (com.blerpc.size) = {
+  option (com.blerpc.message) = {
         size_bytes: 4
     };
 
-  int32 int_value = 1 [(com.blerpc.range) = {
+  int32 int_value = 1 [(com.blerpc.field) = {
         from_byte: 0
         to_byte: 4
     }];
 }
 
 message TestThreeBytesIntegerMessage {
-  option (com.blerpc.size) = {
+  option (com.blerpc.message) = {
         size_bytes: 3
     };
 
-  int32 int_value = 1 [(com.blerpc.range) = {
+  int32 int_value = 1 [(com.blerpc.field) = {
         from_byte: 0
         to_byte: 3
     }];
 }
 
 message TestLongMessage {
-  option (com.blerpc.size) = {
+  option (com.blerpc.message) = {
         size_bytes: 8
     };
 
-  int64 long_value = 1 [(com.blerpc.range) = {
+  int64 long_value = 1 [(com.blerpc.field) = {
         from_byte: 0
         to_byte: 8
     }];
 }
 
 message TestSevenBytesLongMessage {
-  option (com.blerpc.size) = {
+  option (com.blerpc.message) = {
         size_bytes: 7
     };
 
-  int64 long_value = 1 [(com.blerpc.range) = {
+  int64 long_value = 1 [(com.blerpc.field) = {
         from_byte: 0
         to_byte: 7
     }];
 }
 
 message TestBoolMessage {
-  option (com.blerpc.size) = {
+  option (com.blerpc.message) = {
         size_bytes: 1
     };
 
-  bool bool_value = 1 [(com.blerpc.range) = {
+  bool bool_value = 1 [(com.blerpc.field) = {
         from_byte: 0
         to_byte: 1
     }];
 }
 
 message TestByteStringMessage {
-  option (com.blerpc.size) = {
+  option (com.blerpc.message) = {
         size_bytes: 8
     };
 
-  bytes byte_string_value = 1 [(com.blerpc.range) = {
+  bytes byte_string_value = 1 [(com.blerpc.field) = {
         from_byte: 0
         to_byte: 8
     }];
 }
 
 message TestEnumMessage {
-  option (com.blerpc.size) = {
+  option (com.blerpc.message) = {
         size_bytes: 4
     };
 
-  TestEnum enum_value = 1 [(com.blerpc.range) = {
+  TestEnum enum_value = 1 [(com.blerpc.field) = {
         from_byte: 0
         to_byte: 4
     }];
 }
 
 message TestThreeBytesEnumMessage {
-  option (com.blerpc.size) = {
+  option (com.blerpc.message) = {
         size_bytes: 3
     };
 
-  TestEnum enum_value = 1 [(com.blerpc.range) = {
+  TestEnum enum_value = 1 [(com.blerpc.field) = {
         from_byte: 0
         to_byte: 3
     }];
 }
 
 message TestNonPrimitiveFieldMessage {
-  option (com.blerpc.size) = {
+  option (com.blerpc.message) = {
         size_bytes: 12
     };
 
-  int32 int_value = 1 [(com.blerpc.range) = {
+  int32 int_value = 1 [(com.blerpc.field) = {
         from_byte: 0
         to_byte: 4
     }];
 
-  TestLongMessage embedded_message = 2 [(com.blerpc.range) = {
+  TestLongMessage embedded_message = 2 [(com.blerpc.field) = {
         from_byte: 4
         to_byte: 12
     }];
 }
 
 message TestMessageWithGaps {
-  option (com.blerpc.size) = {
+  option (com.blerpc.message) = {
         size_bytes: 14
     };
 
-  int32 int_value = 1 [(com.blerpc.range) = {
+  int32 int_value = 1 [(com.blerpc.field) = {
         from_byte: 0
         to_byte: 4
     }];
 
-  int64 long_value = 2 [(com.blerpc.range) = {
+  int64 long_value = 2 [(com.blerpc.field) = {
         from_byte: 6
         to_byte: 14
     }];
@@ -137,7 +137,7 @@ message TestMessageWithGaps {
 message TestEmptyMessage {}
 
 message TestZeroBytesMessage {
-  option (com.blerpc.size) = {
+  option (com.blerpc.message) = {
         size_bytes: 0
     };
   int32 int_value = 1;
@@ -148,157 +148,207 @@ message TestNoBytesSizeMessage {
 }
 
 message TestNoBytesRangeMessage {
-  option (com.blerpc.size) = {
+  option (com.blerpc.message) = {
         size_bytes: 2
     };
   int32 int_value = 1;
 }
 
 message TestZeroSizeRangeMessage {
-  option (com.blerpc.size) = {
+  option (com.blerpc.message) = {
         size_bytes: 1
     };
 
-  int32 int_value = 1 [(com.blerpc.range) = {
+  int32 int_value = 1 [(com.blerpc.field) = {
         from_byte: 0
         to_byte: 0
     }];
 }
 
 message TestNegativeSizeRangeMessage {
-  option (com.blerpc.size) = {
+  option (com.blerpc.message) = {
         size_bytes: 1
     };
 
-  int32 int_value = 1 [(com.blerpc.range) = {
+  int32 int_value = 1 [(com.blerpc.field) = {
         from_byte: 1
         to_byte: 0
     }];
 }
 
 message TestNegativeRangeFromMessage {
-  option (com.blerpc.size) = {
+  option (com.blerpc.message) = {
         size_bytes: 1
     };
 
-  int32 int_value = 1 [(com.blerpc.range) = {
+  int32 int_value = 1 [(com.blerpc.field) = {
         from_byte: -1
         to_byte: 0
     }];
 }
 
 message TestRangeBiggerThanCountMessage {
-  option (com.blerpc.size) = {
+  option (com.blerpc.message) = {
         size_bytes: 10
     };
 
-  int32 int_value = 1 [(com.blerpc.range) = {
+  int32 int_value = 1 [(com.blerpc.field) = {
         from_byte: 0
         to_byte: 11
     }];
 }
 
 message TestRangesIntersectMessage {
-  option (com.blerpc.size) = {
+  option (com.blerpc.message) = {
         size_bytes: 10
     };
 
-  int32 int_value_1 = 1 [(com.blerpc.range) = {
+  int32 int_value_1 = 1 [(com.blerpc.field) = {
         from_byte: 0
         to_byte: 4
     }];
 
-  int32 int_value_2 = 2 [(com.blerpc.range) = {
+  int32 int_value_2 = 2 [(com.blerpc.field) = {
         from_byte: 2
         to_byte: 10
     }];
 }
 
 message TestStringValueMessage {
-  option (com.blerpc.size) = {
+  option (com.blerpc.message) = {
         size_bytes: 4
     };
 
-  string string_value = 1 [(com.blerpc.range) = {
+  string string_value = 1 [(com.blerpc.field) = {
         from_byte: 0
         to_byte: 4
     }];
 }
 
 message TestFloatValueMessage {
-  option (com.blerpc.size) = {
+  option (com.blerpc.message) = {
         size_bytes: 4
     };
 
-  float float_value = 1 [(com.blerpc.range) = {
+  float float_value = 1 [(com.blerpc.field) = {
         from_byte: 0
         to_byte: 4
     }];
 }
 
 message TestDoubleValueMessage {
-  option (com.blerpc.size) = {
+  option (com.blerpc.message) = {
         size_bytes: 8
     };
 
-  double double_value = 1 [(com.blerpc.range) = {
+  double double_value = 1 [(com.blerpc.field) = {
         from_byte: 0
         to_byte: 8
     }];
 }
 
 message TestWrongIntegerRangeMessage {
-  option (com.blerpc.size) = {
+  option (com.blerpc.message) = {
         size_bytes: 5
     };
 
-  int32 int_value = 1 [(com.blerpc.range) = {
+  int32 int_value = 1 [(com.blerpc.field) = {
         from_byte: 0
         to_byte: 5
     }];
 }
 
 message TestWrongLongRangeMessage {
-  option (com.blerpc.size) = {
+  option (com.blerpc.message) = {
         size_bytes: 9
     };
 
-  int64 long_value = 1 [(com.blerpc.range) = {
+  int64 long_value = 1 [(com.blerpc.field) = {
         from_byte: 0
         to_byte: 9
     }];
 }
 
 message TestWrongEnumRangeMessage {
-  option (com.blerpc.size) = {
+  option (com.blerpc.message) = {
         size_bytes: 5
     };
 
-  TestEnum enum_value = 1 [(com.blerpc.range) = {
+  TestEnum enum_value = 1 [(com.blerpc.field) = {
         from_byte: 0
         to_byte: 5
     }];
 }
 
 message TestWrongBooleanRangeMessage {
-  option (com.blerpc.size) = {
+  option (com.blerpc.message) = {
         size_bytes: 2
     };
 
-  bool bool_value = 1 [(com.blerpc.range) = {
+  bool bool_value = 1 [(com.blerpc.field) = {
         from_byte: 0
         to_byte: 2
     }];
 }
 
 message TestSmallEnumRangeMessage {
-  option (com.blerpc.size) = {
+  option (com.blerpc.message) = {
         size_bytes: 3
     };
 
-  TestBigValueEnum enum_value = 1 [(com.blerpc.range) = {
+  TestBigValueEnum enum_value = 1 [(com.blerpc.field) = {
         from_byte: 0
         to_byte: 3
+    }];
+}
+
+message TestBigEndianMessage {
+  option (com.blerpc.message) = {
+        size_bytes: 4
+        byte_order: BIG_ENDIAN
+    };
+
+  int32 int_value = 1 [(com.blerpc.field) = {
+        from_byte: 0
+        to_byte: 4
+    }];
+}
+
+message TestLittleEndianMessage {
+  option (com.blerpc.message) = {
+        size_bytes: 4
+        byte_order: LITTLE_ENDIAN
+    };
+
+  int32 int_value = 1 [(com.blerpc.field) = {
+        from_byte: 0
+        to_byte: 4
+    }];
+}
+
+message TestBigEndianMessageWithLittleEndianField {
+  option (com.blerpc.message) = {
+        size_bytes: 4
+        byte_order: BIG_ENDIAN
+    };
+
+  int32 int_value = 1 [(com.blerpc.field) = {
+        from_byte: 0
+        to_byte: 4
+        byte_order: LITTLE_ENDIAN
+    }];
+}
+
+message TestLittleEndianMessageWithBigEndianField {
+  option (com.blerpc.message) = {
+        size_bytes: 4
+        byte_order: LITTLE_ENDIAN
+    };
+
+  int32 int_value = 1 [(com.blerpc.field) = {
+        from_byte: 0
+        to_byte: 4
+        byte_order: BIG_ENDIAN
     }];
 }
 

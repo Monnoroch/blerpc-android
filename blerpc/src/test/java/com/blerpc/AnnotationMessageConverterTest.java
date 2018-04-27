@@ -3,6 +3,8 @@ package com.blerpc;
 import static com.blerpc.Assert.assertError;
 import static com.google.common.truth.Truth.assertThat;
 
+import com.blerpc.device.test.proto.TestBigEndianMessage;
+import com.blerpc.device.test.proto.TestBigEndianMessageWithLittleEndianField;
 import com.blerpc.device.test.proto.TestBigValueEnum;
 import com.blerpc.device.test.proto.TestBoolMessage;
 import com.blerpc.device.test.proto.TestByteStringMessage;
@@ -12,6 +14,8 @@ import com.blerpc.device.test.proto.TestEnum;
 import com.blerpc.device.test.proto.TestEnumMessage;
 import com.blerpc.device.test.proto.TestFloatValueMessage;
 import com.blerpc.device.test.proto.TestIntegerMessage;
+import com.blerpc.device.test.proto.TestLittleEndianMessage;
+import com.blerpc.device.test.proto.TestLittleEndianMessageWithBigEndianField;
 import com.blerpc.device.test.proto.TestLongMessage;
 import com.blerpc.device.test.proto.TestMessageWithGaps;
 import com.blerpc.device.test.proto.TestNegativeRangeFromMessage;
@@ -183,13 +187,13 @@ public class AnnotationMessageConverterTest {
   @Test
   public void serializeRequest_messageWithFieldAndWithoutByteSize() throws Exception {
     assertError(() -> converter.serializeRequest(null, TestNoBytesSizeMessage.getDefaultInstance()),
-        "A non empty message TestNoBytesSizeMessage doesn't have com.blerpc.message_size annotation.");
+        "A non empty message TestNoBytesSizeMessage doesn't have com.blerpc.message_extension annotation.");
   }
 
   @Test
   public void serializeRequest_noByteRange() throws Exception {
     assertError(() -> converter.serializeRequest(null, TestNoBytesRangeMessage.getDefaultInstance()),
-        "Proto field int_value doesn't have com.blerpc.field_bytes annotation");
+        "Proto field int_value doesn't have com.blerpc.field_extension annotation");
   }
 
   @Test
@@ -273,6 +277,54 @@ public class AnnotationMessageConverterTest {
             .setEnumValue(TestBigValueEnum.ENUM_VALUE_1)
             .build()),
         "3 byte(s) not enough for TestBigValueEnum enum that has 222222222 max number");
+  }
+
+  @Test
+  public void serializeRequest_bigEndianMessage() throws Exception {
+    assertThat(converter.serializeRequest(null, TestBigEndianMessage.newBuilder()
+        .setIntValue(intFrom(TEST_INT_BYTE_ARRAY))
+        .build()))
+        .isEqualTo(TEST_INT_BYTE_ARRAY);
+    assertThat(converterLittleEndian.serializeRequest(null, TestBigEndianMessage.newBuilder()
+        .setIntValue(intFrom(TEST_INT_BYTE_ARRAY))
+        .build()))
+        .isEqualTo(TEST_INT_BYTE_ARRAY);
+  }
+
+  @Test
+  public void serializeRequest_littleEndianMessage() throws Exception {
+    assertThat(converter.serializeRequest(null, TestLittleEndianMessage.newBuilder()
+        .setIntValue(littleEndianIntFrom(TEST_INT_BYTE_ARRAY))
+        .build()))
+        .isEqualTo(TEST_INT_BYTE_ARRAY);
+    assertThat(converterLittleEndian.serializeRequest(null, TestLittleEndianMessage.newBuilder()
+        .setIntValue(littleEndianIntFrom(TEST_INT_BYTE_ARRAY))
+        .build()))
+        .isEqualTo(TEST_INT_BYTE_ARRAY);
+  }
+
+  @Test
+  public void serializeRequest_littleEndianMessageWithBigEndianField() throws Exception {
+    assertThat(converter.serializeRequest(null, TestLittleEndianMessageWithBigEndianField.newBuilder()
+        .setIntValue(intFrom(TEST_INT_BYTE_ARRAY))
+        .build()))
+        .isEqualTo(TEST_INT_BYTE_ARRAY);
+    assertThat(converterLittleEndian.serializeRequest(null, TestLittleEndianMessageWithBigEndianField.newBuilder()
+        .setIntValue(intFrom(TEST_INT_BYTE_ARRAY))
+        .build()))
+        .isEqualTo(TEST_INT_BYTE_ARRAY);
+  }
+
+  @Test
+  public void serializeRequest_bigEndianMessageWithLittleEndianField() throws Exception {
+    assertThat(converter.serializeRequest(null, TestBigEndianMessageWithLittleEndianField.newBuilder()
+        .setIntValue(littleEndianIntFrom(TEST_INT_BYTE_ARRAY))
+        .build()))
+        .isEqualTo(TEST_INT_BYTE_ARRAY);
+    assertThat(converterLittleEndian.serializeRequest(null, TestBigEndianMessageWithLittleEndianField.newBuilder()
+        .setIntValue(littleEndianIntFrom(TEST_INT_BYTE_ARRAY))
+        .build()))
+        .isEqualTo(TEST_INT_BYTE_ARRAY);
   }
 
   @Test
@@ -390,13 +442,13 @@ public class AnnotationMessageConverterTest {
     assertError(() -> converter.deserializeResponse(null,
         TestNoBytesSizeMessage.getDefaultInstance(),
         TEST_BOOL_BYTE_ARRAY),
-        "A non empty message TestNoBytesSizeMessage doesn't have com.blerpc.message_size annotation.");
+        "A non empty message TestNoBytesSizeMessage doesn't have com.blerpc.message_extension annotation.");
   }
 
   @Test
   public void deserializeResponse_noByteRangeMessage() throws Exception {
     assertError(() -> converter.deserializeResponse(null, TestNoBytesRangeMessage.getDefaultInstance(), new byte[2]),
-        "Proto field int_value doesn't have com.blerpc.field_bytes annotation");
+        "Proto field int_value doesn't have com.blerpc.field_extension annotation");
   }
 
   @Test
@@ -449,6 +501,62 @@ public class AnnotationMessageConverterTest {
   public void deserializeResponse_wrongBooleanRange() throws Exception {
     assertError(() -> converter.deserializeResponse(null, TestWrongBooleanRangeMessage.getDefaultInstance(), new byte[2]),
         "Boolean field bool_value has unsupported size 2. Only sizes 1 are supported.");
+  }
+
+  @Test
+  public void deserializeResponse_bigEndianMessage() throws Exception {
+    assertThat(converter.deserializeResponse(null, TestBigEndianMessage.getDefaultInstance(),
+        TEST_INT_BYTE_ARRAY))
+        .isEqualTo(TestBigEndianMessage.newBuilder()
+            .setIntValue(intFrom(TEST_INT_BYTE_ARRAY))
+            .build());
+    assertThat(converterLittleEndian.deserializeResponse(null, TestBigEndianMessage.getDefaultInstance(),
+        TEST_INT_BYTE_ARRAY))
+        .isEqualTo(TestBigEndianMessage.newBuilder()
+            .setIntValue(intFrom(TEST_INT_BYTE_ARRAY))
+            .build());
+  }
+
+  @Test
+  public void deserializeResponse_littleEndianMessage() throws Exception {
+    assertThat(converter.deserializeResponse(null, TestLittleEndianMessage.getDefaultInstance(),
+        TEST_INT_BYTE_ARRAY))
+        .isEqualTo(TestLittleEndianMessage.newBuilder()
+            .setIntValue(littleEndianIntFrom(TEST_INT_BYTE_ARRAY))
+            .build());
+    assertThat(converterLittleEndian.deserializeResponse(null, TestLittleEndianMessage.getDefaultInstance(),
+        TEST_INT_BYTE_ARRAY))
+        .isEqualTo(TestLittleEndianMessage.newBuilder()
+            .setIntValue(littleEndianIntFrom(TEST_INT_BYTE_ARRAY))
+            .build());
+  }
+
+  @Test
+  public void deserializeResponse_littleEndianMessageWithBigEndianField() throws Exception {
+    assertThat(converter.deserializeResponse(null, TestLittleEndianMessageWithBigEndianField.getDefaultInstance(),
+        TEST_INT_BYTE_ARRAY))
+        .isEqualTo(TestLittleEndianMessageWithBigEndianField.newBuilder()
+            .setIntValue(intFrom(TEST_INT_BYTE_ARRAY))
+            .build());
+    assertThat(converterLittleEndian.deserializeResponse(null, TestLittleEndianMessageWithBigEndianField.getDefaultInstance(),
+        TEST_INT_BYTE_ARRAY))
+        .isEqualTo(TestLittleEndianMessageWithBigEndianField.newBuilder()
+            .setIntValue(intFrom(TEST_INT_BYTE_ARRAY))
+            .build());
+  }
+
+  @Test
+  public void deserializeResponse_bigEndianMessageWithLittleEndianField() throws Exception {
+    assertThat(converter.deserializeResponse(null, TestBigEndianMessageWithLittleEndianField.getDefaultInstance(),
+        TEST_INT_BYTE_ARRAY))
+        .isEqualTo(TestBigEndianMessageWithLittleEndianField.newBuilder()
+            .setIntValue(littleEndianIntFrom(TEST_INT_BYTE_ARRAY))
+            .build());
+    assertThat(converterLittleEndian.deserializeResponse(null, TestBigEndianMessageWithLittleEndianField.getDefaultInstance(),
+        TEST_INT_BYTE_ARRAY))
+        .isEqualTo(TestBigEndianMessageWithLittleEndianField.newBuilder()
+            .setIntValue(littleEndianIntFrom(TEST_INT_BYTE_ARRAY))
+            .build());
   }
 
   private static int intFrom(byte[] bytes) {
