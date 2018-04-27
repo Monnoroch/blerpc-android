@@ -58,7 +58,7 @@ public class AnnotationMessageConverterTest {
   private static final byte[] TEST_LITTLE_ENDIAN_ENUM_BYTE_ARRAY = new byte[]{2, 0, 0, 0};
 
   AnnotationMessageConverter converter = new AnnotationMessageConverter();
-  AnnotationMessageConverter converterLittleEndian = new AnnotationMessageConverter(ByteOrder.LITTLE_ENDIAN);
+  AnnotationMessageConverter converterLittleEndian = new AnnotationMessageConverter(com.blerpc.proto.ByteOrder.LITTLE_ENDIAN);
 
   @Test
   public void serializeRequest_integer() throws Exception {
