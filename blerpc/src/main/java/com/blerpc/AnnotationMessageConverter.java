@@ -29,7 +29,7 @@ public class AnnotationMessageConverter implements MessageConverter {
    * Create {@link AnnotationMessageConverter} instance for big endian byte order.
    */
   public AnnotationMessageConverter() {
-    this(ByteOrder.BIG_ENDIAN);
+    this(java.nio.ByteOrder.BIG_ENDIAN);
   }
 
   /**
@@ -37,11 +37,10 @@ public class AnnotationMessageConverter implements MessageConverter {
    *
    * @param defaultByteOrder - byte order that will be used while serialize/deserialize field values to bytes.
    */
-  public AnnotationMessageConverter(ByteOrder defaultByteOrder) {
-    if (defaultByteOrder.equals(ByteOrder.DEFAULT)) {
-      throw new IllegalArgumentException("Converter support only BIG_ENDIAN and LITTLE_ENDIAN byte orders.");
-    }
-    this.defaultByteOrder = defaultByteOrder;
+  public AnnotationMessageConverter(java.nio.ByteOrder defaultByteOrder) {
+    this.defaultByteOrder = defaultByteOrder.equals(java.nio.ByteOrder.BIG_ENDIAN)
+        ? ByteOrder.BIG_ENDIAN
+        : ByteOrder.LITTLE_ENDIAN;
   }
 
   @Override
@@ -69,7 +68,7 @@ public class AnnotationMessageConverter implements MessageConverter {
       FieldExtension relativeBytesRangeFieldExtension =
           getRelativeBytesRangeFieldExtension(messageFieldExtension,
               fieldDescriptor,
-              getByteOrderOrDefault(getMessageExtension(message).getByteOrder(), messageFieldExtension.getByteOrder()));
+              message);
       JavaType fieldType = fieldDescriptor.getType().getJavaType();
       switch (fieldType) {
         case MESSAGE:
@@ -177,7 +176,7 @@ public class AnnotationMessageConverter implements MessageConverter {
     for (FieldDescriptor fieldDescriptor : message.getDescriptorForType().getFields()) {
       FieldExtension relativeBytesRangeFieldExtension = getRelativeBytesRangeFieldExtension(messageFieldExtension,
           fieldDescriptor,
-          getByteOrderOrDefault(getMessageExtension(message).getByteOrder(), messageFieldExtension.getByteOrder()));
+          message);
       String fieldName = fieldDescriptor.getName();
       JavaType fieldType = fieldDescriptor.getType().getJavaType();
       switch (fieldType) {
@@ -373,15 +372,16 @@ public class AnnotationMessageConverter implements MessageConverter {
         bytesSize);
   }
 
-  private FieldExtension getRelativeBytesRangeFieldExtension(FieldExtension fieldExtension,
+  private FieldExtension getRelativeBytesRangeFieldExtension(FieldExtension messageFieldExtension,
                                                              FieldDescriptor fieldDescriptor,
-                                                             ByteOrder defaultByteOrder) {
-    int firstByte = fieldExtension.getFromByte();
+                                                             Message message) {
+    int firstByte = messageFieldExtension.getFromByte();
     FieldExtension embeddedFieldExtension = getFieldExtension(fieldDescriptor);
     return FieldExtension.newBuilder()
         .setFromByte(embeddedFieldExtension.getFromByte() + firstByte)
         .setToByte(embeddedFieldExtension.getToByte() + firstByte)
-        .setByteOrder(getByteOrderOrDefault(embeddedFieldExtension.getByteOrder(), defaultByteOrder))
+        .setByteOrder(getByteOrderOrDefault(embeddedFieldExtension.getByteOrder(),
+            getByteOrderOrDefault(getMessageExtension(message).getByteOrder(), messageFieldExtension.getByteOrder())))
         .build();
   }
 

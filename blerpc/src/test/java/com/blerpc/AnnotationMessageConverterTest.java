@@ -3,7 +3,6 @@ package com.blerpc;
 import static com.blerpc.Assert.assertError;
 import static com.google.common.truth.Truth.assertThat;
 
-import com.blerpc.device.test.proto.TestBigEndianMessage;
 import com.blerpc.device.test.proto.TestBigValueEnum;
 import com.blerpc.device.test.proto.TestBoolMessage;
 import com.blerpc.device.test.proto.TestByteStringMessage;
@@ -16,8 +15,8 @@ import com.blerpc.device.test.proto.TestEnumMessage;
 import com.blerpc.device.test.proto.TestFieldOrderOverrideMessage;
 import com.blerpc.device.test.proto.TestFloatValueMessage;
 import com.blerpc.device.test.proto.TestIntegerMessage;
-import com.blerpc.device.test.proto.TestLittleEndianMessage;
 import com.blerpc.device.test.proto.TestLongMessage;
+import com.blerpc.device.test.proto.TestMessageOrderOverrideDefault;
 import com.blerpc.device.test.proto.TestMessageWithGaps;
 import com.blerpc.device.test.proto.TestNegativeRangeFromMessage;
 import com.blerpc.device.test.proto.TestNegativeSizeRangeMessage;
@@ -59,13 +58,7 @@ public class AnnotationMessageConverterTest {
   private static final byte[] TEST_LITTLE_ENDIAN_ENUM_BYTE_ARRAY = new byte[]{2, 0, 0, 0};
 
   AnnotationMessageConverter converter = new AnnotationMessageConverter();
-  AnnotationMessageConverter converterLittleEndian = new AnnotationMessageConverter(com.blerpc.proto.ByteOrder.LITTLE_ENDIAN);
-
-  @Test
-  public void createWithWrongByteOrder() {
-    assertError(() -> new AnnotationMessageConverter(com.blerpc.proto.ByteOrder.DEFAULT),
-        "Converter support only BIG_ENDIAN and LITTLE_ENDIAN byte orders.");
-  }
+  AnnotationMessageConverter converterLittleEndian = new AnnotationMessageConverter(ByteOrder.LITTLE_ENDIAN);
 
   @Test
   public void serializeRequest_integer() throws Exception {
@@ -287,24 +280,12 @@ public class AnnotationMessageConverterTest {
   }
 
   @Test
-  public void serializeRequest_bigEndianMessage() throws Exception {
-    assertThat(converter.serializeRequest(null, TestBigEndianMessage.newBuilder()
-        .setIntValue(intFrom(TEST_INT_BYTE_ARRAY))
-        .build()))
-        .isEqualTo(TEST_INT_BYTE_ARRAY);
-    assertThat(converterLittleEndian.serializeRequest(null, TestBigEndianMessage.newBuilder()
-        .setIntValue(intFrom(TEST_INT_BYTE_ARRAY))
-        .build()))
-        .isEqualTo(TEST_INT_BYTE_ARRAY);
-  }
-
-  @Test
-  public void serializeRequest_littleEndianMessage() throws Exception {
-    assertThat(converter.serializeRequest(null, TestLittleEndianMessage.newBuilder()
+  public void serializeRequest_messageOrderOverrideDefault() throws Exception {
+    assertThat(converter.serializeRequest(null, TestMessageOrderOverrideDefault.newBuilder()
         .setIntValue(littleEndianIntFrom(TEST_INT_BYTE_ARRAY))
         .build()))
         .isEqualTo(TEST_INT_BYTE_ARRAY);
-    assertThat(converterLittleEndian.serializeRequest(null, TestLittleEndianMessage.newBuilder()
+    assertThat(converterLittleEndian.serializeRequest(null, TestMessageOrderOverrideDefault.newBuilder()
         .setIntValue(littleEndianIntFrom(TEST_INT_BYTE_ARRAY))
         .build()))
         .isEqualTo(TEST_INT_BYTE_ARRAY);
@@ -331,9 +312,9 @@ public class AnnotationMessageConverterTest {
   @Test
   public void serializeRequest_overloadMessageOrderInEmbeddedMessage() throws Exception {
     assertThat(converter.serializeRequest(null, TestEmbeddedMessageOrderOverrideMessage.newBuilder()
-        .setIntValue(littleEndianIntFrom(TEST_INT_BYTE_ARRAY))
-        .setEmbeddedMessage(TestBigEndianMessage.newBuilder()
-            .setIntValue(intFrom(TEST_INT_BYTE_ARRAY)))
+        .setIntValue(intFrom(TEST_INT_BYTE_ARRAY))
+        .setEmbeddedMessage(TestMessageOrderOverrideDefault.newBuilder()
+            .setIntValue(littleEndianIntFrom(TEST_INT_BYTE_ARRAY)))
         .build()))
         .isEqualTo(concatArrays(TEST_INT_BYTE_ARRAY, TEST_INT_BYTE_ARRAY));
   }
@@ -515,29 +496,10 @@ public class AnnotationMessageConverterTest {
   }
 
   @Test
-  public void deserializeResponse_bigEndianMessage() throws Exception {
-    assertThat(converter.deserializeResponse(null, TestBigEndianMessage.getDefaultInstance(),
+  public void deserializeResponse_messageOrderOverrideDefault() throws Exception {
+    assertThat(converter.deserializeResponse(null, TestMessageOrderOverrideDefault.getDefaultInstance(),
         TEST_INT_BYTE_ARRAY))
-        .isEqualTo(TestBigEndianMessage.newBuilder()
-            .setIntValue(intFrom(TEST_INT_BYTE_ARRAY))
-            .build());
-    assertThat(converterLittleEndian.deserializeResponse(null, TestBigEndianMessage.getDefaultInstance(),
-        TEST_INT_BYTE_ARRAY))
-        .isEqualTo(TestBigEndianMessage.newBuilder()
-            .setIntValue(intFrom(TEST_INT_BYTE_ARRAY))
-            .build());
-  }
-
-  @Test
-  public void deserializeResponse_littleEndianMessage() throws Exception {
-    assertThat(converter.deserializeResponse(null, TestLittleEndianMessage.getDefaultInstance(),
-        TEST_INT_BYTE_ARRAY))
-        .isEqualTo(TestLittleEndianMessage.newBuilder()
-            .setIntValue(littleEndianIntFrom(TEST_INT_BYTE_ARRAY))
-            .build());
-    assertThat(converterLittleEndian.deserializeResponse(null, TestLittleEndianMessage.getDefaultInstance(),
-        TEST_INT_BYTE_ARRAY))
-        .isEqualTo(TestLittleEndianMessage.newBuilder()
+        .isEqualTo(TestMessageOrderOverrideDefault.newBuilder()
             .setIntValue(littleEndianIntFrom(TEST_INT_BYTE_ARRAY))
             .build());
   }
@@ -567,9 +529,9 @@ public class AnnotationMessageConverterTest {
     assertThat(converter.deserializeResponse(null, TestEmbeddedMessageOrderOverrideMessage.getDefaultInstance(),
         concatArrays(TEST_INT_BYTE_ARRAY, TEST_INT_BYTE_ARRAY)))
         .isEqualTo(TestEmbeddedMessageOrderOverrideMessage.newBuilder()
-            .setIntValue(littleEndianIntFrom(TEST_INT_BYTE_ARRAY))
-            .setEmbeddedMessage(TestBigEndianMessage.newBuilder()
-                .setIntValue(intFrom(TEST_INT_BYTE_ARRAY)))
+            .setIntValue(intFrom(TEST_INT_BYTE_ARRAY))
+            .setEmbeddedMessage(TestMessageOrderOverrideDefault.newBuilder()
+                .setIntValue(littleEndianIntFrom(TEST_INT_BYTE_ARRAY)))
             .build());
   }
 
