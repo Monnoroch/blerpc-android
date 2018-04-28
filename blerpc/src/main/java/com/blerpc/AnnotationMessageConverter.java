@@ -3,6 +3,7 @@ package com.blerpc;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import com.blerpc.proto.Blerpc;
+import com.blerpc.proto.ByteOrder;
 import com.blerpc.proto.FieldExtension;
 import com.blerpc.proto.MessageExtension;
 import com.google.common.math.LongMath;
@@ -14,7 +15,6 @@ import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor.JavaType;
 import com.google.protobuf.Descriptors.MethodDescriptor;
 import com.google.protobuf.Message;
-import java.nio.ByteOrder;
 import java.util.List;
 import java.util.Map;
 
@@ -23,22 +23,24 @@ import java.util.Map;
  */
 public class AnnotationMessageConverter implements MessageConverter {
 
-  private final ByteOrder byteOrder;
+  private final ByteOrder defaultByteOrder;
 
   /**
    * Create {@link AnnotationMessageConverter} instance for big endian byte order.
    */
   public AnnotationMessageConverter() {
-    this(ByteOrder.BIG_ENDIAN);
+    this(java.nio.ByteOrder.BIG_ENDIAN);
   }
 
   /**
    * Create {@link AnnotationMessageConverter} instance.
    *
-   * @param byteOrder - byte order that will be used while serialize/deserialize field values to bytes.
+   * @param defaultByteOrder - byte order that will be used while serialize/deserialize field values to bytes.
    */
-  public AnnotationMessageConverter(ByteOrder byteOrder) {
-    this.byteOrder = byteOrder;
+  public AnnotationMessageConverter(java.nio.ByteOrder defaultByteOrder) {
+    this.defaultByteOrder = defaultByteOrder.equals(java.nio.ByteOrder.BIG_ENDIAN)
+        ? ByteOrder.BIG_ENDIAN
+        : ByteOrder.LITTLE_ENDIAN;
   }
 
   @Override
@@ -52,21 +54,29 @@ public class AnnotationMessageConverter implements MessageConverter {
     serializeMessage(requestBytes, message, FieldExtension.newBuilder()
         .setFromByte(0)
         .setToByte(messageBytesSize)
-        .build());
+        .setByteOrder(defaultByteOrder)
+        .build(), false);
     return requestBytes;
   }
 
-  private void serializeMessage(byte[] requestBytes, Message message, FieldExtension requestFieldExtension) {
-    validateMessageSchema(message, requestFieldExtension);
+  private void serializeMessage(byte[] requestBytes,
+                                Message message,
+                                FieldExtension messageFieldExtension,
+                                boolean useFieldByteOrder) {
+    validateMessageSchema(message, messageFieldExtension);
     for (Map.Entry<FieldDescriptor, Object> entry : message.getAllFields().entrySet()) {
       FieldDescriptor fieldDescriptor = entry.getKey();
       Object fieldValue = entry.getValue();
       String fieldName = fieldDescriptor.getName();
-      FieldExtension relativeBytesRangeFieldExtension = getRelativeBytesRangeFieldExtension(requestFieldExtension, fieldDescriptor);
+      FieldExtension relativeBytesRangeFieldExtension =
+          getRelativeBytesRangeFieldExtension(messageFieldExtension,
+              fieldDescriptor,
+              message,
+              useFieldByteOrder);
       JavaType fieldType = fieldDescriptor.getType().getJavaType();
       switch (fieldType) {
         case MESSAGE:
-          serializeMessage(requestBytes, (Message) fieldValue, relativeBytesRangeFieldExtension);
+          serializeMessage(requestBytes, (Message) fieldValue, relativeBytesRangeFieldExtension, hasByteOrder(fieldDescriptor));
           break;
         case INT:
           serializeInt(requestBytes, (Integer) fieldValue, relativeBytesRangeFieldExtension, fieldName);
@@ -108,7 +118,7 @@ public class AnnotationMessageConverter implements MessageConverter {
         "Int64 field %s has unsupported size %s. Only sizes in [1, 8] are supported.",
         fieldName,
         bytesCount);
-    if (byteOrder.equals(ByteOrder.BIG_ENDIAN)) {
+    if (fieldExtension.getByteOrder().equals(ByteOrder.BIG_ENDIAN)) {
       for (int i = 0; i < bytesCount; i++) {
         messageBytes[firstByte + i] = (byte) (fieldValue >> 8 * (bytesCount - i - 1));
       }
@@ -160,21 +170,29 @@ public class AnnotationMessageConverter implements MessageConverter {
     return deserializeMessage(message, value, FieldExtension.newBuilder()
         .setFromByte(0)
         .setToByte(messageBytesSize)
-        .build());
+        .setByteOrder(defaultByteOrder)
+        .build(), false);
   }
 
-  private Message deserializeMessage(Message message, byte[] value, FieldExtension requestFieldExtension) {
-    validateMessageSchema(message, requestFieldExtension);
+  private Message deserializeMessage(Message message,
+                                     byte[] value,
+                                     FieldExtension messageFieldExtension,
+                                     boolean useFieldByteOrder) {
+    validateMessageSchema(message, messageFieldExtension);
     Message.Builder messageBuilder = message.toBuilder();
     for (FieldDescriptor fieldDescriptor : message.getDescriptorForType().getFields()) {
-      FieldExtension relativeBytesRangeFieldExtension = getRelativeBytesRangeFieldExtension(requestFieldExtension, fieldDescriptor);
+      FieldExtension relativeBytesRangeFieldExtension = getRelativeBytesRangeFieldExtension(messageFieldExtension,
+          fieldDescriptor,
+          message,
+          useFieldByteOrder);
       String fieldName = fieldDescriptor.getName();
       JavaType fieldType = fieldDescriptor.getType().getJavaType();
       switch (fieldType) {
         case MESSAGE:
           messageBuilder.setField(fieldDescriptor, deserializeMessage((Message) message.getField(fieldDescriptor),
               value,
-                  relativeBytesRangeFieldExtension));
+              relativeBytesRangeFieldExtension,
+              hasByteOrder(fieldDescriptor)));
           break;
         case INT:
           messageBuilder.setField(fieldDescriptor, deserializeInt(value, relativeBytesRangeFieldExtension, fieldName));
@@ -220,7 +238,7 @@ public class AnnotationMessageConverter implements MessageConverter {
         bytesSize);
 
     long result = 0;
-    if (byteOrder.equals(ByteOrder.BIG_ENDIAN)) {
+    if (fieldExtension.getByteOrder().equals(ByteOrder.BIG_ENDIAN)) {
       for (int i = firstByte; i < lastByte; i++) {
         result <<= 8;
         result |= bytes[i] & 0xFF;
@@ -363,12 +381,27 @@ public class AnnotationMessageConverter implements MessageConverter {
         bytesSize);
   }
 
-  private FieldExtension getRelativeBytesRangeFieldExtension(FieldExtension fieldExtension, FieldDescriptor fieldDescriptor) {
-    int firstByte = fieldExtension.getFromByte();
+  private FieldExtension getRelativeBytesRangeFieldExtension(FieldExtension messageFieldExtension,
+                                                             FieldDescriptor fieldDescriptor,
+                                                             Message message,
+                                                             boolean useFieldByteOrder) {
+    int firstByte = messageFieldExtension.getFromByte();
+    ByteOrder messageFieldOrder = messageFieldExtension.getByteOrder();
     FieldExtension embeddedFieldExtension = getFieldExtension(fieldDescriptor);
     return FieldExtension.newBuilder()
         .setFromByte(embeddedFieldExtension.getFromByte() + firstByte)
         .setToByte(embeddedFieldExtension.getToByte() + firstByte)
+        .setByteOrder(useFieldByteOrder ? messageFieldOrder :
+            getByteOrderOrDefault(embeddedFieldExtension.getByteOrder(),
+                getByteOrderOrDefault(getMessageExtension(message).getByteOrder(), messageFieldOrder)))
         .build();
+  }
+
+  private static ByteOrder getByteOrderOrDefault(ByteOrder currentByteOrder, ByteOrder defaultByteOrder) {
+    return currentByteOrder.equals(ByteOrder.DEFAULT) ? defaultByteOrder : currentByteOrder;
+  }
+
+  private static boolean hasByteOrder(FieldDescriptor fieldDescriptor) {
+    return !getFieldExtension(fieldDescriptor).getByteOrder().equals(ByteOrder.DEFAULT);
   }
 }

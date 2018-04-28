@@ -302,6 +302,93 @@ message TestSmallEnumRangeMessage {
     }];
 }
 
+message TestOverrideDefaultOrderMessage {
+  option (com.blerpc.message) = {
+        size_bytes: 12
+        byte_order: LITTLE_ENDIAN
+    };
+
+  int32 int_value = 1 [(com.blerpc.field) = {
+        from_byte: 0
+        to_byte: 4
+    }];
+
+  int64 long_value = 2 [(com.blerpc.field) = {
+        from_byte: 4
+        to_byte: 12
+    }];
+}
+
+message TestOverrideMessageOrderMessage {
+  option (com.blerpc.message) = {
+        size_bytes: 12
+        byte_order: BIG_ENDIAN
+    };
+
+  int32 int_value = 1 [(com.blerpc.field) = {
+        from_byte: 0
+        to_byte: 4
+        byte_order: LITTLE_ENDIAN
+    }];
+
+  int64 long_value = 2 [(com.blerpc.field) = {
+        from_byte: 4
+        to_byte: 12
+    }];
+}
+
+message TestByteOrderPropagatedToEmbeddedMessage {
+  option (com.blerpc.message) = {
+        size_bytes: 8
+        byte_order: LITTLE_ENDIAN
+    };
+
+  int32 int_value = 1 [(com.blerpc.field) = {
+        from_byte: 0
+        to_byte: 4
+    }];
+
+  TestIntegerMessage embedded_message = 2 [(com.blerpc.field) = {
+        from_byte: 4
+        to_byte: 8
+    }];
+}
+
+message TestOverrideByteOrderInEmbeddedMessage {
+  option (com.blerpc.message) = {
+        size_bytes: 16
+        byte_order: BIG_ENDIAN
+    };
+
+  int32 int_value = 1 [(com.blerpc.field) = {
+        from_byte: 0
+        to_byte: 4
+    }];
+
+  TestOverrideDefaultOrderMessage embedded_message = 2 [(com.blerpc.field) = {
+        from_byte: 4
+        to_byte: 16
+    }];
+}
+
+message TestOverrideEmbeddedByteOrderInFieldMessage {
+  option (com.blerpc.message) = {
+        size_bytes: 16
+        byte_order: LITTLE_ENDIAN
+    };
+
+  int32 int_value = 1 [(com.blerpc.field) = {
+        from_byte: 0
+        to_byte: 4
+    }];
+
+  TestOverrideDefaultOrderMessage embedded_message = 2 [(com.blerpc.field) = {
+        from_byte: 4
+        to_byte: 16
+        byte_order: BIG_ENDIAN
+    }];
+}
+
 enum TestBigValueEnum {
   UNKNOWN_ENUM_VALUE = 0;
   ENUM_VALUE_1 = 222222222;

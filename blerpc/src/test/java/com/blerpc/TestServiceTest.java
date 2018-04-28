@@ -30,6 +30,7 @@ import com.blerpc.device.test.proto.TestBleSubscribeResponse;
 import com.blerpc.device.test.proto.TestBleWriteRequest;
 import com.blerpc.device.test.proto.TestBleWriteResponse;
 import com.blerpc.device.test.proto.TestIntegerEmbeddedMessage;
+import com.blerpc.device.test.proto.TestLittleEndianMessage;
 import com.blerpc.device.test.proto.TestValuesEnum;
 import com.blerpc.proto.Blerpc;
 import com.google.protobuf.ByteString;
@@ -67,7 +68,8 @@ public class TestServiceTest {
   private static final TestBleReadResponse TEST_READ_RESPONSE = TestBleReadResponse.newBuilder()
       .setIntValue(45)
       .build();
-  private static byte[] TEST_WRITE_REQUEST_BYTES = new byte[]{0, 0, 0, 50, 0, 0, 0, 0, 0, 0, 0, 80, 1, 0, 2, 0, 0, 0, 0, 100, 1, 2, 3, 4};
+  private static byte[] TEST_WRITE_REQUEST_BYTES =
+      new byte[]{0, 0, 0, 50, 0, 0, 0, 0, 0, 0, 0, 80, 1, 0, 2, 0, 0, 0, 0, 100, 1, 2, 3, 4, 50, 0, 0, 0};
   private static final TestBleWriteRequest TEST_WRITE_REQUEST = TestBleWriteRequest.newBuilder()
       .setIntValue(50)
       .setLongValue(80)
@@ -76,8 +78,10 @@ public class TestServiceTest {
       .setEnumValue(TestValuesEnum.VALUE_2)
       .setMessageValue(TestIntegerEmbeddedMessage.newBuilder()
           .setIntValue(100))
+      .setLittleEndianIntValue(50)
       .build();
-  private static byte[] TEST_WRITE_RESPONSE_BYTES = new byte[]{0, 0, 0, 60, 0, 0, 0, 0, 0, 0, 0, 95, 1, 0, 1, 0, 0, 0, 0, 115, 5, 6, 7, 8};
+  private static byte[] TEST_WRITE_RESPONSE_BYTES =
+      new byte[]{60, 0, 0, 0, 95, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 115, 0, 0, 0, 5, 6, 7, 8, 0, 0, 0, 50, 0, 0, 0, 0, 0, 0, 0, 110};
   private static final TestBleWriteResponse TEST_WRITE_RESPONSE = TestBleWriteResponse.newBuilder()
       .setIntValue(60)
       .setLongValue(95)
@@ -86,6 +90,9 @@ public class TestServiceTest {
       .setEnumValue(TestValuesEnum.VALUE_1)
       .setMessageValue(TestIntegerEmbeddedMessage.newBuilder()
           .setIntValue(115))
+      .setBigEndianIntValue(50)
+      .setLittleEndianValue(TestLittleEndianMessage.newBuilder()
+          .setLongValue(110))
       .build();
   private static final TestBleSubscribeRequest TEST_SUBSCRIBE_REQUEST = TestBleSubscribeRequest.newBuilder()
       .setIntValue(5000)

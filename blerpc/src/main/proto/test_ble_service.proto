@@ -11,7 +11,7 @@ import "blerpc.proto";
 
 message TestBleWriteRequest {
   option (com.blerpc.message) = {
-        size_bytes: 24
+        size_bytes: 28
     };
 
   int32 int_value = 1 [(com.blerpc.field) = {
@@ -37,12 +37,18 @@ message TestBleWriteRequest {
   bytes byte_string_value = 6 [(com.blerpc.field) = {
         from_byte: 20
         to_byte: 24
+    }];
+  int32 little_endian_int_value = 7 [(com.blerpc.field) = {
+        from_byte: 24
+        to_byte: 28
+        byte_order: LITTLE_ENDIAN
     }];
 }
 
 message TestBleWriteResponse {
   option (com.blerpc.message) = {
-        size_bytes: 24
+        size_bytes: 36
+        byte_order: LITTLE_ENDIAN
     };
 
   int32 int_value = 1 [(com.blerpc.field) = {
@@ -68,6 +74,16 @@ message TestBleWriteResponse {
   bytes byte_string_value = 6 [(com.blerpc.field) = {
         from_byte: 20
         to_byte: 24
+    }];
+  int32 big_endian_int_value = 7 [(com.blerpc.field) = {
+        from_byte: 24
+        to_byte: 28
+        byte_order: BIG_ENDIAN
+    }];
+  TestLittleEndianMessage little_endian_value = 8 [(com.blerpc.field) = {
+        from_byte: 28
+        to_byte: 36
+        byte_order: BIG_ENDIAN
     }];
 }
 
@@ -123,6 +139,18 @@ message TestIntegerEmbeddedMessage {
   int32 int_value = 1 [(com.blerpc.field) = {
         from_byte: 0
         to_byte: 4
+    }];
+}
+
+message TestLittleEndianMessage {
+  option (com.blerpc.message) = {
+        size_bytes: 8
+        byte_order: LITTLE_ENDIAN
+    };
+
+  int64 long_value = 1 [(com.blerpc.field) = {
+        from_byte: 0
+        to_byte: 8
     }];
 }
 
