@@ -30,7 +30,7 @@ import com.blerpc.device.test.proto.TestBleSubscribeResponse;
 import com.blerpc.device.test.proto.TestBleWriteRequest;
 import com.blerpc.device.test.proto.TestBleWriteResponse;
 import com.blerpc.device.test.proto.TestIntegerEmbeddedMessage;
-import com.blerpc.device.test.proto.TestLongEmbeddedMessage;
+import com.blerpc.device.test.proto.TestLittleEndianMessage;
 import com.blerpc.device.test.proto.TestValuesEnum;
 import com.blerpc.proto.Blerpc;
 import com.google.protobuf.ByteString;
@@ -91,7 +91,7 @@ public class TestServiceTest {
       .setMessageValue(TestIntegerEmbeddedMessage.newBuilder()
           .setIntValue(115))
       .setBigEndianIntValue(50)
-      .setLongMessageValue(TestLongEmbeddedMessage.newBuilder()
+      .setLittleEndianValue(TestLittleEndianMessage.newBuilder()
           .setLongValue(110))
       .build();
   private static final TestBleSubscribeRequest TEST_SUBSCRIBE_REQUEST = TestBleSubscribeRequest.newBuilder()

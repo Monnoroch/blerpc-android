@@ -374,7 +374,7 @@ message TestOverrideByteOrderInEmbeddedMessage {
 message TestOverrideEmbeddedByteOrderInFieldMessage {
   option (com.blerpc.message) = {
         size_bytes: 16
-        byte_order: BIG_ENDIAN
+        byte_order: LITTLE_ENDIAN
     };
 
   int32 int_value = 1 [(com.blerpc.field) = {

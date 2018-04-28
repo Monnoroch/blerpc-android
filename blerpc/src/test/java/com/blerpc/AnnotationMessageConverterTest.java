@@ -327,7 +327,7 @@ public class AnnotationMessageConverterTest {
   @Test
   public void serializeRequest_overloadEmbeddeddMessageOrderInField() throws Exception {
     assertThat(converter.serializeRequest(null, TestOverrideEmbeddedByteOrderInFieldMessage.newBuilder()
-        .setIntValue(intFrom(TEST_INT_BYTE_ARRAY))
+        .setIntValue(littleEndianIntFrom(TEST_INT_BYTE_ARRAY))
         .setEmbeddedMessage(TestOverrideDefaultOrderMessage.newBuilder()
             .setIntValue(intFrom(TEST_INT_BYTE_ARRAY))
             .setLongValue(longFrom(TEST_LONG_BYTE_ARRAY)))
@@ -565,7 +565,7 @@ public class AnnotationMessageConverterTest {
     assertThat(converter.deserializeResponse(null, TestOverrideEmbeddedByteOrderInFieldMessage.getDefaultInstance(),
         concatArrays(TEST_INT_BYTE_ARRAY, TEST_INT_BYTE_ARRAY, TEST_LONG_BYTE_ARRAY)))
         .isEqualTo(TestOverrideEmbeddedByteOrderInFieldMessage.newBuilder()
-            .setIntValue(intFrom(TEST_INT_BYTE_ARRAY))
+            .setIntValue(littleEndianIntFrom(TEST_INT_BYTE_ARRAY))
             .setEmbeddedMessage(TestOverrideDefaultOrderMessage.newBuilder()
                 .setIntValue(intFrom(TEST_INT_BYTE_ARRAY))
                 .setLongValue(longFrom(TEST_LONG_BYTE_ARRAY)))

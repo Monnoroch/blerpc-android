@@ -80,7 +80,7 @@ message TestBleWriteResponse {
         to_byte: 28
         byte_order: BIG_ENDIAN
     }];
-  TestLongEmbeddedMessage long_message_value = 8 [(com.blerpc.field) = {
+  TestLittleEndianMessage little_endian_value = 8 [(com.blerpc.field) = {
         from_byte: 28
         to_byte: 36
         byte_order: BIG_ENDIAN
@@ -142,7 +142,7 @@ message TestIntegerEmbeddedMessage {
     }];
 }
 
-message TestLongEmbeddedMessage {
+message TestLittleEndianMessage {
   option (com.blerpc.message) = {
         size_bytes: 8
         byte_order: LITTLE_ENDIAN
