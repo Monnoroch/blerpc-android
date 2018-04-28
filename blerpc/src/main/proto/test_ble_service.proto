@@ -48,6 +48,7 @@ message TestBleWriteRequest {
 message TestBleWriteResponse {
   option (com.blerpc.message) = {
         size_bytes: 28
+        byte_order: LITTLE_ENDIAN
     };
 
   int32 int_value = 1 [(com.blerpc.field) = {
@@ -69,6 +70,7 @@ message TestBleWriteResponse {
   TestIntegerEmbeddedMessage message_value = 5 [(com.blerpc.field) = {
         from_byte: 16
         to_byte: 20
+        byte_order: BIG_ENDIAN
     }];
   bytes byte_string_value = 6 [(com.blerpc.field) = {
         from_byte: 20

@@ -326,7 +326,7 @@ message TestLittleEndianMessage {
     }];
 }
 
-message TestBigEndianMessageWithLittleEndianField {
+message TestOverloadMessageOrderInFieldBigEndian {
   option (com.blerpc.message) = {
         size_bytes: 4
         byte_order: BIG_ENDIAN
@@ -339,7 +339,7 @@ message TestBigEndianMessageWithLittleEndianField {
     }];
 }
 
-message TestLittleEndianMessageWithBigEndianField {
+message TestOverloadMessageOrderInFieldLittleEndian {
   option (com.blerpc.message) = {
         size_bytes: 4
         byte_order: LITTLE_ENDIAN
@@ -352,7 +352,7 @@ message TestLittleEndianMessageWithBigEndianField {
     }];
 }
 
-message TestLittleEndianNonPrimitiveMessage {
+message TestUseMessageOrderInEmbeddedMessage {
   option (com.blerpc.message) = {
         size_bytes: 8
         byte_order: LITTLE_ENDIAN
@@ -369,7 +369,7 @@ message TestLittleEndianNonPrimitiveMessage {
     }];
 }
 
-message TestLittleEndianNonPrimitiveMessageWithBigEndianEmbeddedMessage {
+message TestOverloadMessageOrderInEmbeddedMessage {
   option (com.blerpc.message) = {
         size_bytes: 8
         byte_order: LITTLE_ENDIAN

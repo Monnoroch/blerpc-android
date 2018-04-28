@@ -38,6 +38,9 @@ public class AnnotationMessageConverter implements MessageConverter {
    * @param defaultByteOrder - byte order that will be used while serialize/deserialize field values to bytes.
    */
   public AnnotationMessageConverter(ByteOrder defaultByteOrder) {
+    if (defaultByteOrder.equals(ByteOrder.DEFAULT)) {
+      throw new IllegalArgumentException("Converter support only BIG_ENDIAN and LITTLE_ENDIAN byte orders.");
+    }
     this.defaultByteOrder = defaultByteOrder;
   }
 
@@ -57,15 +60,16 @@ public class AnnotationMessageConverter implements MessageConverter {
     return requestBytes;
   }
 
-  private void serializeMessage(byte[] requestBytes, Message message, FieldExtension requestFieldExtension) {
-    validateMessageSchema(message, requestFieldExtension);
-    ByteOrder messageBytesOrder = getByteOrderOrDefault(getMessageExtension(message).getByteOrder(), requestFieldExtension.getByteOrder());
+  private void serializeMessage(byte[] requestBytes, Message message, FieldExtension messageFieldExtension) {
+    validateMessageSchema(message, messageFieldExtension);
     for (Map.Entry<FieldDescriptor, Object> entry : message.getAllFields().entrySet()) {
       FieldDescriptor fieldDescriptor = entry.getKey();
       Object fieldValue = entry.getValue();
       String fieldName = fieldDescriptor.getName();
       FieldExtension relativeBytesRangeFieldExtension =
-          getRelativeBytesRangeFieldExtension(requestFieldExtension, fieldDescriptor, messageBytesOrder);
+          getRelativeBytesRangeFieldExtension(messageFieldExtension,
+              fieldDescriptor,
+              getByteOrderOrDefault(getMessageExtension(message).getByteOrder(), messageFieldExtension.getByteOrder()));
       JavaType fieldType = fieldDescriptor.getType().getJavaType();
       switch (fieldType) {
         case MESSAGE:
@@ -167,13 +171,13 @@ public class AnnotationMessageConverter implements MessageConverter {
         .build());
   }
 
-  private Message deserializeMessage(Message message, byte[] value, FieldExtension requestFieldExtension) {
-    validateMessageSchema(message, requestFieldExtension);
+  private Message deserializeMessage(Message message, byte[] value, FieldExtension messageFieldExtension) {
+    validateMessageSchema(message, messageFieldExtension);
     Message.Builder messageBuilder = message.toBuilder();
-    ByteOrder messageBytesOrder = getByteOrderOrDefault(getMessageExtension(message).getByteOrder(), requestFieldExtension.getByteOrder());
     for (FieldDescriptor fieldDescriptor : message.getDescriptorForType().getFields()) {
-      FieldExtension relativeBytesRangeFieldExtension =
-          getRelativeBytesRangeFieldExtension(requestFieldExtension, fieldDescriptor, messageBytesOrder);
+      FieldExtension relativeBytesRangeFieldExtension = getRelativeBytesRangeFieldExtension(messageFieldExtension,
+          fieldDescriptor,
+          getByteOrderOrDefault(getMessageExtension(message).getByteOrder(), messageFieldExtension.getByteOrder()));
       String fieldName = fieldDescriptor.getName();
       JavaType fieldType = fieldDescriptor.getType().getJavaType();
       switch (fieldType) {
