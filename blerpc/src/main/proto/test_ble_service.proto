@@ -47,7 +47,7 @@ message TestBleWriteRequest {
 
 message TestBleWriteResponse {
   option (com.blerpc.message) = {
-        size_bytes: 28
+        size_bytes: 36
         byte_order: LITTLE_ENDIAN
     };
 
@@ -78,6 +78,11 @@ message TestBleWriteResponse {
   int32 big_endian_int_value = 7 [(com.blerpc.field) = {
         from_byte: 24
         to_byte: 28
+        byte_order: BIG_ENDIAN
+    }];
+  TestLongEmbeddedMessage long_message_value = 8 [(com.blerpc.field) = {
+        from_byte: 28
+        to_byte: 36
         byte_order: BIG_ENDIAN
     }];
 }
@@ -134,6 +139,18 @@ message TestIntegerEmbeddedMessage {
   int32 int_value = 1 [(com.blerpc.field) = {
         from_byte: 0
         to_byte: 4
+    }];
+}
+
+message TestLongEmbeddedMessage {
+  option (com.blerpc.message) = {
+        size_bytes: 8
+        byte_order: LITTLE_ENDIAN
+    };
+
+  int64 long_value = 1 [(com.blerpc.field) = {
+        from_byte: 0
+        to_byte: 8
     }];
 }
 

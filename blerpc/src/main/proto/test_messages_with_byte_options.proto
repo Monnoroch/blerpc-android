@@ -302,9 +302,9 @@ message TestSmallEnumRangeMessage {
     }];
 }
 
-message TestMessageOrderOverrideDefault {
+message TestOverrideDefaultOrderMessage {
   option (com.blerpc.message) = {
-        size_bytes: 4
+        size_bytes: 12
         byte_order: LITTLE_ENDIAN
     };
 
@@ -312,11 +312,16 @@ message TestMessageOrderOverrideDefault {
         from_byte: 0
         to_byte: 4
     }];
+
+  int64 long_value = 2 [(com.blerpc.field) = {
+        from_byte: 4
+        to_byte: 12
+    }];
 }
 
-message TestFieldOrderOverrideMessage {
+message TestOverrideMessageOrderMessage {
   option (com.blerpc.message) = {
-        size_bytes: 4
+        size_bytes: 12
         byte_order: BIG_ENDIAN
     };
 
@@ -325,9 +330,14 @@ message TestFieldOrderOverrideMessage {
         to_byte: 4
         byte_order: LITTLE_ENDIAN
     }];
+
+  int64 long_value = 2 [(com.blerpc.field) = {
+        from_byte: 4
+        to_byte: 12
+    }];
 }
 
-message TestEmbeddedMessageNotContainsOrder {
+message TestByteOrderPropagatedToEmbeddedMessage {
   option (com.blerpc.message) = {
         size_bytes: 8
         byte_order: LITTLE_ENDIAN
@@ -344,9 +354,9 @@ message TestEmbeddedMessageNotContainsOrder {
     }];
 }
 
-message TestEmbeddedMessageOrderOverrideMessage {
+message TestOverrideByteOrderInEmbeddedMessage {
   option (com.blerpc.message) = {
-        size_bytes: 8
+        size_bytes: 16
         byte_order: BIG_ENDIAN
     };
 
@@ -355,9 +365,27 @@ message TestEmbeddedMessageOrderOverrideMessage {
         to_byte: 4
     }];
 
-  TestMessageOrderOverrideDefault embedded_message = 2 [(com.blerpc.field) = {
+  TestOverrideDefaultOrderMessage embedded_message = 2 [(com.blerpc.field) = {
         from_byte: 4
-        to_byte: 8
+        to_byte: 16
+    }];
+}
+
+message TestOverrideEmbeddedByteOrderInFieldMessage {
+  option (com.blerpc.message) = {
+        size_bytes: 16
+        byte_order: BIG_ENDIAN
+    };
+
+  int32 int_value = 1 [(com.blerpc.field) = {
+        from_byte: 0
+        to_byte: 4
+    }];
+
+  TestOverrideDefaultOrderMessage embedded_message = 2 [(com.blerpc.field) = {
+        from_byte: 4
+        to_byte: 16
+        byte_order: BIG_ENDIAN
     }];
 }
 

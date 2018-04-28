@@ -5,24 +5,25 @@ import static com.google.common.truth.Truth.assertThat;
 
 import com.blerpc.device.test.proto.TestBigValueEnum;
 import com.blerpc.device.test.proto.TestBoolMessage;
+import com.blerpc.device.test.proto.TestByteOrderPropagatedToEmbeddedMessage;
 import com.blerpc.device.test.proto.TestByteStringMessage;
 import com.blerpc.device.test.proto.TestDoubleValueMessage;
-import com.blerpc.device.test.proto.TestEmbeddedMessageNotContainsOrder;
-import com.blerpc.device.test.proto.TestEmbeddedMessageOrderOverrideMessage;
 import com.blerpc.device.test.proto.TestEmptyMessage;
 import com.blerpc.device.test.proto.TestEnum;
 import com.blerpc.device.test.proto.TestEnumMessage;
-import com.blerpc.device.test.proto.TestFieldOrderOverrideMessage;
 import com.blerpc.device.test.proto.TestFloatValueMessage;
 import com.blerpc.device.test.proto.TestIntegerMessage;
 import com.blerpc.device.test.proto.TestLongMessage;
-import com.blerpc.device.test.proto.TestMessageOrderOverrideDefault;
 import com.blerpc.device.test.proto.TestMessageWithGaps;
 import com.blerpc.device.test.proto.TestNegativeRangeFromMessage;
 import com.blerpc.device.test.proto.TestNegativeSizeRangeMessage;
 import com.blerpc.device.test.proto.TestNoBytesRangeMessage;
 import com.blerpc.device.test.proto.TestNoBytesSizeMessage;
 import com.blerpc.device.test.proto.TestNonPrimitiveFieldMessage;
+import com.blerpc.device.test.proto.TestOverrideByteOrderInEmbeddedMessage;
+import com.blerpc.device.test.proto.TestOverrideDefaultOrderMessage;
+import com.blerpc.device.test.proto.TestOverrideEmbeddedByteOrderInFieldMessage;
+import com.blerpc.device.test.proto.TestOverrideMessageOrderMessage;
 import com.blerpc.device.test.proto.TestRangeBiggerThanCountMessage;
 import com.blerpc.device.test.proto.TestRangesIntersectMessage;
 import com.blerpc.device.test.proto.TestSevenBytesLongMessage;
@@ -280,28 +281,31 @@ public class AnnotationMessageConverterTest {
   }
 
   @Test
-  public void serializeRequest_messageOrderOverrideDefault() throws Exception {
-    assertThat(converter.serializeRequest(null, TestMessageOrderOverrideDefault.newBuilder()
+  public void serializeRequest_messageByteOrder() throws Exception {
+    assertThat(converter.serializeRequest(null, TestOverrideDefaultOrderMessage.newBuilder()
         .setIntValue(littleEndianIntFrom(TEST_INT_BYTE_ARRAY))
+        .setLongValue(littleEndianLongFrom(TEST_LONG_BYTE_ARRAY))
         .build()))
-        .isEqualTo(TEST_INT_BYTE_ARRAY);
-    assertThat(converterLittleEndian.serializeRequest(null, TestMessageOrderOverrideDefault.newBuilder()
+        .isEqualTo(concatArrays(TEST_INT_BYTE_ARRAY, TEST_LONG_BYTE_ARRAY));
+    assertThat(converterLittleEndian.serializeRequest(null, TestOverrideDefaultOrderMessage.newBuilder()
         .setIntValue(littleEndianIntFrom(TEST_INT_BYTE_ARRAY))
+        .setLongValue(littleEndianLongFrom(TEST_LONG_BYTE_ARRAY))
         .build()))
-        .isEqualTo(TEST_INT_BYTE_ARRAY);
+        .isEqualTo(concatArrays(TEST_INT_BYTE_ARRAY, TEST_LONG_BYTE_ARRAY));
   }
 
   @Test
-  public void serializeRequest_fieldOrderOverrideMessage() throws Exception {
-    assertThat(converter.serializeRequest(null, TestFieldOrderOverrideMessage.newBuilder()
+  public void serializeRequest_fieldOrder() throws Exception {
+    assertThat(converter.serializeRequest(null, TestOverrideMessageOrderMessage.newBuilder()
         .setIntValue(littleEndianIntFrom(TEST_INT_BYTE_ARRAY))
+        .setLongValue(longFrom(TEST_LONG_BYTE_ARRAY))
         .build()))
-        .isEqualTo(TEST_INT_BYTE_ARRAY);
+        .isEqualTo(concatArrays(TEST_INT_BYTE_ARRAY, TEST_LONG_BYTE_ARRAY));
   }
 
   @Test
   public void serializeRequest_embeddedMessageNotContainsOrder() throws Exception {
-    assertThat(converter.serializeRequest(null, TestEmbeddedMessageNotContainsOrder.newBuilder()
+    assertThat(converter.serializeRequest(null, TestByteOrderPropagatedToEmbeddedMessage.newBuilder()
         .setIntValue(littleEndianIntFrom(TEST_INT_BYTE_ARRAY))
         .setEmbeddedMessage(TestIntegerMessage.newBuilder()
             .setIntValue(littleEndianIntFrom(TEST_INT_BYTE_ARRAY)))
@@ -311,12 +315,24 @@ public class AnnotationMessageConverterTest {
 
   @Test
   public void serializeRequest_overloadMessageOrderInEmbeddedMessage() throws Exception {
-    assertThat(converter.serializeRequest(null, TestEmbeddedMessageOrderOverrideMessage.newBuilder()
+    assertThat(converter.serializeRequest(null, TestOverrideByteOrderInEmbeddedMessage.newBuilder()
         .setIntValue(intFrom(TEST_INT_BYTE_ARRAY))
-        .setEmbeddedMessage(TestMessageOrderOverrideDefault.newBuilder()
-            .setIntValue(littleEndianIntFrom(TEST_INT_BYTE_ARRAY)))
+        .setEmbeddedMessage(TestOverrideDefaultOrderMessage.newBuilder()
+            .setIntValue(littleEndianIntFrom(TEST_INT_BYTE_ARRAY))
+            .setLongValue(littleEndianLongFrom(TEST_LONG_BYTE_ARRAY)))
         .build()))
-        .isEqualTo(concatArrays(TEST_INT_BYTE_ARRAY, TEST_INT_BYTE_ARRAY));
+        .isEqualTo(concatArrays(TEST_INT_BYTE_ARRAY, TEST_INT_BYTE_ARRAY, TEST_LONG_BYTE_ARRAY));
+  }
+
+  @Test
+  public void serializeRequest_overloadEmbeddeddMessageOrderInField() throws Exception {
+    assertThat(converter.serializeRequest(null, TestOverrideEmbeddedByteOrderInFieldMessage.newBuilder()
+        .setIntValue(intFrom(TEST_INT_BYTE_ARRAY))
+        .setEmbeddedMessage(TestOverrideDefaultOrderMessage.newBuilder()
+            .setIntValue(intFrom(TEST_INT_BYTE_ARRAY))
+            .setLongValue(longFrom(TEST_LONG_BYTE_ARRAY)))
+        .build()))
+        .isEqualTo(concatArrays(TEST_INT_BYTE_ARRAY, TEST_INT_BYTE_ARRAY, TEST_LONG_BYTE_ARRAY));
   }
 
   @Test
@@ -496,28 +512,36 @@ public class AnnotationMessageConverterTest {
   }
 
   @Test
-  public void deserializeResponse_messageOrderOverrideDefault() throws Exception {
-    assertThat(converter.deserializeResponse(null, TestMessageOrderOverrideDefault.getDefaultInstance(),
-        TEST_INT_BYTE_ARRAY))
-        .isEqualTo(TestMessageOrderOverrideDefault.newBuilder()
+  public void deserializeResponse_messageByteOrder() throws Exception {
+    assertThat(converter.deserializeResponse(null, TestOverrideDefaultOrderMessage.getDefaultInstance(),
+        concatArrays(TEST_INT_BYTE_ARRAY, TEST_LONG_BYTE_ARRAY)))
+        .isEqualTo(TestOverrideDefaultOrderMessage.newBuilder()
             .setIntValue(littleEndianIntFrom(TEST_INT_BYTE_ARRAY))
+            .setLongValue(littleEndianLongFrom(TEST_LONG_BYTE_ARRAY))
+            .build());
+    assertThat(converterLittleEndian.deserializeResponse(null, TestOverrideDefaultOrderMessage.getDefaultInstance(),
+        concatArrays(TEST_INT_BYTE_ARRAY, TEST_LONG_BYTE_ARRAY)))
+        .isEqualTo(TestOverrideDefaultOrderMessage.newBuilder()
+            .setIntValue(littleEndianIntFrom(TEST_INT_BYTE_ARRAY))
+            .setLongValue(littleEndianLongFrom(TEST_LONG_BYTE_ARRAY))
             .build());
   }
 
   @Test
-  public void deserializeResponse_fieldOrderOverrideMessage() throws Exception {
-    assertThat(converter.deserializeResponse(null, TestFieldOrderOverrideMessage.getDefaultInstance(),
-        TEST_INT_BYTE_ARRAY))
-        .isEqualTo(TestFieldOrderOverrideMessage.newBuilder()
+  public void deserializeResponse_fieldOrder() throws Exception {
+    assertThat(converter.deserializeResponse(null, TestOverrideMessageOrderMessage.getDefaultInstance(),
+        concatArrays(TEST_INT_BYTE_ARRAY, TEST_LONG_BYTE_ARRAY)))
+        .isEqualTo(TestOverrideMessageOrderMessage.newBuilder()
             .setIntValue(littleEndianIntFrom(TEST_INT_BYTE_ARRAY))
+            .setLongValue(longFrom(TEST_LONG_BYTE_ARRAY))
             .build());
   }
 
   @Test
   public void deserializeResponse_embeddedMessageNotContainsOrder() throws Exception {
-    assertThat(converter.deserializeResponse(null, TestEmbeddedMessageNotContainsOrder.getDefaultInstance(),
+    assertThat(converter.deserializeResponse(null, TestByteOrderPropagatedToEmbeddedMessage.getDefaultInstance(),
         concatArrays(TEST_INT_BYTE_ARRAY, TEST_INT_BYTE_ARRAY)))
-        .isEqualTo(TestEmbeddedMessageNotContainsOrder.newBuilder()
+        .isEqualTo(TestByteOrderPropagatedToEmbeddedMessage.newBuilder()
             .setIntValue(littleEndianIntFrom(TEST_INT_BYTE_ARRAY))
             .setEmbeddedMessage(TestIntegerMessage.newBuilder()
                 .setIntValue(littleEndianIntFrom(TEST_INT_BYTE_ARRAY)))
@@ -525,13 +549,26 @@ public class AnnotationMessageConverterTest {
   }
 
   @Test
-  public void deserializeResponse_embeddedMessageOrderOverrideMessage() throws Exception {
-    assertThat(converter.deserializeResponse(null, TestEmbeddedMessageOrderOverrideMessage.getDefaultInstance(),
-        concatArrays(TEST_INT_BYTE_ARRAY, TEST_INT_BYTE_ARRAY)))
-        .isEqualTo(TestEmbeddedMessageOrderOverrideMessage.newBuilder()
+  public void deserializeResponse_overloadMessageOrderInEmbeddedMessage() throws Exception {
+    assertThat(converter.deserializeResponse(null, TestOverrideByteOrderInEmbeddedMessage.getDefaultInstance(),
+        concatArrays(TEST_INT_BYTE_ARRAY, TEST_INT_BYTE_ARRAY, TEST_LONG_BYTE_ARRAY)))
+        .isEqualTo(TestOverrideByteOrderInEmbeddedMessage.newBuilder()
             .setIntValue(intFrom(TEST_INT_BYTE_ARRAY))
-            .setEmbeddedMessage(TestMessageOrderOverrideDefault.newBuilder()
-                .setIntValue(littleEndianIntFrom(TEST_INT_BYTE_ARRAY)))
+            .setEmbeddedMessage(TestOverrideDefaultOrderMessage.newBuilder()
+                .setIntValue(littleEndianIntFrom(TEST_INT_BYTE_ARRAY))
+                .setLongValue(littleEndianLongFrom(TEST_LONG_BYTE_ARRAY)))
+            .build());
+  }
+
+  @Test
+  public void deserializeResponse_overloadEmbeddeddMessageOrderInField() throws Exception {
+    assertThat(converter.deserializeResponse(null, TestOverrideEmbeddedByteOrderInFieldMessage.getDefaultInstance(),
+        concatArrays(TEST_INT_BYTE_ARRAY, TEST_INT_BYTE_ARRAY, TEST_LONG_BYTE_ARRAY)))
+        .isEqualTo(TestOverrideEmbeddedByteOrderInFieldMessage.newBuilder()
+            .setIntValue(intFrom(TEST_INT_BYTE_ARRAY))
+            .setEmbeddedMessage(TestOverrideDefaultOrderMessage.newBuilder()
+                .setIntValue(intFrom(TEST_INT_BYTE_ARRAY))
+                .setLongValue(longFrom(TEST_LONG_BYTE_ARRAY)))
             .build());
   }
 
