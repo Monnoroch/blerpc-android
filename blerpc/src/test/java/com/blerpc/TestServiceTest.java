@@ -80,7 +80,7 @@ public class TestServiceTest {
       .setLittleEndianIntValue(50)
       .build();
   private static byte[] TEST_WRITE_RESPONSE_BYTES =
-      new byte[]{60, 0, 0, 0, 95, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 115, 5, 6, 7, 8, 0, 0, 0, 50};
+      new byte[]{60, 0, 0, 0, 95, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 115, 0, 0, 0, 5, 6, 7, 8, 0, 0, 0, 50};
   private static final TestBleWriteResponse TEST_WRITE_RESPONSE = TestBleWriteResponse.newBuilder()
       .setIntValue(60)
       .setLongValue(95)

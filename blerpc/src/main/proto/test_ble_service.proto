@@ -70,7 +70,6 @@ message TestBleWriteResponse {
   TestIntegerEmbeddedMessage message_value = 5 [(com.blerpc.field) = {
         from_byte: 16
         to_byte: 20
-        byte_order: BIG_ENDIAN
     }];
   bytes byte_string_value = 6 [(com.blerpc.field) = {
         from_byte: 20

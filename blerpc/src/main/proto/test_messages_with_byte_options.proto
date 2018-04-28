@@ -326,7 +326,7 @@ message TestLittleEndianMessage {
     }];
 }
 
-message TestOverloadMessageOrderInFieldBigEndian {
+message TestFieldOrderOverrideMessage {
   option (com.blerpc.message) = {
         size_bytes: 4
         byte_order: BIG_ENDIAN
@@ -339,20 +339,7 @@ message TestOverloadMessageOrderInFieldBigEndian {
     }];
 }
 
-message TestOverloadMessageOrderInFieldLittleEndian {
-  option (com.blerpc.message) = {
-        size_bytes: 4
-        byte_order: LITTLE_ENDIAN
-    };
-
-  int32 int_value = 1 [(com.blerpc.field) = {
-        from_byte: 0
-        to_byte: 4
-        byte_order: BIG_ENDIAN
-    }];
-}
-
-message TestUseMessageOrderInEmbeddedMessage {
+message TestEmbeddedMessageNotContainsOrder {
   option (com.blerpc.message) = {
         size_bytes: 8
         byte_order: LITTLE_ENDIAN
@@ -369,7 +356,7 @@ message TestUseMessageOrderInEmbeddedMessage {
     }];
 }
 
-message TestOverloadMessageOrderInEmbeddedMessage {
+message TestEmbeddedMessageOrderOverrideMessage {
   option (com.blerpc.message) = {
         size_bytes: 8
         byte_order: LITTLE_ENDIAN
