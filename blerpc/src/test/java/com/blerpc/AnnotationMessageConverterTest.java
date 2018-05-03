@@ -5,6 +5,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import com.blerpc.device.test.proto.TestBigValueEnum;
 import com.blerpc.device.test.proto.TestBoolMessage;
+import com.blerpc.device.test.proto.TestByteOrderPropagatedToEmbeddedMessage;
 import com.blerpc.device.test.proto.TestByteStringMessage;
 import com.blerpc.device.test.proto.TestDoubleValueMessage;
 import com.blerpc.device.test.proto.TestEmptyMessage;
@@ -19,6 +20,10 @@ import com.blerpc.device.test.proto.TestNegativeSizeRangeMessage;
 import com.blerpc.device.test.proto.TestNoBytesRangeMessage;
 import com.blerpc.device.test.proto.TestNoBytesSizeMessage;
 import com.blerpc.device.test.proto.TestNonPrimitiveFieldMessage;
+import com.blerpc.device.test.proto.TestOverrideByteOrderInEmbeddedMessage;
+import com.blerpc.device.test.proto.TestOverrideDefaultOrderMessage;
+import com.blerpc.device.test.proto.TestOverrideEmbeddedByteOrderInFieldMessage;
+import com.blerpc.device.test.proto.TestOverrideMessageOrderMessage;
 import com.blerpc.device.test.proto.TestRangeBiggerThanCountMessage;
 import com.blerpc.device.test.proto.TestRangesIntersectMessage;
 import com.blerpc.device.test.proto.TestSevenBytesLongMessage;
@@ -183,13 +188,13 @@ public class AnnotationMessageConverterTest {
   @Test
   public void serializeRequest_messageWithFieldAndWithoutByteSize() throws Exception {
     assertError(() -> converter.serializeRequest(null, TestNoBytesSizeMessage.getDefaultInstance()),
-        "A non empty message TestNoBytesSizeMessage doesn't have com.blerpc.message_size annotation.");
+        "A non empty message TestNoBytesSizeMessage doesn't have com.blerpc.message_extension annotation.");
   }
 
   @Test
   public void serializeRequest_noByteRange() throws Exception {
     assertError(() -> converter.serializeRequest(null, TestNoBytesRangeMessage.getDefaultInstance()),
-        "Proto field int_value doesn't have com.blerpc.field_bytes annotation");
+        "Proto field int_value doesn't have com.blerpc.field_extension annotation");
   }
 
   @Test
@@ -273,6 +278,61 @@ public class AnnotationMessageConverterTest {
             .setEnumValue(TestBigValueEnum.ENUM_VALUE_1)
             .build()),
         "3 byte(s) not enough for TestBigValueEnum enum that has 222222222 max number");
+  }
+
+  @Test
+  public void serializeRequest_messageByteOrder() throws Exception {
+    assertThat(converter.serializeRequest(null, TestOverrideDefaultOrderMessage.newBuilder()
+        .setIntValue(littleEndianIntFrom(TEST_INT_BYTE_ARRAY))
+        .setLongValue(littleEndianLongFrom(TEST_LONG_BYTE_ARRAY))
+        .build()))
+        .isEqualTo(concatArrays(TEST_INT_BYTE_ARRAY, TEST_LONG_BYTE_ARRAY));
+    assertThat(converterLittleEndian.serializeRequest(null, TestOverrideDefaultOrderMessage.newBuilder()
+        .setIntValue(littleEndianIntFrom(TEST_INT_BYTE_ARRAY))
+        .setLongValue(littleEndianLongFrom(TEST_LONG_BYTE_ARRAY))
+        .build()))
+        .isEqualTo(concatArrays(TEST_INT_BYTE_ARRAY, TEST_LONG_BYTE_ARRAY));
+  }
+
+  @Test
+  public void serializeRequest_fieldOrder() throws Exception {
+    assertThat(converter.serializeRequest(null, TestOverrideMessageOrderMessage.newBuilder()
+        .setIntValue(littleEndianIntFrom(TEST_INT_BYTE_ARRAY))
+        .setLongValue(longFrom(TEST_LONG_BYTE_ARRAY))
+        .build()))
+        .isEqualTo(concatArrays(TEST_INT_BYTE_ARRAY, TEST_LONG_BYTE_ARRAY));
+  }
+
+  @Test
+  public void serializeRequest_embeddedMessageNotContainsOrder() throws Exception {
+    assertThat(converter.serializeRequest(null, TestByteOrderPropagatedToEmbeddedMessage.newBuilder()
+        .setIntValue(littleEndianIntFrom(TEST_INT_BYTE_ARRAY))
+        .setEmbeddedMessage(TestIntegerMessage.newBuilder()
+            .setIntValue(littleEndianIntFrom(TEST_INT_BYTE_ARRAY)))
+        .build()))
+        .isEqualTo(concatArrays(TEST_INT_BYTE_ARRAY, TEST_INT_BYTE_ARRAY));
+  }
+
+  @Test
+  public void serializeRequest_overloadMessageOrderInEmbeddedMessage() throws Exception {
+    assertThat(converter.serializeRequest(null, TestOverrideByteOrderInEmbeddedMessage.newBuilder()
+        .setIntValue(intFrom(TEST_INT_BYTE_ARRAY))
+        .setEmbeddedMessage(TestOverrideDefaultOrderMessage.newBuilder()
+            .setIntValue(littleEndianIntFrom(TEST_INT_BYTE_ARRAY))
+            .setLongValue(littleEndianLongFrom(TEST_LONG_BYTE_ARRAY)))
+        .build()))
+        .isEqualTo(concatArrays(TEST_INT_BYTE_ARRAY, TEST_INT_BYTE_ARRAY, TEST_LONG_BYTE_ARRAY));
+  }
+
+  @Test
+  public void serializeRequest_overloadEmbeddeddMessageOrderInField() throws Exception {
+    assertThat(converter.serializeRequest(null, TestOverrideEmbeddedByteOrderInFieldMessage.newBuilder()
+        .setIntValue(littleEndianIntFrom(TEST_INT_BYTE_ARRAY))
+        .setEmbeddedMessage(TestOverrideDefaultOrderMessage.newBuilder()
+            .setIntValue(intFrom(TEST_INT_BYTE_ARRAY))
+            .setLongValue(longFrom(TEST_LONG_BYTE_ARRAY)))
+        .build()))
+        .isEqualTo(concatArrays(TEST_INT_BYTE_ARRAY, TEST_INT_BYTE_ARRAY, TEST_LONG_BYTE_ARRAY));
   }
 
   @Test
@@ -390,13 +450,13 @@ public class AnnotationMessageConverterTest {
     assertError(() -> converter.deserializeResponse(null,
         TestNoBytesSizeMessage.getDefaultInstance(),
         TEST_BOOL_BYTE_ARRAY),
-        "A non empty message TestNoBytesSizeMessage doesn't have com.blerpc.message_size annotation.");
+        "A non empty message TestNoBytesSizeMessage doesn't have com.blerpc.message_extension annotation.");
   }
 
   @Test
   public void deserializeResponse_noByteRangeMessage() throws Exception {
     assertError(() -> converter.deserializeResponse(null, TestNoBytesRangeMessage.getDefaultInstance(), new byte[2]),
-        "Proto field int_value doesn't have com.blerpc.field_bytes annotation");
+        "Proto field int_value doesn't have com.blerpc.field_extension annotation");
   }
 
   @Test
@@ -449,6 +509,67 @@ public class AnnotationMessageConverterTest {
   public void deserializeResponse_wrongBooleanRange() throws Exception {
     assertError(() -> converter.deserializeResponse(null, TestWrongBooleanRangeMessage.getDefaultInstance(), new byte[2]),
         "Boolean field bool_value has unsupported size 2. Only sizes 1 are supported.");
+  }
+
+  @Test
+  public void deserializeResponse_messageByteOrder() throws Exception {
+    assertThat(converter.deserializeResponse(null, TestOverrideDefaultOrderMessage.getDefaultInstance(),
+        concatArrays(TEST_INT_BYTE_ARRAY, TEST_LONG_BYTE_ARRAY)))
+        .isEqualTo(TestOverrideDefaultOrderMessage.newBuilder()
+            .setIntValue(littleEndianIntFrom(TEST_INT_BYTE_ARRAY))
+            .setLongValue(littleEndianLongFrom(TEST_LONG_BYTE_ARRAY))
+            .build());
+    assertThat(converterLittleEndian.deserializeResponse(null, TestOverrideDefaultOrderMessage.getDefaultInstance(),
+        concatArrays(TEST_INT_BYTE_ARRAY, TEST_LONG_BYTE_ARRAY)))
+        .isEqualTo(TestOverrideDefaultOrderMessage.newBuilder()
+            .setIntValue(littleEndianIntFrom(TEST_INT_BYTE_ARRAY))
+            .setLongValue(littleEndianLongFrom(TEST_LONG_BYTE_ARRAY))
+            .build());
+  }
+
+  @Test
+  public void deserializeResponse_fieldOrder() throws Exception {
+    assertThat(converter.deserializeResponse(null, TestOverrideMessageOrderMessage.getDefaultInstance(),
+        concatArrays(TEST_INT_BYTE_ARRAY, TEST_LONG_BYTE_ARRAY)))
+        .isEqualTo(TestOverrideMessageOrderMessage.newBuilder()
+            .setIntValue(littleEndianIntFrom(TEST_INT_BYTE_ARRAY))
+            .setLongValue(longFrom(TEST_LONG_BYTE_ARRAY))
+            .build());
+  }
+
+  @Test
+  public void deserializeResponse_embeddedMessageNotContainsOrder() throws Exception {
+    assertThat(converter.deserializeResponse(null, TestByteOrderPropagatedToEmbeddedMessage.getDefaultInstance(),
+        concatArrays(TEST_INT_BYTE_ARRAY, TEST_INT_BYTE_ARRAY)))
+        .isEqualTo(TestByteOrderPropagatedToEmbeddedMessage.newBuilder()
+            .setIntValue(littleEndianIntFrom(TEST_INT_BYTE_ARRAY))
+            .setEmbeddedMessage(TestIntegerMessage.newBuilder()
+                .setIntValue(littleEndianIntFrom(TEST_INT_BYTE_ARRAY)))
+            .build());
+  }
+
+  @Test
+  public void deserializeResponse_overloadMessageOrderInEmbeddedMessage() throws Exception {
+    assertThat(converter.deserializeResponse(null, TestOverrideByteOrderInEmbeddedMessage.getDefaultInstance(),
+        concatArrays(TEST_INT_BYTE_ARRAY, TEST_INT_BYTE_ARRAY, TEST_LONG_BYTE_ARRAY)))
+        .isEqualTo(TestOverrideByteOrderInEmbeddedMessage.newBuilder()
+            .setIntValue(intFrom(TEST_INT_BYTE_ARRAY))
+            .setEmbeddedMessage(TestOverrideDefaultOrderMessage.newBuilder()
+                .setIntValue(littleEndianIntFrom(TEST_INT_BYTE_ARRAY))
+                .setLongValue(littleEndianLongFrom(TEST_LONG_BYTE_ARRAY)))
+            .build());
+  }
+
+  @Test
+  public void deserializeResponse_overloadEmbeddeddMessageOrderInField() throws Exception {
+    assertThat(converter.deserializeResponse(null, TestOverrideEmbeddedByteOrderInFieldMessage.getDefaultInstance(),
+        concatArrays(TEST_INT_BYTE_ARRAY, TEST_INT_BYTE_ARRAY, TEST_LONG_BYTE_ARRAY)))
+        .isEqualTo(TestOverrideEmbeddedByteOrderInFieldMessage.newBuilder()
+            .setIntValue(littleEndianIntFrom(TEST_INT_BYTE_ARRAY))
+            .setEmbeddedMessage(TestOverrideDefaultOrderMessage.newBuilder()
+                .setIntValue(intFrom(TEST_INT_BYTE_ARRAY))
+                .setLongValue(longFrom(TEST_LONG_BYTE_ARRAY)))
+            .build());
   }
 
   private static int intFrom(byte[] bytes) {
