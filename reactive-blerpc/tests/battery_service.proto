@@ -40,11 +40,11 @@ message GetBatteryLevelRequest {
 
 // Response message for the ReadBatteryLevel and GetBatteryUpdates methods.
 message GetBatteryLevelResponse {
-    option (com.blerpc.size) = {
+    option (com.blerpc.message) = {
         size_bytes: 1
     };
     // Current device battery level percent.
-    int32 battery_level_percent = 1 [(com.blerpc.range) = {
+    int32 battery_level_percent = 1 [(com.blerpc.field) = {
         from_byte: 0
         to_byte: 1
     }];
