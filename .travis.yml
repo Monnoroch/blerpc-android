@@ -15,8 +15,12 @@ licenses:
   - google-gdk-license-.+
 before_install:
   - linters/install-linters.sh
+  - ci/install-protoc.sh
 script:
   - gradle reactive-blerpc:assemble
+  - ci/generate-reactive-plugin.sh
+  - reactive-blerpc/tests/test.sh
+  - gradle reactive-blerpc-test:assemble reactive-blerpc-test:testReleaseUnitTest
   - gradle blerpcproto:assemble
   - gradle assembleRelease --stacktrace --no-daemon
   - gradle testReleaseUnitTest --info

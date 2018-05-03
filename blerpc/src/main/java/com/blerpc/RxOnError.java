@@ -14,7 +14,7 @@ import java.util.logging.Logger;
  *     {@link Emitter#onError(Throwable)} method, mute and log UncatchableException.
  * This class should not be used extensively, only in select situations where this is absolutely needed.
  */
-class RxOnError {
+public class RxOnError {
 
   private RxOnError() {}
 
@@ -25,7 +25,7 @@ class RxOnError {
    * @param throwable - error that will be sent to subscriber.
    * @param logger - for logging errors.
    */
-  static void loggingUncatchableExceptions(Emitter subscriber, Throwable throwable, Logger logger) {
+  public static void loggingUncatchableExceptions(Emitter subscriber, Throwable throwable, Logger logger) {
     loggingUncatchableExceptions(() -> subscriber.onError(throwable), logger);
   }
 
@@ -36,7 +36,7 @@ class RxOnError {
    * @param throwable - error that will be sent to subscriber.
    * @param logger - for logging errors.
    */
-  static void loggingUncatchableExceptions(SingleEmitter subscriber, Throwable throwable, Logger logger) {
+  public static void loggingUncatchableExceptions(SingleEmitter subscriber, Throwable throwable, Logger logger) {
     loggingUncatchableExceptions(() -> subscriber.onError(throwable), logger);
   }
 

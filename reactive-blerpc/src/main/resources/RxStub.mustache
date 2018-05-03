@@ -17,20 +17,20 @@ public class {{className}} {
     this.service = service;
     this.logger = logger;
   }
+{{#methods}}
+{{#isManyOutput}}
 
-  {{#methods}}
-  {{#isManyOutput}}
-      {{#javaDoc}}
-    {{{javaDoc}}}
-      {{/javaDoc}}
-      {{#deprecated}}
-    @java.lang.Deprecated
-      {{/deprecated}}
-    public io.reactivex.Observable<{{outputType}}> {{methodName}}({{inputType}} request) {
-      return {{methodName}}(request, new com.blerpc.BleRpcController());
-    }
+    {{#javaDoc}}
+  {{{javaDoc}}}
+    {{/javaDoc}}
+    {{#deprecated}}
+  @java.lang.Deprecated
+    {{/deprecated}}
+  public io.reactivex.Observable<{{outputType}}> {{methodName}}({{inputType}} request) {
+    return {{methodName}}(request, new com.blerpc.BleRpcController());
+  }
+{{/isManyOutput}}
 
-  {{/isManyOutput}}
     {{#javaDoc}}
   {{{javaDoc}}}
     {{/javaDoc}}

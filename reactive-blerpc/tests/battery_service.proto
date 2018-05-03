@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+option java_package = "com.device.proto";
+option java_multiple_files = true;
+option optimize_for = CODE_SIZE;
+option java_generic_services = true;
+
+package device;
+
+import "blerpc.proto";
+
+// A service for getting information about device battery.
+service BatteryService {
+    option (com.blerpc.service) = {
+        uuid: "F000HHH0-0251-2000-B000-000000000000"
+    };
+
+    // Get current device battery level.
+    rpc ReadBatteryLevel (GetBatteryLevelRequest) returns (GetBatteryLevelResponse) {
+        option (com.blerpc.characteristic) = {
+            uuid: "F000HHH1-0251-2000-B000-000000000000"
+            type: READ
+        };
+    }
+
+    // Subscribe for receiving updates of device battery level.
+    // Will only be sending updates when battery level is lower than the one set with SetMaxUpdatePercent.
+    rpc GetBatteryUpdates (GetBatteryLevelRequest) returns (stream GetBatteryLevelResponse) {
+        option (com.blerpc.characteristic) = {
+            uuid: "F000HHH1-0251-2000-B000-000000000000"
+            descriptor_uuid: "00002902-0000-1000-8000-00805f9b34fb"
+            type: SUBSCRIBE
+        };
+    }
+}
+
+// Request message for the ReadBatteryLevel and GetBatteryUpdates methods.
+message GetBatteryLevelRequest {
+}
+
+// Response message for the ReadBatteryLevel and GetBatteryUpdates methods.
+message GetBatteryLevelResponse {
+    option (com.blerpc.size) = {
+        size_bytes: 1
+    };
+    // Current device battery level percent.
+    int32 battery_level_percent = 1 [(com.blerpc.range) = {
+        from_byte: 0
+        to_byte: 1
+    }];
+}

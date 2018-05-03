@@ -13,9 +13,9 @@ import com.salesforce.jprotoc.Generator;
 import com.salesforce.jprotoc.GeneratorException;
 import com.salesforce.jprotoc.ProtoTypeMap;
 import com.salesforce.jprotoc.ProtocPlugin;
-import com.sun.tools.javac.util.Pair;
 import java.io.File;
 import java.nio.file.Paths;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -83,17 +83,17 @@ public class ReactiveBleRpcGenerator extends Generator {
     return Stream.concat(services.stream().map(this::buildServiceFile), Stream.of(factoryFile));
   }
 
-  private Stream<Pair<FileDescriptorProto, Location>> getFileLocations(FileDescriptorProto file) {
+  private Stream<AbstractMap.SimpleEntry<FileDescriptorProto, Location>> getFileLocations(FileDescriptorProto file) {
     return file.getSourceCodeInfo()
         .getLocationList()
         .stream()
-        .map(location -> Pair.of(file, location));
+        .map(location -> new AbstractMap.SimpleEntry<>(file, location));
   }
 
   private ServiceContext buildServiceContext(
-      Pair<FileDescriptorProto, Location> fileLocation, ProtoTypeMap typeMap) {
-    int serviceNumber = fileLocation.snd.getPath(SERVICE_NUMBER_OF_PATHS - 1);
-    ServiceDescriptorProto serviceProto = fileLocation.fst.getService(serviceNumber);
+      AbstractMap.SimpleEntry<FileDescriptorProto, Location> fileLocation, ProtoTypeMap typeMap) {
+    int serviceNumber = fileLocation.getValue().getPath(SERVICE_NUMBER_OF_PATHS - 1);
+    ServiceDescriptorProto serviceProto = fileLocation.getKey().getService(serviceNumber);
     ServiceContext serviceContext = new ServiceContext();
     serviceContext.serviceName = serviceProto.getName();
     serviceContext.className = CLASS_PREFIX + serviceContext.serviceName;
@@ -102,7 +102,7 @@ public class ReactiveBleRpcGenerator extends Generator {
         serviceProto.getOptions() != null && serviceProto.getOptions().getDeprecated();
     serviceContext.methods =
         fileLocation
-            .fst
+            .getKey()
             .getSourceCodeInfo()
             .getLocationList()
             .stream()
@@ -110,8 +110,8 @@ public class ReactiveBleRpcGenerator extends Generator {
             .map(location -> buildMethodContext(serviceProto, location, typeMap))
             .collect(Collectors.toList());
     serviceContext.javaDoc =
-        getJavaDoc(fileLocation.snd.getLeadingComments(), SERVICE_JAVADOC_PREFIX);
-    serviceContext.packageName = extractPackageName(fileLocation.fst);
+        getJavaDoc(fileLocation.getValue().getLeadingComments(), SERVICE_JAVADOC_PREFIX);
+    serviceContext.packageName = extractPackageName(fileLocation.getKey());
     return serviceContext;
   }
 
@@ -181,15 +181,15 @@ public class ReactiveBleRpcGenerator extends Generator {
     return null;
   }
 
-  private boolean isProtoService(Pair<FileDescriptorProto, Location> fileLocation) {
-    return fileLocation.snd.getPathCount() == SERVICE_NUMBER_OF_PATHS
-        && fileLocation.snd.getPath(0) == FileDescriptorProto.SERVICE_FIELD_NUMBER;
+  private boolean isProtoService(AbstractMap.SimpleEntry<FileDescriptorProto, Location> fileLocation) {
+    return fileLocation.getValue().getPathCount() == SERVICE_NUMBER_OF_PATHS
+        && fileLocation.getValue().getPath(0) == FileDescriptorProto.SERVICE_FIELD_NUMBER;
   }
 
-  private boolean isBleRpcService(Pair<FileDescriptorProto, Location> fileLocation) {
+  private boolean isBleRpcService(AbstractMap.SimpleEntry<FileDescriptorProto, Location> fileLocation) {
     return fileLocation
-        .fst
-        .getService(fileLocation.snd.getPath(SERVICE_NUMBER_OF_PATHS - 1))
+        .getKey()
+        .getService(fileLocation.getValue().getPath(SERVICE_NUMBER_OF_PATHS - 1))
         .getOptions()
         .getUnknownFields()
         .hasField(Blerpc.SERVICE_FIELD_NUMBER);
