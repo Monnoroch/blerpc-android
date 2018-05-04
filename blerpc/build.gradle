@@ -39,9 +39,12 @@ dependencies {
     compile 'com.google.protobuf:protobuf-java:3.2.0'
     compile 'com.google.protobuf:protoc:3.0.0'
     compile 'com.google.dagger:dagger:2.7'
+    compile 'io.reactivex.rxjava2:rxandroid:2.0.1'
+    compile 'io.reactivex.rxjava2:rxjava:2.1.7'
     annotationProcessor 'com.google.dagger:dagger-compiler:2.7'
     testAnnotationProcessor 'com.google.dagger:dagger-compiler:2.7'
 
+    testCompile "org.robolectric:robolectric:3.6.1"
     testCompile 'junit:junit:4.12'
     testCompile "org.mockito:mockito-inline:2.7.22"
     testCompile 'com.google.truth:truth:0.34'
@@ -65,7 +68,7 @@ publish {
     groupId = 'com.github.monnoroch'
     repoName = 'blerpc-android'
     artifactId = 'blerpc-android'
-    publishVersion = '0.2.2'
+    publishVersion = "${blerpcVersion}"
     desc = 'A library for simplifying working with blutooth low energy devices.'
     licences = ['MIT']
     website = 'https://github.com/monnoroch/blerpc-android'

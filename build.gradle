@@ -33,6 +33,10 @@ project(':blerpc') {
     apply plugin: 'com.android.library'
 }
 
+ext {
+    blerpcVersion = '0.2.2'
+}
+
 apply from: "linters/configs/android-lint.build.gradle"
 apply from: "linters/configs/checkstyle.build.gradle"
 apply from: "linters/configs/findbugs.build.gradle"

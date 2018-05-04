@@ -1,0 +1,49 @@
+package com.test.proto;
+
+/**
+ * <pre>
+ * Service javadoc.
+ * <pre>
+ */
+public class RxTestService {
+
+  private final com.test.proto.TestService service;
+  private final java.util.logging.Logger logger;
+
+  public RxTestService(com.test.proto.TestService service, java.util.logging.Logger logger) {
+    this.service = service;
+    this.logger = logger;
+  }
+
+  /**
+   * <pre>
+   * Subscribe method javadoc.
+   * <pre>
+   */
+  public io.reactivex.Observable<com.test.proto.TestOutputValue> subscribeValue(com.test.proto.TestInputValue request) {
+    return subscribeValue(request, new com.blerpc.BleRpcController());
+  }
+
+  /**
+   * <pre>
+   * Subscribe method javadoc.
+   * <pre>
+   */
+  public io.reactivex.Observable<com.test.proto.TestOutputValue> subscribeValue(com.test.proto.TestInputValue request, com.blerpc.BleRpcController controller) {
+      return io.reactivex.Observable.create(
+          subscriber -> {
+            service.subscribeValue(
+                controller,
+                request,
+                response -> {
+                  if (!controller.failed()) {
+                    subscriber.onNext(response);
+                  } else {
+                    com.blerpc.RxOnError.loggingUncatchableExceptions(
+                        subscriber, new Exception(controller.errorText()), logger);
+                  }
+                });
+            subscriber.setCancellable(controller::startCancel);
+          });
+  }
+}
