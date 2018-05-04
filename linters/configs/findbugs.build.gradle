@@ -1,4 +1,9 @@
+task runFindbugs
+
 subprojects {
+    if (project.getName().contentEquals('reactive-blerpc-test')) {
+        return
+    }
     def isAndroidLibrary = project.getPlugins().hasPlugin('com.android.library')
 
     apply plugin: 'findbugs'
@@ -20,9 +25,5 @@ subprojects {
             xml.destination "${rootProject.buildDir}/linters/${project.name}.findbugs.xml"
         }
     }
-}
-
-task runFindbugs
-subprojects {
-    project -> runFindbugs.dependsOn("${project.path}:customFindbugs")
+    runFindbugs.dependsOn("${project.path}:customFindbugs")
 }
