@@ -18,6 +18,7 @@ import com.salesforce.jprotoc.Generator;
 import com.salesforce.jprotoc.GeneratorException;
 import com.salesforce.jprotoc.ProtoTypeMap;
 import com.salesforce.jprotoc.ProtocPlugin;
+import edu.umd.cs.findbugs.annotations.SuppressWarnings;
 import java.io.File;
 import java.nio.file.Paths;
 import java.util.AbstractMap;
@@ -201,11 +202,13 @@ public class ReactiveBleRpcGenerator extends Generator {
   }
 
   /** Template class that describe protobuf file. */
+  @SuppressWarnings(value = "URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
   private static class FileContext {
     public ImmutableList<ServiceContext> services = ImmutableList.of();
   }
 
   /** Template class that describe protobuf services. */
+  @SuppressWarnings(value = "URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
   private static class ServiceContext {
     public String fileName;
     public String packageName;
@@ -217,6 +220,7 @@ public class ReactiveBleRpcGenerator extends Generator {
   }
 
   /** Template class that describe protobuf methods. */
+  @SuppressWarnings(value = "URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
   private static class MethodContext {
     public String methodName;
     public String inputType;

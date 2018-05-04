@@ -380,7 +380,7 @@ public class ReactiveBleRpcGeneratorTest {
 
   String readFileFromResources(String fileName) throws Exception {
     StringBuilder result = new StringBuilder("");
-    Scanner scanner = new Scanner(new File(getClass().getClassLoader().getResource(fileName).getFile()));
+    Scanner scanner = new Scanner(new File(getClass().getClassLoader().getResource(fileName).getFile()), "utf-8");
     while (scanner.hasNextLine()) {
       result.append(scanner.nextLine()).append("\n");
     }
