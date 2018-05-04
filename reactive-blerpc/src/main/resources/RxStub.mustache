@@ -40,7 +40,9 @@ public class {{className}} {
   public {{#isManyOutput}}io.reactivex.Observable{{/isManyOutput}}{{^isManyOutput}}io.reactivex.Single{{/isManyOutput}}<{{outputType}}> {{methodName}}({{inputType}} request{{#isManyOutput}}, com.blerpc.BleRpcController controller{{/isManyOutput}}) {
       return {{#isManyOutput}}io.reactivex.Observable{{/isManyOutput}}{{^isManyOutput}}io.reactivex.Single{{/isManyOutput}}.create(
           subscriber -> {
-            {{^isManyOutput}}com.blerpc.BleRpcController controller = new com.blerpc.BleRpcController();{{/isManyOutput}}
+              {{^isManyOutput}}
+            com.blerpc.BleRpcController controller = new com.blerpc.BleRpcController();
+              {{/isManyOutput}}
             service.{{methodName}}(
                 controller,
                 request,

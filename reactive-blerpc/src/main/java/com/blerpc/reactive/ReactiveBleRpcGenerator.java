@@ -1,7 +1,9 @@
 package com.blerpc.reactive;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Strings.isNullOrEmpty;
+
 import com.blerpc.proto.Blerpc;
-import com.google.common.base.Strings;
 import com.google.common.html.HtmlEscapers;
 import com.google.protobuf.DescriptorProtos.FileDescriptorProto;
 import com.google.protobuf.DescriptorProtos.FileOptions;
@@ -68,6 +70,7 @@ public class ReactiveBleRpcGenerator extends Generator {
         request
             .getProtoFileList()
             .stream()
+            .peek(this::hasPackage)
             .filter(file -> request.getFileToGenerateList().contains(file.getName()))
             .flatMap(this::getFileLocations)
             .filter(this::isProtoService)
@@ -75,6 +78,9 @@ public class ReactiveBleRpcGenerator extends Generator {
             .map(fileLocation -> buildServiceContext(fileLocation, typeMap))
             .collect(Collectors.toList());
 
+    if (services.isEmpty()) {
+      return Stream.empty();
+    }
     PluginProtos.CodeGeneratorResponse.File factoryFile =
         PluginProtos.CodeGeneratorResponse.File.newBuilder()
             .setName(SERVICE_FACTORY_PATH)
@@ -119,11 +125,11 @@ public class ReactiveBleRpcGenerator extends Generator {
     FileOptions options = proto.getOptions();
     if (options != null) {
       String javaPackage = options.getJavaPackage();
-      if (!Strings.isNullOrEmpty(javaPackage)) {
+      if (!isNullOrEmpty(javaPackage)) {
         return javaPackage;
       }
     }
-    return Strings.nullToEmpty(proto.getPackage());
+    return proto.getPackage();
   }
 
   private MethodContext buildMethodContext(
@@ -138,9 +144,7 @@ public class ReactiveBleRpcGenerator extends Generator {
         methodProto.getOptions() != null && methodProto.getOptions().getDeprecated();
     methodContext.isManyOutput = methodProto.getServerStreaming();
     methodContext.javaDoc = getJavaDoc(location.getLeadingComments(), METHOD_JAVADOC_PREFIX);
-    if (methodProto.getClientStreaming()) {
-      throw new RuntimeException("BleRpc doesn't support client streaming to BLE device.");
-    }
+    checkArgument(!methodProto.getClientStreaming(), "BleRpc doesn't support client streaming to BLE device.");
     return methodContext;
   }
 
@@ -162,12 +166,7 @@ public class ReactiveBleRpcGenerator extends Generator {
   }
 
   private String fullFileName(ServiceContext context) {
-    String dir = context.packageName.replace(".", File.separator);
-    if (Strings.isNullOrEmpty(dir)) {
-      return context.fileName;
-    } else {
-      return Paths.get(dir, context.fileName).toString();
-    }
+    return Paths.get(context.packageName.replace(".", File.separator), context.fileName).toString();
   }
 
   private String getJavaDoc(String comments, String prefix) {
@@ -200,6 +199,10 @@ public class ReactiveBleRpcGenerator extends Generator {
         && location.getPath(0) == FileDescriptorProto.SERVICE_FIELD_NUMBER
         && location.getPath(1) == serviceNumber
         && location.getPath(2) == ServiceDescriptorProto.METHOD_FIELD_NUMBER;
+  }
+
+  private void hasPackage(FileDescriptorProto file) {
+    checkArgument(!isNullOrEmpty(file.getPackage()), "Proto file must contains package name.");
   }
 
   /** Template class that describe protobuf file. */
