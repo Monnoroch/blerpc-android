@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-/usr/local/proto/protoc \
+/tmp/proto/protoc \
   --plugin=protoc-gen-rx='generated/reactive-blerpc' \
   --proto_path='.' \
   -I 'blerpcproto/src/main/proto/' \
