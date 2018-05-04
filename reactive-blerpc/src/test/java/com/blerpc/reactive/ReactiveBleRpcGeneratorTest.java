@@ -178,7 +178,7 @@ public class ReactiveBleRpcGeneratorTest {
                     .setClientStreaming(true))))
         .build();
     Exception exception = assertThrows(IllegalArgumentException.class, () -> generator.generate(request));
-    assertThat(exception.getMessage()).isEqualTo("BleRpc doesn't support client streaming to BLE device.");
+    assertThat(exception.getMessage()).contains("BleRpc doesn't support client streaming to BLE device.");
   }
 
   @Test
@@ -189,7 +189,7 @@ public class ReactiveBleRpcGeneratorTest {
             .clearPackage())
         .build();
     Exception exception = assertThrows(IllegalArgumentException.class, () -> generator.generate(request));
-    assertThat(exception.getMessage()).isEqualTo("Proto file must contains package name.");
+    assertThat(exception.getMessage()).contains("Proto file must contains package name.");
   }
 
   @Test

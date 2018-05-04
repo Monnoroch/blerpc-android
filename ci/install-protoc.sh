@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 PROTO_HOME=/usr/local/proto
-export PATH=$PATH:${PROTO_HOME}
 mkdir -p /tmp/work
 file_path=/tmp/work/protoc.zip
 wget --output-document=${file_path} --quiet \
