@@ -21,6 +21,7 @@ import java.io.File;
 import java.nio.file.Paths;
 import java.util.AbstractMap;
 import java.util.Arrays;
+import java.util.Optional;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
 
@@ -123,7 +124,7 @@ public class ReactiveBleRpcGenerator extends Generator {
             .filter(location -> isProtoMethod(location, serviceNumber))
             .map(location -> buildMethodContext(serviceProto, location, typeMap))
             .collect(ImmutableList.toImmutableList());
-    serviceContext.javaDoc = getJavaDoc(fileLocation.getLeadingComments(), SERVICE_JAVADOC_PREFIX);
+    serviceContext.javaDoc = getJavaDoc(fileLocation.getLeadingComments(), SERVICE_JAVADOC_PREFIX).orElse(null);
     serviceContext.packageName = extractPackageName(protoFile);
     return serviceContext;
   }
@@ -149,7 +150,7 @@ public class ReactiveBleRpcGenerator extends Generator {
     methodContext.outputType = typeMap.toJavaTypeName(methodProto.getOutputType());
     methodContext.deprecated = methodProto.getOptions().getDeprecated();
     methodContext.isManyOutput = methodProto.getServerStreaming();
-    methodContext.javaDoc = getJavaDoc(location.getLeadingComments(), METHOD_JAVADOC_PREFIX);
+    methodContext.javaDoc = getJavaDoc(location.getLeadingComments(), METHOD_JAVADOC_PREFIX).orElse(null);
     return methodContext;
   }
 
@@ -174,15 +175,15 @@ public class ReactiveBleRpcGenerator extends Generator {
     return Paths.get(context.packageName.replace(".", File.separator), context.fileName).toString();
   }
 
-  private String getJavaDoc(String comments, String prefix) {
+  private Optional<String> getJavaDoc(String comments, String prefix) {
     if (comments.isEmpty()) {
-      return null;
+      return Optional.empty();
     }
     StringBuilder builder = new StringBuilder("/**\n").append(prefix).append(" * <pre>\n");
     Arrays.stream(HtmlEscapers.htmlEscaper().escape(comments).split("\n"))
         .forEach(line -> builder.append(prefix).append(" * ").append(line).append("\n"));
     builder.append(prefix).append(" * <pre>\n").append(prefix).append(" */");
-    return builder.toString();
+    return Optional.of(builder.toString());
   }
 
   private boolean isProtoService(
