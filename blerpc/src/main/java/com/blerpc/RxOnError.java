@@ -55,7 +55,7 @@ public class RxOnError {
    */
   private static void muteUndeliverableException(Throwable error, Logger logger) {
     if (error instanceof UndeliverableException) {
-      logger.info(error.getMessage());
+      logger.warning(error.getMessage());
       return;
     } else if (error instanceof RuntimeException) {
       throw (RuntimeException) error;

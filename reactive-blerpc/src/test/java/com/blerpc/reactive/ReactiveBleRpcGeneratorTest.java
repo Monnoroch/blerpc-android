@@ -25,16 +25,8 @@ public class ReactiveBleRpcGeneratorTest {
   static final String SERVICE_JAVADOC = "Service javadoc.";
   static final String READ_METHOD_JAVADOC = "Read method javadoc.";
   static final String SUBSCRIBE_METHOD_JAVADOC = "Subscribe method javadoc.";
-  static final String SERVICE_JAVADOC_TEMPLATE = "/**\n" +
-      " * <pre>\n" +
-      " * %s\n" +
-      " * <pre>\n" +
-      " */";
-  static final String METHOD_JAVADOC_TEMPLATE = "/**\n" +
-      "   * <pre>\n" +
-      "   * %s\n" +
-      "   * <pre>\n" +
-      "   */";
+  static final String SERVICE_JAVADOC_TEMPLATE = "/**%n" + " * <pre>%n" + " * %s%n" + " * <pre>%n" + " */";
+  static final String METHOD_JAVADOC_TEMPLATE = "/**%n" + "   * <pre>%n" + "   * %s%n" + "   * <pre>%n" + "   */";
   static final String READ_METHOD_NAME = "ReadValue";
   static final String READ_METHOD_NAME_FIRST_LOWER_CASE = "readValue";
   static final String SUBSCRIBE_METHOD_NAME = "SubscribeValue";
@@ -244,8 +236,8 @@ public class ReactiveBleRpcGeneratorTest {
   public void generate_noJavaPackage() throws Exception {
     ReactiveBleRpcGenerator.ServiceContext serviceContext = createServiceContext();
     serviceContext.methods.forEach(methodContext -> {
-      methodContext.inputType = PROTO_PACKAGE +"." + METHOD_INPUT_TYPE;
-      methodContext.outputType = PROTO_PACKAGE +"." + METHOD_OUTPUT_TYPE;
+      methodContext.inputType = PROTO_PACKAGE + "." + METHOD_INPUT_TYPE;
+      methodContext.outputType = PROTO_PACKAGE + "." + METHOD_OUTPUT_TYPE;
     });
     serviceContext.packageName = PROTO_PACKAGE;
     PluginProtos.CodeGeneratorRequest request = PluginProtos.CodeGeneratorRequest.newBuilder()
@@ -335,8 +327,8 @@ public class ReactiveBleRpcGeneratorTest {
   private ReactiveBleRpcGenerator.MethodContext createReadMethodContext() {
     ReactiveBleRpcGenerator.MethodContext readMethodContext = new ReactiveBleRpcGenerator.MethodContext();
     readMethodContext.methodName = READ_METHOD_NAME_FIRST_LOWER_CASE;
-    readMethodContext.inputType = JAVA_PACKAGE +"." + METHOD_INPUT_TYPE;
-    readMethodContext.outputType = JAVA_PACKAGE +"." + METHOD_OUTPUT_TYPE;
+    readMethodContext.inputType = JAVA_PACKAGE + "." + METHOD_INPUT_TYPE;
+    readMethodContext.outputType = JAVA_PACKAGE + "." + METHOD_OUTPUT_TYPE;
     readMethodContext.javaDoc = String.format(METHOD_JAVADOC_TEMPLATE, READ_METHOD_JAVADOC);
     return readMethodContext;
   }
@@ -344,8 +336,8 @@ public class ReactiveBleRpcGeneratorTest {
   private ReactiveBleRpcGenerator.MethodContext createSubscribeMethodContext() {
     ReactiveBleRpcGenerator.MethodContext subscribeMethodContext = new ReactiveBleRpcGenerator.MethodContext();
     subscribeMethodContext.methodName = SUBSCRIBE_METHOD_NAME_FIRST_LOWER_CASE;
-    subscribeMethodContext.inputType = JAVA_PACKAGE +"." + METHOD_INPUT_TYPE;
-    subscribeMethodContext.outputType = JAVA_PACKAGE +"." + METHOD_OUTPUT_TYPE;
+    subscribeMethodContext.inputType = JAVA_PACKAGE + "." + METHOD_INPUT_TYPE;
+    subscribeMethodContext.outputType = JAVA_PACKAGE + "." + METHOD_OUTPUT_TYPE;
     subscribeMethodContext.javaDoc = String.format(METHOD_JAVADOC_TEMPLATE, SUBSCRIBE_METHOD_JAVADOC);
     subscribeMethodContext.isManyOutput = true;
     return subscribeMethodContext;

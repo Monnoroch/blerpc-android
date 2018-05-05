@@ -50,7 +50,7 @@ public class RxOnErrorTest {
         TestObserver<Optional<Void>> testObserver = observable.test();
         testObserver.dispose();
         RxOnError.loggingUncatchableExceptions(observableSubscriber, THROWABLE, logger);
-        verify(logger).info(contains(THROWABLE.getMessage()));
+        verify(logger).warning(contains(THROWABLE.getMessage()));
     }
 
     @Test
@@ -65,6 +65,6 @@ public class RxOnErrorTest {
         testObserver.dispose();
         RxOnError.loggingUncatchableExceptions(singleSubscriber, THROWABLE, logger);
 
-        verify(logger).info(contains(THROWABLE.getMessage()));
+        verify(logger).warning(contains(THROWABLE.getMessage()));
     }
 }
