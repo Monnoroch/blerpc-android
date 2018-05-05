@@ -1,12 +1,9 @@
 package com.blerpc.reactive;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static java.util.stream.Collectors.collectingAndThen;
-import static java.util.stream.Collectors.toList;
 
 import com.blerpc.proto.Blerpc;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.html.HtmlEscapers;
 import com.google.protobuf.DescriptorProtos.FileDescriptorProto;
@@ -24,7 +21,6 @@ import java.io.File;
 import java.nio.file.Paths;
 import java.util.AbstractMap;
 import java.util.Arrays;
-import java.util.Objects;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
 
@@ -82,7 +78,9 @@ public class ReactiveBleRpcGenerator extends Generator {
     return Stream.concat(services.stream().map(this::buildServiceFile), Stream.of(factoryFile));
   }
 
-  @VisibleForTesting ImmutableList<ServiceContext> buildServiceContexts(PluginProtos.CodeGeneratorRequest request) {
+  @VisibleForTesting
+  ImmutableList<ServiceContext> buildServiceContexts(PluginProtos.CodeGeneratorRequest request) {
+    ProtoTypeMap protoTypeMap = ProtoTypeMap.of(request.getProtoFileList());
     return request
         .getProtoFileList()
         .stream()
@@ -91,43 +89,48 @@ public class ReactiveBleRpcGenerator extends Generator {
         .flatMap(this::getFileLocations)
         .filter(this::isProtoService)
         .filter(this::isBleRpcService)
-        .map(fileLocation -> buildServiceContext(
-            fileLocation.getKey(), fileLocation.getValue(), ProtoTypeMap.of(request.getProtoFileList())))
-        .collect(collectingAndThen(toList(), ImmutableList::copyOf));
+        .map(
+            fileLocation ->
+                buildServiceContext(
+                    fileLocation.getKey(),
+                    fileLocation.getValue(),
+                    protoTypeMap))
+        .collect(ImmutableList.toImmutableList());
   }
 
-  private Stream<AbstractMap.SimpleEntry<FileDescriptorProto, Location>> getFileLocations(FileDescriptorProto file) {
+  private Stream<AbstractMap.SimpleEntry<FileDescriptorProto, Location>> getFileLocations(
+      FileDescriptorProto file) {
     return file.getSourceCodeInfo()
         .getLocationList()
         .stream()
         .map(location -> new AbstractMap.SimpleEntry<>(file, location));
   }
 
-  private ServiceContext buildServiceContext(FileDescriptorProto protoFile, Location fileLocation, ProtoTypeMap typeMap) {
+  private ServiceContext buildServiceContext(
+      FileDescriptorProto protoFile, Location fileLocation, ProtoTypeMap typeMap) {
     int serviceNumber = fileLocation.getPath(SERVICE_NUMBER_OF_PATHS - 1);
     ServiceDescriptorProto serviceProto = protoFile.getService(serviceNumber);
     ServiceContext serviceContext = new ServiceContext();
     serviceContext.serviceName = serviceProto.getName();
     serviceContext.className = RX_CLASS_PREFIX + serviceContext.serviceName;
     serviceContext.fileName = serviceContext.className + JAVA_SOURCE_EXTENSION;
-    serviceContext.deprecated =
-        serviceProto.getOptions() != null && serviceProto.getOptions().getDeprecated();
-    serviceContext.methods = protoFile
+    serviceContext.deprecated = serviceProto.getOptions().getDeprecated();
+    serviceContext.methods =
+        protoFile
             .getSourceCodeInfo()
             .getLocationList()
             .stream()
             .filter(location -> isProtoMethod(location, serviceNumber))
             .map(location -> buildMethodContext(serviceProto, location, typeMap))
-            .collect(collectingAndThen(toList(), ImmutableList::copyOf));
-    serviceContext.javaDoc =
-        getJavaDoc(fileLocation.getLeadingComments(), SERVICE_JAVADOC_PREFIX);
+            .collect(ImmutableList.toImmutableList());
+    serviceContext.javaDoc = getJavaDoc(fileLocation.getLeadingComments(), SERVICE_JAVADOC_PREFIX);
     serviceContext.packageName = extractPackageName(protoFile);
     return serviceContext;
   }
 
   private String extractPackageName(FileDescriptorProto proto) {
     FileOptions options = proto.getOptions();
-    if (options != null && !Strings.isNullOrEmpty(options.getJavaPackage())) {
+    if (!options.getJavaPackage().isEmpty()) {
       return options.getJavaPackage();
     }
     return proto.getPackage();
@@ -137,13 +140,14 @@ public class ReactiveBleRpcGenerator extends Generator {
       ServiceDescriptorProto serviceProto, Location location, ProtoTypeMap typeMap) {
     int methodNumber = location.getPath(METHOD_NUMBER_OF_PATHS - 1);
     MethodDescriptorProto methodProto = serviceProto.getMethod(methodNumber);
-    checkArgument(!methodProto.getClientStreaming(), "BleRpc doesn't support client streaming to BLE device.");
+    checkArgument(
+        !methodProto.getClientStreaming(),
+        "BleRpc doesn't support client streaming to BLE device.");
     MethodContext methodContext = new MethodContext();
     methodContext.methodName = lowerCaseFirstLetter(methodProto.getName());
     methodContext.inputType = typeMap.toJavaTypeName(methodProto.getInputType());
     methodContext.outputType = typeMap.toJavaTypeName(methodProto.getOutputType());
-    methodContext.deprecated =
-        methodProto.getOptions() != null && methodProto.getOptions().getDeprecated();
+    methodContext.deprecated = methodProto.getOptions().getDeprecated();
     methodContext.isManyOutput = methodProto.getServerStreaming();
     methodContext.javaDoc = getJavaDoc(location.getLeadingComments(), METHOD_JAVADOC_PREFIX);
     return methodContext;
@@ -181,12 +185,14 @@ public class ReactiveBleRpcGenerator extends Generator {
     return builder.toString();
   }
 
-  private boolean isProtoService(AbstractMap.SimpleEntry<FileDescriptorProto, Location> fileLocation) {
+  private boolean isProtoService(
+      AbstractMap.SimpleEntry<FileDescriptorProto, Location> fileLocation) {
     return fileLocation.getValue().getPathCount() == SERVICE_NUMBER_OF_PATHS
         && fileLocation.getValue().getPath(0) == FileDescriptorProto.SERVICE_FIELD_NUMBER;
   }
 
-  private boolean isBleRpcService(AbstractMap.SimpleEntry<FileDescriptorProto, Location> fileLocation) {
+  private boolean isBleRpcService(
+      AbstractMap.SimpleEntry<FileDescriptorProto, Location> fileLocation) {
     return fileLocation
         .getKey()
         .getService(fileLocation.getValue().getPath(SERVICE_NUMBER_OF_PATHS - 1))
@@ -203,7 +209,7 @@ public class ReactiveBleRpcGenerator extends Generator {
   }
 
   private void hasPackage(FileDescriptorProto file) {
-    checkArgument(!Strings.isNullOrEmpty(file.getPackage()), "Proto file must contains package name.");
+    checkArgument(!file.getPackage().isEmpty(), "Proto file must contains package name.");
   }
 
   /** Template class that describe protobuf file. */
@@ -213,8 +219,9 @@ public class ReactiveBleRpcGenerator extends Generator {
   }
 
   /** Template class that describe protobuf services. */
-  @SuppressWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD", "HE_EQUALS_USE_HASHCODE"})
-  @VisibleForTesting static class ServiceContext {
+  @SuppressWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
+  @VisibleForTesting
+  static class ServiceContext {
     public String fileName;
     public String packageName;
     public String className;
@@ -222,51 +229,17 @@ public class ReactiveBleRpcGenerator extends Generator {
     public boolean deprecated;
     @Nullable public String javaDoc;
     public ImmutableList<MethodContext> methods = ImmutableList.of();
-
-    @Override
-    public boolean equals(Object object) {
-      if (this == object) {
-        return true;
-      }
-      if (object == null || getClass() != object.getClass()) {
-        return false;
-      }
-      ServiceContext otherService = (ServiceContext) object;
-      return Objects.equals(fileName, otherService.fileName)
-        && Objects.equals(packageName, otherService.packageName)
-        && Objects.equals(className, otherService.className)
-        && Objects.equals(serviceName, otherService.serviceName)
-        && Objects.equals(javaDoc, otherService.javaDoc)
-        && Objects.equals(methods, otherService.methods)
-        && deprecated == otherService.deprecated;
-    }
   }
 
   /** Template class that describe protobuf methods. */
-  @SuppressWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD", "HE_EQUALS_USE_HASHCODE"})
-  @VisibleForTesting static class MethodContext {
+  @SuppressWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
+  @VisibleForTesting
+  static class MethodContext {
     public String methodName;
     public String inputType;
     public String outputType;
     public boolean deprecated;
     public boolean isManyOutput;
     @Nullable public String javaDoc;
-
-    @Override
-    public boolean equals(Object object) {
-      if (this == object) {
-        return true;
-      }
-      if (object == null || getClass() != object.getClass()) {
-        return false;
-      }
-      MethodContext otherMethod = (MethodContext) object;
-      return Objects.equals(methodName, otherMethod.methodName)
-          && Objects.equals(inputType, otherMethod.inputType)
-          && Objects.equals(outputType, otherMethod.outputType)
-          && Objects.equals(javaDoc, otherMethod.javaDoc)
-          && deprecated == otherMethod.deprecated
-          && isManyOutput == otherMethod.isManyOutput;
-    }
   }
 }

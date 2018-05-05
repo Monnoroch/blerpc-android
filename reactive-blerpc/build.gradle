@@ -27,7 +27,7 @@ dependencies {
     compile group: 'findbugs', name: 'annotations', version: '1.0.0'
     compile 'com.github.monnoroch:blerpcproto-android:0.2.1'
     compile 'com.salesforce.servicelibs:jprotoc:0.8.0'
-    compile 'com.google.guava:guava:20.0'
+    compile 'com.google.guava:guava:22.0'
     testCompile 'org.junit.jupiter:junit-jupiter-api:5.2.0'
     testCompile "org.mockito:mockito-inline:2.7.22"
     testCompile 'com.google.truth:truth:0.40'

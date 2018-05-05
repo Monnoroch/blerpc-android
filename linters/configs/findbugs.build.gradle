@@ -1,6 +1,8 @@
 task runFindbugs
 
 subprojects {
+    // Reactive-blerpc-test project doesn't have java files in 'src' dir. When findbugs can't find
+    // java files for checking, then it throws an error.
     if (project.getName().contentEquals('reactive-blerpc-test')) {
         return
     }
