@@ -38,24 +38,24 @@ public class {{className}} {
   @java.lang.Deprecated
     {{/deprecated}}
   public {{#isManyOutput}}io.reactivex.Observable{{/isManyOutput}}{{^isManyOutput}}io.reactivex.Single{{/isManyOutput}}<{{outputType}}> {{methodName}}({{inputType}} request{{#isManyOutput}}, com.blerpc.BleRpcController controller{{/isManyOutput}}) {
-      return {{#isManyOutput}}io.reactivex.Observable{{/isManyOutput}}{{^isManyOutput}}io.reactivex.Single{{/isManyOutput}}.create(
-          subscriber -> {
-              {{^isManyOutput}}
-            com.blerpc.BleRpcController controller = new com.blerpc.BleRpcController();
-              {{/isManyOutput}}
-            service.{{methodName}}(
-                controller,
-                request,
-                response -> {
-                  if (!controller.failed()) {
-                    subscriber.{{#isManyOutput}}onNext{{/isManyOutput}}{{^isManyOutput}}onSuccess{{/isManyOutput}}(response);
-                  } else {
-                    com.blerpc.RxOnError.loggingUncatchableExceptions(
-                        subscriber, new Exception(controller.errorText()), logger);
-                  }
-                });
-            subscriber.setCancellable(controller::startCancel);
-          });
+    return {{#isManyOutput}}io.reactivex.Observable{{/isManyOutput}}{{^isManyOutput}}io.reactivex.Single{{/isManyOutput}}.create(
+        subscriber -> {
+            {{^isManyOutput}}
+          com.blerpc.BleRpcController controller = new com.blerpc.BleRpcController();
+            {{/isManyOutput}}
+          service.{{methodName}}(
+              controller,
+              request,
+              response -> {
+                if (!controller.failed()) {
+                  subscriber.{{#isManyOutput}}onNext{{/isManyOutput}}{{^isManyOutput}}onSuccess{{/isManyOutput}}(response);
+                } else {
+                  com.blerpc.RxOnError.loggingUncatchableExceptions(
+                      subscriber, new Exception(controller.errorText()), logger);
+                }
+              });
+          subscriber.setCancellable(controller::startCancel);
+        });
   }
   {{/methods}}
 }

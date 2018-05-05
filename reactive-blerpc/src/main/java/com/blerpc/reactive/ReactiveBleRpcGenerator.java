@@ -5,6 +5,7 @@ import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.toList;
 
 import com.blerpc.proto.Blerpc;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.html.HtmlEscapers;
@@ -23,6 +24,7 @@ import java.io.File;
 import java.nio.file.Paths;
 import java.util.AbstractMap;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
 
@@ -67,18 +69,7 @@ public class ReactiveBleRpcGenerator extends Generator {
   @Override
   public Stream<PluginProtos.CodeGeneratorResponse.File> generate(
       PluginProtos.CodeGeneratorRequest request) throws GeneratorException {
-    final ProtoTypeMap typeMap = ProtoTypeMap.of(request.getProtoFileList());
-    ImmutableList<ServiceContext> services =
-        request
-            .getProtoFileList()
-            .stream()
-            .peek(this::hasPackage)
-            .filter(file -> request.getFileToGenerateList().contains(file.getName()))
-            .flatMap(this::getFileLocations)
-            .filter(this::isProtoService)
-            .filter(this::isBleRpcService)
-            .map(fileLocation -> buildServiceContext(fileLocation.getKey(), fileLocation.getValue(), typeMap))
-            .collect(collectingAndThen(toList(), ImmutableList::copyOf));
+    ImmutableList<ServiceContext> services = buildServiceContexts(request);
     if (services.isEmpty()) {
       return Stream.empty();
     }
@@ -89,6 +80,20 @@ public class ReactiveBleRpcGenerator extends Generator {
             .setContent(generateFactoryFile(services))
             .build();
     return Stream.concat(services.stream().map(this::buildServiceFile), Stream.of(factoryFile));
+  }
+
+  @VisibleForTesting ImmutableList<ServiceContext> buildServiceContexts(PluginProtos.CodeGeneratorRequest request) {
+    return request
+        .getProtoFileList()
+        .stream()
+        .peek(this::hasPackage)
+        .filter(file -> request.getFileToGenerateList().contains(file.getName()))
+        .flatMap(this::getFileLocations)
+        .filter(this::isProtoService)
+        .filter(this::isBleRpcService)
+        .map(fileLocation -> buildServiceContext(
+            fileLocation.getKey(), fileLocation.getValue(), ProtoTypeMap.of(request.getProtoFileList())))
+        .collect(collectingAndThen(toList(), ImmutableList::copyOf));
   }
 
   private Stream<AbstractMap.SimpleEntry<FileDescriptorProto, Location>> getFileLocations(FileDescriptorProto file) {
@@ -209,7 +214,7 @@ public class ReactiveBleRpcGenerator extends Generator {
 
   /** Template class that describe protobuf services. */
   @SuppressWarnings(value = "URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
-  private static class ServiceContext {
+  @VisibleForTesting static class ServiceContext {
     public String fileName;
     public String packageName;
     public String className;
@@ -217,16 +222,51 @@ public class ReactiveBleRpcGenerator extends Generator {
     public boolean deprecated;
     @Nullable public String javaDoc;
     public ImmutableList<MethodContext> methods = ImmutableList.of();
+
+    @Override
+    public boolean equals(Object object) {
+      if (this == object) {
+        return true;
+      }
+      if (object == null || getClass() != object.getClass()) {
+        return false;
+      }
+      ServiceContext otherService = (ServiceContext) object;
+      return Objects.equals(fileName, otherService.fileName)
+        && Objects.equals(packageName, otherService.packageName)
+        && Objects.equals(className, otherService.className)
+        && Objects.equals(serviceName, otherService.serviceName)
+        && Objects.equals(javaDoc, otherService.javaDoc)
+        && Objects.equals(methods, otherService.methods)
+        && deprecated == otherService.deprecated;
+    }
   }
 
   /** Template class that describe protobuf methods. */
   @SuppressWarnings(value = "URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
-  private static class MethodContext {
+  @VisibleForTesting static class MethodContext {
     public String methodName;
     public String inputType;
     public String outputType;
     public boolean deprecated;
     public boolean isManyOutput;
     @Nullable public String javaDoc;
+
+    @Override
+    public boolean equals(Object object) {
+      if (this == object) {
+        return true;
+      }
+      if (object == null || getClass() != object.getClass()) {
+        return false;
+      }
+      MethodContext otherMethod = (MethodContext) object;
+      return Objects.equals(methodName, otherMethod.methodName)
+          && Objects.equals(inputType, otherMethod.inputType)
+          && Objects.equals(outputType, otherMethod.outputType)
+          && Objects.equals(javaDoc, otherMethod.javaDoc)
+          && deprecated == otherMethod.deprecated
+          && isManyOutput == otherMethod.isManyOutput;
+    }
   }
 }

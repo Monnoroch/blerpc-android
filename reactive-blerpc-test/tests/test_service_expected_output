@@ -1,0 +1,73 @@
+package com.device.proto;
+
+/**
+ * <pre>
+ *  A service for testing reactive-blerpc.
+ * <pre>
+ */
+public class RxTestService {
+
+  private final com.device.proto.TestService service;
+  private final java.util.logging.Logger logger;
+
+  public RxTestService(com.device.proto.TestService service, java.util.logging.Logger logger) {
+    this.service = service;
+    this.logger = logger;
+  }
+
+  /**
+   * <pre>
+   *  Read value test method.
+   * <pre>
+   */
+  public io.reactivex.Single<com.device.proto.GetValueResponse> readValue(com.device.proto.GetValueRequest request) {
+    return io.reactivex.Single.create(
+        subscriber -> {
+          com.blerpc.BleRpcController controller = new com.blerpc.BleRpcController();
+          service.readValue(
+              controller,
+              request,
+              response -> {
+                if (!controller.failed()) {
+                  subscriber.onSuccess(response);
+                } else {
+                  com.blerpc.RxOnError.loggingUncatchableExceptions(
+                      subscriber, new Exception(controller.errorText()), logger);
+                }
+              });
+          subscriber.setCancellable(controller::startCancel);
+        });
+  }
+
+  /**
+   * <pre>
+   *  Subscribe for receiving test value updates.
+   * <pre>
+   */
+  public io.reactivex.Observable<com.device.proto.GetValueResponse> getValueUpdates(com.device.proto.GetValueRequest request) {
+    return getValueUpdates(request, new com.blerpc.BleRpcController());
+  }
+
+  /**
+   * <pre>
+   *  Subscribe for receiving test value updates.
+   * <pre>
+   */
+  public io.reactivex.Observable<com.device.proto.GetValueResponse> getValueUpdates(com.device.proto.GetValueRequest request, com.blerpc.BleRpcController controller) {
+    return io.reactivex.Observable.create(
+        subscriber -> {
+          service.getValueUpdates(
+              controller,
+              request,
+              response -> {
+                if (!controller.failed()) {
+                  subscriber.onNext(response);
+                } else {
+                  com.blerpc.RxOnError.loggingUncatchableExceptions(
+                      subscriber, new Exception(controller.errorText()), logger);
+                }
+              });
+          subscriber.setCancellable(controller::startCancel);
+        });
+  }
+}

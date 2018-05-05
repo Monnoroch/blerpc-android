@@ -1,6 +1,7 @@
 package com.blerpc.reactive;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth8.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.blerpc.proto.Blerpc;
@@ -8,9 +9,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.protobuf.DescriptorProtos;
 import com.google.protobuf.UnknownFieldSet;
 import com.google.protobuf.compiler.PluginProtos;
-import java.io.File;
-import java.util.Scanner;
-import java.util.stream.Collectors;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -27,9 +25,23 @@ public class ReactiveBleRpcGeneratorTest {
   static final String SERVICE_JAVADOC = "Service javadoc.";
   static final String READ_METHOD_JAVADOC = "Read method javadoc.";
   static final String SUBSCRIBE_METHOD_JAVADOC = "Subscribe method javadoc.";
+  static final String SERVICE_JAVADOC_TEMPLATE = "/**\n" +
+      " * <pre>\n" +
+      " * %s\n" +
+      " * <pre>\n" +
+      " */";
+  static final String METHOD_JAVADOC_TEMPLATE = "/**\n" +
+      "   * <pre>\n" +
+      "   * %s\n" +
+      "   * <pre>\n" +
+      "   */";
   static final String READ_METHOD_NAME = "ReadValue";
+  static final String READ_METHOD_NAME_FIRST_LOWER_CASE = "readValue";
   static final String SUBSCRIBE_METHOD_NAME = "SubscribeValue";
+  static final String SUBSCRIBE_METHOD_NAME_FIRST_LOWER_CASE = "subscribeValue";
   static final String METHOD_INPUT_TYPE = "TestInputValue";
+  static final String RX_CLASS_PREFIX = "Rx";
+  static final String JAVA_SOURCE_EXTENSION = ".java";
   static final String METHOD_INPUT_TYPE_FULL_PATH = "." + PROTO_PACKAGE + "." + METHOD_INPUT_TYPE;
   static final String METHOD_OUTPUT_TYPE = "TestOutputValue";
   static final String METHOD_OUTPUT_TYPE_FULL_PATH = "." + PROTO_PACKAGE + "." + METHOD_OUTPUT_TYPE;
@@ -109,16 +121,12 @@ public class ReactiveBleRpcGeneratorTest {
 
   @Test
   public void generate() throws Exception {
-    assertThat(generator.generate(REQUEST).collect(Collectors.toList())).isEqualTo(ImmutableList.of(
-        PluginProtos.CodeGeneratorResponse.File.newBuilder()
-            .setContent(readFileFromResources("TestServiceExpectedOutput"))
-            .setName("com/test/proto/RxTestService.java")
-            .build(),
-        PluginProtos.CodeGeneratorResponse.File.newBuilder()
-            .setContent(readFileFromResources("FactoryExpectedOutput"))
-            .setName("com/blerpc/reactive/BleServiceFactory.java")
-            .build()
-    ));
+    assertThat(generator.generate(REQUEST)).hasSize(2);
+  }
+
+  @Test
+  public void buildServiceContexts() throws Exception {
+    assertThat(generator.buildServiceContexts(REQUEST).get(0)).isEqualTo(createServiceContext());
   }
 
   @Test
@@ -126,7 +134,7 @@ public class ReactiveBleRpcGeneratorTest {
     PluginProtos.CodeGeneratorRequest request = REQUEST.toBuilder()
         .clearFileToGenerate()
         .build();
-    assertThat(generator.generate(request).collect(Collectors.toList())).isEqualTo(ImmutableList.of());
+    assertThat(generator.buildServiceContexts(request)).isEmpty();
   }
 
   @Test
@@ -140,7 +148,7 @@ public class ReactiveBleRpcGeneratorTest {
                     .addLocation(READ_METHOD_LOCATION)
                     .addLocation(SUBSCRIBE_METHOD_LOCATION)))
         .build();
-    assertThat(generator.generate(request).collect(Collectors.toList())).isEqualTo(ImmutableList.of());
+    assertThat(generator.buildServiceContexts(request)).isEmpty();
   }
 
   @Test
@@ -154,7 +162,7 @@ public class ReactiveBleRpcGeneratorTest {
                 .addLocation(READ_METHOD_LOCATION)
                 .addLocation(SUBSCRIBE_METHOD_LOCATION)))
         .build();
-    assertThat(generator.generate(request).collect(Collectors.toList())).isEqualTo(ImmutableList.of());
+    assertThat(generator.buildServiceContexts(request)).isEmpty();
   }
 
   @Test
@@ -165,7 +173,7 @@ public class ReactiveBleRpcGeneratorTest {
             .setService(0, SERVICE.toBuilder()
                 .clearOptions()))
         .build();
-    assertThat(generator.generate(request).collect(Collectors.toList())).isEqualTo(ImmutableList.of());
+    assertThat(generator.buildServiceContexts(request)).isEmpty();
   }
 
   @Test
@@ -194,6 +202,9 @@ public class ReactiveBleRpcGeneratorTest {
 
   @Test
   public void generate_deprecatedAnnotation() throws Exception {
+    ReactiveBleRpcGenerator.ServiceContext serviceContext = createServiceContext();
+    serviceContext.deprecated = true;
+    serviceContext.methods.forEach(methodContext -> methodContext.deprecated = true);
     PluginProtos.CodeGeneratorRequest request = PluginProtos.CodeGeneratorRequest.newBuilder()
         .addFileToGenerate(FILE_NAME)
         .addProtoFile(FILE.toBuilder()
@@ -202,22 +213,19 @@ public class ReactiveBleRpcGeneratorTest {
                     .setDeprecated(true))
                 .setMethod(0, READ_METHOD.toBuilder()
                     .setOptions(DescriptorProtos.MethodOptions.newBuilder()
+                        .setDeprecated(true)))
+                .setMethod(1, SUBSCRIBE_METHOD.toBuilder()
+                    .setOptions(DescriptorProtos.MethodOptions.newBuilder()
                         .setDeprecated(true)))))
         .build();
-    assertThat(generator.generate(request).collect(Collectors.toList())).isEqualTo(ImmutableList.of(
-        PluginProtos.CodeGeneratorResponse.File.newBuilder()
-            .setContent(readFileFromResources("TestServiceExpectedOutputDeprecated"))
-            .setName("com/test/proto/RxTestService.java")
-            .build(),
-        PluginProtos.CodeGeneratorResponse.File.newBuilder()
-            .setContent(readFileFromResources("FactoryExpectedOutput"))
-            .setName("com/blerpc/reactive/BleServiceFactory.java")
-            .build()
-    ));
+    assertThat(generator.buildServiceContexts(request).get(0)).isEqualTo(serviceContext);
   }
 
   @Test
   public void generate_noJavaDoc() throws Exception {
+    ReactiveBleRpcGenerator.ServiceContext serviceContext = createServiceContext();
+    serviceContext.javaDoc = null;
+    serviceContext.methods.forEach(methodContext -> methodContext.javaDoc = null);
     PluginProtos.CodeGeneratorRequest request = PluginProtos.CodeGeneratorRequest.newBuilder()
         .addFileToGenerate(FILE_NAME)
         .addProtoFile(FILE.toBuilder()
@@ -229,65 +237,30 @@ public class ReactiveBleRpcGeneratorTest {
                 .setLocation(2, SUBSCRIBE_METHOD_LOCATION.toBuilder()
                     .clearLeadingComments())))
         .build();
-    assertThat(generator.generate(request).collect(Collectors.toList())).isEqualTo(ImmutableList.of(
-        PluginProtos.CodeGeneratorResponse.File.newBuilder()
-            .setContent(readFileFromResources("TestServiceExpectedOutputWithoutJavadoc"))
-            .setName("com/test/proto/RxTestService.java")
-            .build(),
-        PluginProtos.CodeGeneratorResponse.File.newBuilder()
-            .setContent(readFileFromResources("FactoryExpectedOutput"))
-            .setName("com/blerpc/reactive/BleServiceFactory.java")
-            .build()
-    ));
-  }
-
-  @Test
-  public void generate_multilineJavaDoc() throws Exception {
-    PluginProtos.CodeGeneratorRequest request = PluginProtos.CodeGeneratorRequest.newBuilder()
-        .addFileToGenerate(FILE_NAME)
-        .addProtoFile(FILE.toBuilder()
-            .setSourceCodeInfo(FILE_SOURCE_CODE_INFO.toBuilder()
-                .setLocation(0, SERVICE_LOCATION.toBuilder()
-                    .setLeadingComments(SERVICE_JAVADOC + "\n" + SERVICE_JAVADOC))
-                .setLocation(1, READ_METHOD_LOCATION.toBuilder()
-                    .setLeadingComments(READ_METHOD_JAVADOC + "\n" + READ_METHOD_JAVADOC))
-                .setLocation(2, SUBSCRIBE_METHOD_LOCATION.toBuilder()
-                    .setLeadingComments(SUBSCRIBE_METHOD_JAVADOC + "\n" + SUBSCRIBE_METHOD_JAVADOC))))
-        .build();
-    assertThat(generator.generate(request).collect(Collectors.toList())).isEqualTo(ImmutableList.of(
-        PluginProtos.CodeGeneratorResponse.File.newBuilder()
-            .setContent(readFileFromResources("TestServiceExpectedOutputMultilineJavadoc"))
-            .setName("com/test/proto/RxTestService.java")
-            .build(),
-        PluginProtos.CodeGeneratorResponse.File.newBuilder()
-            .setContent(readFileFromResources("FactoryExpectedOutput"))
-            .setName("com/blerpc/reactive/BleServiceFactory.java")
-            .build()
-    ));
+    assertThat(generator.buildServiceContexts(request).get(0)).isEqualTo(serviceContext);
   }
 
   @Test
   public void generate_noJavaPackage() throws Exception {
+    ReactiveBleRpcGenerator.ServiceContext serviceContext = createServiceContext();
+    serviceContext.methods.forEach(methodContext -> {
+      methodContext.inputType = PROTO_PACKAGE +"." + METHOD_INPUT_TYPE;
+      methodContext.outputType = PROTO_PACKAGE +"." + METHOD_OUTPUT_TYPE;
+    });
+    serviceContext.packageName = PROTO_PACKAGE;
     PluginProtos.CodeGeneratorRequest request = PluginProtos.CodeGeneratorRequest.newBuilder()
         .addFileToGenerate(FILE_NAME)
         .addProtoFile(FILE.toBuilder()
             .setOptions(FILE_OPTIONS.toBuilder()
                 .clearJavaPackage()))
         .build();
-    assertThat(generator.generate(request).collect(Collectors.toList())).isEqualTo(ImmutableList.of(
-        PluginProtos.CodeGeneratorResponse.File.newBuilder()
-            .setContent(readFileFromResources("TestServiceExpectedOutputWithoutJavaPackage"))
-            .setName("com/test/RxTestService.java")
-            .build(),
-        PluginProtos.CodeGeneratorResponse.File.newBuilder()
-            .setContent(readFileFromResources("FactoryExpectedOutputWithoutJavaPackage"))
-            .setName("com/blerpc/reactive/BleServiceFactory.java")
-            .build()
-    ));
+    assertThat(generator.buildServiceContexts(request).get(0)).isEqualTo(serviceContext);
   }
 
   @Test
   public void generate_wrongMethodNumberOfPath() throws Exception {
+    ReactiveBleRpcGenerator.ServiceContext serviceContext = createServiceContext();
+    serviceContext.methods = ImmutableList.of(createSubscribeMethodContext());
     PluginProtos.CodeGeneratorRequest request = PluginProtos.CodeGeneratorRequest.newBuilder()
         .addFileToGenerate(FILE_NAME)
         .addProtoFile(FILE.toBuilder()
@@ -297,20 +270,13 @@ public class ReactiveBleRpcGeneratorTest {
                     .addAllPath(ImmutableList.of(6, 0, 2, 0, 0)))
                 .addLocation(SUBSCRIBE_METHOD_LOCATION)))
         .build();
-    assertThat(generator.generate(request).collect(Collectors.toList())).isEqualTo(ImmutableList.of(
-        PluginProtos.CodeGeneratorResponse.File.newBuilder()
-            .setContent(readFileFromResources("TestServiceExpectedOutputWithoutReadMethod"))
-            .setName("com/test/proto/RxTestService.java")
-            .build(),
-        PluginProtos.CodeGeneratorResponse.File.newBuilder()
-            .setContent(readFileFromResources("FactoryExpectedOutput"))
-            .setName("com/blerpc/reactive/BleServiceFactory.java")
-            .build()
-    ));
+    assertThat(generator.buildServiceContexts(request).get(0)).isEqualTo(serviceContext);
   }
 
   @Test
   public void generate_wrongMethodPathServiceNumber() throws Exception {
+    ReactiveBleRpcGenerator.ServiceContext serviceContext = createServiceContext();
+    serviceContext.methods = ImmutableList.of(createSubscribeMethodContext());
     PluginProtos.CodeGeneratorRequest request = PluginProtos.CodeGeneratorRequest.newBuilder()
         .addFileToGenerate(FILE_NAME)
         .addProtoFile(FILE.toBuilder()
@@ -320,20 +286,13 @@ public class ReactiveBleRpcGeneratorTest {
                     .addAllPath(ImmutableList.of(5, 0, 2, 0)))
                 .addLocation(SUBSCRIBE_METHOD_LOCATION)))
         .build();
-    assertThat(generator.generate(request).collect(Collectors.toList())).isEqualTo(ImmutableList.of(
-        PluginProtos.CodeGeneratorResponse.File.newBuilder()
-            .setContent(readFileFromResources("TestServiceExpectedOutputWithoutReadMethod"))
-            .setName("com/test/proto/RxTestService.java")
-            .build(),
-        PluginProtos.CodeGeneratorResponse.File.newBuilder()
-            .setContent(readFileFromResources("FactoryExpectedOutput"))
-            .setName("com/blerpc/reactive/BleServiceFactory.java")
-            .build()
-    ));
+    assertThat(generator.buildServiceContexts(request).get(0)).isEqualTo(serviceContext);
   }
 
   @Test
   public void generate_wrongMethodPathServiceIndex() throws Exception {
+    ReactiveBleRpcGenerator.ServiceContext serviceContext = createServiceContext();
+    serviceContext.methods = ImmutableList.of(createSubscribeMethodContext());
     PluginProtos.CodeGeneratorRequest request = PluginProtos.CodeGeneratorRequest.newBuilder()
         .addFileToGenerate(FILE_NAME)
         .addProtoFile(FILE.toBuilder()
@@ -343,20 +302,13 @@ public class ReactiveBleRpcGeneratorTest {
                     .addAllPath(ImmutableList.of(6, 1, 2, 0)))
                 .addLocation(SUBSCRIBE_METHOD_LOCATION)))
         .build();
-    assertThat(generator.generate(request).collect(Collectors.toList())).isEqualTo(ImmutableList.of(
-        PluginProtos.CodeGeneratorResponse.File.newBuilder()
-            .setContent(readFileFromResources("TestServiceExpectedOutputWithoutReadMethod"))
-            .setName("com/test/proto/RxTestService.java")
-            .build(),
-        PluginProtos.CodeGeneratorResponse.File.newBuilder()
-            .setContent(readFileFromResources("FactoryExpectedOutput"))
-            .setName("com/blerpc/reactive/BleServiceFactory.java")
-            .build()
-    ));
+    assertThat(generator.buildServiceContexts(request).get(0)).isEqualTo(serviceContext);
   }
 
   @Test
   public void generate_wrongMethodPathNumber() throws Exception {
+    ReactiveBleRpcGenerator.ServiceContext serviceContext = createServiceContext();
+    serviceContext.methods = ImmutableList.of(createSubscribeMethodContext());
     PluginProtos.CodeGeneratorRequest request = PluginProtos.CodeGeneratorRequest.newBuilder()
         .addFileToGenerate(FILE_NAME)
         .addProtoFile(FILE.toBuilder()
@@ -366,25 +318,36 @@ public class ReactiveBleRpcGeneratorTest {
                     .addAllPath(ImmutableList.of(6, 0, 3, 0)))
                 .addLocation(SUBSCRIBE_METHOD_LOCATION)))
         .build();
-    assertThat(generator.generate(request).collect(Collectors.toList())).isEqualTo(ImmutableList.of(
-        PluginProtos.CodeGeneratorResponse.File.newBuilder()
-            .setContent(readFileFromResources("TestServiceExpectedOutputWithoutReadMethod"))
-            .setName("com/test/proto/RxTestService.java")
-            .build(),
-        PluginProtos.CodeGeneratorResponse.File.newBuilder()
-            .setContent(readFileFromResources("FactoryExpectedOutput"))
-            .setName("com/blerpc/reactive/BleServiceFactory.java")
-            .build()
-    ));
+    assertThat(generator.buildServiceContexts(request).get(0)).isEqualTo(serviceContext);
   }
 
-  String readFileFromResources(String fileName) throws Exception {
-    StringBuilder result = new StringBuilder("");
-    Scanner scanner = new Scanner(new File(getClass().getClassLoader().getResource(fileName).getFile()), "utf-8");
-    while (scanner.hasNextLine()) {
-      result.append(scanner.nextLine()).append("\n");
-    }
-    scanner.close();
-    return result.toString();
+  private ReactiveBleRpcGenerator.ServiceContext createServiceContext() {
+    ReactiveBleRpcGenerator.ServiceContext serviceContext = new ReactiveBleRpcGenerator.ServiceContext();
+    serviceContext.serviceName = SERVICE_NAME;
+    serviceContext.className = RX_CLASS_PREFIX + SERVICE_NAME;
+    serviceContext.fileName = serviceContext.className + JAVA_SOURCE_EXTENSION;
+    serviceContext.javaDoc = String.format(SERVICE_JAVADOC_TEMPLATE, SERVICE_JAVADOC);
+    serviceContext.packageName = JAVA_PACKAGE;
+    serviceContext.methods = ImmutableList.of(createReadMethodContext(), createSubscribeMethodContext());
+    return serviceContext;
+  }
+
+  private ReactiveBleRpcGenerator.MethodContext createReadMethodContext() {
+    ReactiveBleRpcGenerator.MethodContext readMethodContext = new ReactiveBleRpcGenerator.MethodContext();
+    readMethodContext.methodName = READ_METHOD_NAME_FIRST_LOWER_CASE;
+    readMethodContext.inputType = JAVA_PACKAGE +"." + METHOD_INPUT_TYPE;
+    readMethodContext.outputType = JAVA_PACKAGE +"." + METHOD_OUTPUT_TYPE;
+    readMethodContext.javaDoc = String.format(METHOD_JAVADOC_TEMPLATE, READ_METHOD_JAVADOC);
+    return readMethodContext;
+  }
+
+  private ReactiveBleRpcGenerator.MethodContext createSubscribeMethodContext() {
+    ReactiveBleRpcGenerator.MethodContext subscribeMethodContext = new ReactiveBleRpcGenerator.MethodContext();
+    subscribeMethodContext.methodName = SUBSCRIBE_METHOD_NAME_FIRST_LOWER_CASE;
+    subscribeMethodContext.inputType = JAVA_PACKAGE +"." + METHOD_INPUT_TYPE;
+    subscribeMethodContext.outputType = JAVA_PACKAGE +"." + METHOD_OUTPUT_TYPE;
+    subscribeMethodContext.javaDoc = String.format(METHOD_JAVADOC_TEMPLATE, SUBSCRIBE_METHOD_JAVADOC);
+    subscribeMethodContext.isManyOutput = true;
+    return subscribeMethodContext;
   }
 }

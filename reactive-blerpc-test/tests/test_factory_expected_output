@@ -18,16 +18,16 @@ public class BleServiceFactory {
   }
 
   /**
-   * Create {@link com.device.proto.RxBatteryService}.
+   * Create {@link com.device.proto.RxTestService}.
    *
    * @param bluetoothDevice - current bluetooth device for connection.
-   * @return {@link com.device.proto.RxBatteryService} object.
+   * @return {@link com.device.proto.RxTestService} object.
    */
-  public com.device.proto.RxBatteryService createBatteryService(android.bluetooth.BluetoothDevice bluetoothDevice) {
-    return new com.device.proto.RxBatteryService(
-        (com.device.proto.BatteryService)
+  public com.device.proto.RxTestService createTestService(android.bluetooth.BluetoothDevice bluetoothDevice) {
+    return new com.device.proto.RxTestService(
+        (com.device.proto.TestService)
             serviceStubFactory.provideService(
-                bluetoothDevice, com.device.proto.BatteryService.class),
+                bluetoothDevice, com.device.proto.TestService.class),
         logger);
   }
 }
