@@ -79,7 +79,7 @@ public class ReactiveServiceTest {
 
     testSubscriber.assertNoValues();
     testSubscriber.assertNoErrors();
-    verify(logger).info(contains(ERROR_TEXT));
+    verify(logger).warning(contains(ERROR_TEXT));
   }
 
   @Test
@@ -136,7 +136,7 @@ public class ReactiveServiceTest {
 
     testSubscriber.assertNoValues();
     testSubscriber.assertNoErrors();
-    verify(logger).info(contains(ERROR_TEXT));
+    verify(logger).warning(contains(ERROR_TEXT));
   }
 
   @Test
