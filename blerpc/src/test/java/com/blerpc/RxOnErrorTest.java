@@ -13,24 +13,18 @@ import io.reactivex.functions.Consumer;
 import io.reactivex.observers.TestObserver;
 import io.reactivex.plugins.RxJavaPlugins;
 import java.util.logging.Logger;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
-import org.robolectric.RobolectricTestRunner;
-import org.robolectric.annotation.Config;
+import org.mockito.junit.MockitoJUnitRunner;
 
 /**
  * Tests for {@link RxOnError}.
  */
-@RunWith(RobolectricTestRunner.class)
-@Config(sdk = 23)
+@RunWith(MockitoJUnitRunner.class)
 public class RxOnErrorTest {
 
     private static final Throwable THROWABLE = new Throwable("Error text");
-    @Rule public final MockitoRule rule = MockitoJUnit.rule();
 
     @Mock Consumer<Throwable> errorHandler;
     @Mock Logger logger;
