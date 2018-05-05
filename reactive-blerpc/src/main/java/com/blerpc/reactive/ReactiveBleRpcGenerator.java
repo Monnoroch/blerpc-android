@@ -213,7 +213,7 @@ public class ReactiveBleRpcGenerator extends Generator {
   }
 
   /** Template class that describe protobuf services. */
-  @SuppressWarnings(value = "URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
+  @SuppressWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD", "HE_EQUALS_USE_HASHCODE"})
   @VisibleForTesting static class ServiceContext {
     public String fileName;
     public String packageName;
@@ -243,7 +243,7 @@ public class ReactiveBleRpcGenerator extends Generator {
   }
 
   /** Template class that describe protobuf methods. */
-  @SuppressWarnings(value = "URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
+  @SuppressWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD", "HE_EQUALS_USE_HASHCODE"})
   @VisibleForTesting static class MethodContext {
     public String methodName;
     public String inputType;
