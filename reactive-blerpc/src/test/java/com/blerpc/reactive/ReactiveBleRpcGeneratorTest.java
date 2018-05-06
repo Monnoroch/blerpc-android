@@ -118,7 +118,9 @@ public class ReactiveBleRpcGeneratorTest {
 
   @Test
   public void buildServiceContexts() throws Exception {
-    assertEquals(generator.buildServiceContexts(REQUEST).get(0), createServiceContext());
+    ImmutableList<ReactiveBleRpcGenerator.ServiceContext> services = generator.buildServiceContexts(REQUEST);
+    assertThat(services).hasSize(1);
+    assertEquals(services.get(0), createServiceContext());
   }
 
   @Test
@@ -188,8 +190,7 @@ public class ReactiveBleRpcGeneratorTest {
         .addProtoFile(FILE.toBuilder()
             .clearPackage())
         .build();
-    Exception exception = assertThrows(IllegalArgumentException.class, () -> generator.generate(request));
-    assertThat(exception.getMessage()).contains("Proto file must contains package name.");
+    assertThat(generator.buildServiceContexts(request)).isEmpty();
   }
 
   @Test
@@ -350,6 +351,7 @@ public class ReactiveBleRpcGeneratorTest {
     assertThat(firstService.serviceName).isEqualTo(secondService.serviceName);
     assertThat(firstService.javaDoc).isEqualTo(secondService.javaDoc);
     assertThat(firstService.deprecated).isEqualTo(secondService.deprecated);
+    assertThat(firstService.methods.size()).isEqualTo(secondService.methods.size());
     for (int i = 0; i < firstService.methods.size(); i++) {
       assertEquals(firstService.methods.get(i), secondService.methods.get(i));
     }

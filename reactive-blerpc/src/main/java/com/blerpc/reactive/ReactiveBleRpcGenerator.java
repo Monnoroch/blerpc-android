@@ -85,7 +85,7 @@ public class ReactiveBleRpcGenerator extends Generator {
     return request
         .getProtoFileList()
         .stream()
-        .peek(this::hasPackage)
+        .filter(this::hasPackage)
         .filter(file -> request.getFileToGenerateList().contains(file.getName()))
         .flatMap(this::getFileLocations)
         .filter(this::isProtoService)
@@ -116,6 +116,8 @@ public class ReactiveBleRpcGenerator extends Generator {
     serviceContext.className = RX_CLASS_PREFIX + serviceContext.serviceName;
     serviceContext.fileName = serviceContext.className + JAVA_SOURCE_EXTENSION;
     serviceContext.deprecated = serviceProto.getOptions().getDeprecated();
+    serviceContext.javaDoc = getJavaDoc(fileLocation.getLeadingComments(), SERVICE_JAVADOC_PREFIX).orElse(null);
+    serviceContext.packageName = extractPackageName(protoFile);
     serviceContext.methods =
         protoFile
             .getSourceCodeInfo()
@@ -124,17 +126,12 @@ public class ReactiveBleRpcGenerator extends Generator {
             .filter(location -> isProtoMethod(location, serviceNumber))
             .map(location -> buildMethodContext(serviceProto, location, typeMap))
             .collect(ImmutableList.toImmutableList());
-    serviceContext.javaDoc = getJavaDoc(fileLocation.getLeadingComments(), SERVICE_JAVADOC_PREFIX).orElse(null);
-    serviceContext.packageName = extractPackageName(protoFile);
     return serviceContext;
   }
 
   private String extractPackageName(FileDescriptorProto proto) {
-    FileOptions options = proto.getOptions();
-    if (!options.getJavaPackage().isEmpty()) {
-      return options.getJavaPackage();
-    }
-    return proto.getPackage();
+    String javaPackage = proto.getOptions().getJavaPackage();
+    return !javaPackage.isEmpty() ? javaPackage : proto.getPackage();
   }
 
   private MethodContext buildMethodContext(
@@ -209,8 +206,8 @@ public class ReactiveBleRpcGenerator extends Generator {
         && location.getPath(2) == ServiceDescriptorProto.METHOD_FIELD_NUMBER;
   }
 
-  private void hasPackage(FileDescriptorProto file) {
-    checkArgument(!file.getPackage().isEmpty(), "Proto file must contains package name.");
+  private boolean hasPackage(FileDescriptorProto file) {
+    return !file.getPackage().isEmpty();
   }
 
   /** Template class that describe protobuf file. */
