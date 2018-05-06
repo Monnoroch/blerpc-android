@@ -32,7 +32,7 @@ public class ReactiveBleRpcGeneratorTest {
   static final String SUBSCRIBE_METHOD_NAME_FIRST_LOWER_CASE = "subscribeValue";
   static final String METHOD_INPUT_TYPE = "TestInputValue";
   static final String METHOD_INPUT_TYPE_FULL_PATH = ".com.test.TestInputValue";
-  static final String METHOD_INPUT_TYPE_JAVA_PATH ="com.test.proto.TestInputValue";
+  static final String METHOD_INPUT_TYPE_JAVA_PATH = "com.test.proto.TestInputValue";
   static final String METHOD_OUTPUT_TYPE = "TestOutputValue";
   static final String METHOD_OUTPUT_TYPE_FULL_PATH = ".com.test.TestOutputValue";
   static final String METHOD_OUTPUT_TYPE_JAVA_PATH = "com.test.proto.TestOutputValue";
