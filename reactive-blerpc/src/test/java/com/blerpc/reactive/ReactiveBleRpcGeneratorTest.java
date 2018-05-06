@@ -118,7 +118,7 @@ public class ReactiveBleRpcGeneratorTest {
 
   @Test
   public void buildServiceContexts() throws Exception {
-    assertThat(generator.buildServiceContexts(REQUEST).get(0)).isEqualTo(createServiceContext());
+    assertEquals(generator.buildServiceContexts(REQUEST).get(0), createServiceContext());
   }
 
   @Test
@@ -210,7 +210,7 @@ public class ReactiveBleRpcGeneratorTest {
                     .setOptions(DescriptorProtos.MethodOptions.newBuilder()
                         .setDeprecated(true)))))
         .build();
-    assertThat(generator.buildServiceContexts(request).get(0)).isEqualTo(serviceContext);
+    assertEquals(generator.buildServiceContexts(request).get(0), serviceContext);
   }
 
   @Test
@@ -229,7 +229,7 @@ public class ReactiveBleRpcGeneratorTest {
                 .setLocation(2, SUBSCRIBE_METHOD_LOCATION.toBuilder()
                     .clearLeadingComments())))
         .build();
-    assertThat(generator.buildServiceContexts(request).get(0)).isEqualTo(serviceContext);
+    assertEquals(generator.buildServiceContexts(request).get(0), serviceContext);
   }
 
   @Test
@@ -246,7 +246,7 @@ public class ReactiveBleRpcGeneratorTest {
             .setOptions(FILE_OPTIONS.toBuilder()
                 .clearJavaPackage()))
         .build();
-    assertThat(generator.buildServiceContexts(request).get(0)).isEqualTo(serviceContext);
+    assertEquals(generator.buildServiceContexts(request).get(0), serviceContext);
   }
 
   @Test
@@ -262,7 +262,7 @@ public class ReactiveBleRpcGeneratorTest {
                     .addAllPath(ImmutableList.of(6, 0, 2, 0, 0)))
                 .addLocation(SUBSCRIBE_METHOD_LOCATION)))
         .build();
-    assertThat(generator.buildServiceContexts(request).get(0)).isEqualTo(serviceContext);
+    assertEquals(generator.buildServiceContexts(request).get(0), serviceContext);
   }
 
   @Test
@@ -278,7 +278,7 @@ public class ReactiveBleRpcGeneratorTest {
                     .addAllPath(ImmutableList.of(5, 0, 2, 0)))
                 .addLocation(SUBSCRIBE_METHOD_LOCATION)))
         .build();
-    assertThat(generator.buildServiceContexts(request).get(0)).isEqualTo(serviceContext);
+    assertEquals(generator.buildServiceContexts(request).get(0), serviceContext);
   }
 
   @Test
@@ -294,7 +294,7 @@ public class ReactiveBleRpcGeneratorTest {
                     .addAllPath(ImmutableList.of(6, 1, 2, 0)))
                 .addLocation(SUBSCRIBE_METHOD_LOCATION)))
         .build();
-    assertThat(generator.buildServiceContexts(request).get(0)).isEqualTo(serviceContext);
+    assertEquals(generator.buildServiceContexts(request).get(0), serviceContext);
   }
 
   @Test
@@ -310,7 +310,7 @@ public class ReactiveBleRpcGeneratorTest {
                     .addAllPath(ImmutableList.of(6, 0, 3, 0)))
                 .addLocation(SUBSCRIBE_METHOD_LOCATION)))
         .build();
-    assertThat(generator.buildServiceContexts(request).get(0)).isEqualTo(serviceContext);
+    assertEquals(generator.buildServiceContexts(request).get(0), serviceContext);
   }
 
   private ReactiveBleRpcGenerator.ServiceContext createServiceContext() {
@@ -341,5 +341,26 @@ public class ReactiveBleRpcGeneratorTest {
     subscribeMethodContext.javaDoc = String.format(METHOD_JAVADOC_TEMPLATE, SUBSCRIBE_METHOD_JAVADOC);
     subscribeMethodContext.isManyOutput = true;
     return subscribeMethodContext;
+  }
+
+  private void assertEquals(ReactiveBleRpcGenerator.ServiceContext firstService, ReactiveBleRpcGenerator.ServiceContext secondService) {
+    assertThat(firstService.className).isEqualTo(secondService.className);
+    assertThat(firstService.packageName).isEqualTo(secondService.packageName);
+    assertThat(firstService.fileName).isEqualTo(secondService.fileName);
+    assertThat(firstService.serviceName).isEqualTo(secondService.serviceName);
+    assertThat(firstService.javaDoc).isEqualTo(secondService.javaDoc);
+    assertThat(firstService.deprecated).isEqualTo(secondService.deprecated);
+    for (int i = 0; i < firstService.methods.size(); i++) {
+      assertEquals(firstService.methods.get(i), secondService.methods.get(i));
+    }
+  }
+
+  private void assertEquals(ReactiveBleRpcGenerator.MethodContext firstMethod, ReactiveBleRpcGenerator.MethodContext secondMethod) {
+    assertThat(firstMethod.outputType).isEqualTo(secondMethod.outputType);
+    assertThat(firstMethod.inputType).isEqualTo(secondMethod.inputType);
+    assertThat(firstMethod.methodName).isEqualTo(secondMethod.methodName);
+    assertThat(firstMethod.javaDoc).isEqualTo(secondMethod.javaDoc);
+    assertThat(firstMethod.isManyOutput).isEqualTo(secondMethod.isManyOutput);
+    assertThat(firstMethod.deprecated).isEqualTo(secondMethod.deprecated);
   }
 }
