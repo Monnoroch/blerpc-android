@@ -40,7 +40,7 @@ public class ReactiveServiceTest {
   @Mock BleRpcController bleRpcController;
   ArgumentCaptor<BleRpcController> controllerCaptor =
       ArgumentCaptor.forClass(BleRpcController.class);
-  ArgumentCaptor<RpcCallback<GetValueResponse>> valueCaptor =
+  ArgumentCaptor<RpcCallback<GetValueResponse>> callbackCaptor =
       ArgumentCaptor.forClass(RpcCallback.class);
   RxTestService testService;
 
@@ -54,7 +54,7 @@ public class ReactiveServiceTest {
   public void readValue_success() {
     TestObserver<GetValueResponse> testSubscriber = readValue();
 
-    valueCaptor.getValue().run(GET_VALUE_RESPONSE);
+    callbackCaptor.getValue().run(GET_VALUE_RESPONSE);
     assertThat(testSubscriber.values().get(0)).isEqualTo(GET_VALUE_RESPONSE);
     testSubscriber.assertComplete();
   }
@@ -64,22 +64,9 @@ public class ReactiveServiceTest {
     TestObserver<GetValueResponse> testSubscriber = readValue();
 
     controllerCaptor.getValue().setFailed(ERROR_TEXT);
-    valueCaptor.getValue().run(GET_VALUE_RESPONSE);
+    callbackCaptor.getValue().run(GET_VALUE_RESPONSE);
     testSubscriber.assertNoValues();
     assertThat(testSubscriber.errors().get(0).getMessage()).contains(ERROR_TEXT);
-  }
-
-  @Test
-  public void readValue_fail_canceled() {
-    TestObserver<GetValueResponse> testSubscriber = readValue();
-
-    testSubscriber.dispose();
-    controllerCaptor.getValue().setFailed(ERROR_TEXT);
-    valueCaptor.getValue().run(GET_VALUE_RESPONSE);
-
-    testSubscriber.assertNoValues();
-    testSubscriber.assertNoErrors();
-    verify(logger).warning(contains(ERROR_TEXT));
   }
 
   @Test
@@ -90,29 +77,27 @@ public class ReactiveServiceTest {
     assertThat(controllerCaptor.getValue().isCanceled()).isTrue();
   }
 
-  private TestObserver<GetValueResponse> readValue() {
-    TestObserver<GetValueResponse> testSubscriber = testService.readValue(GET_VALUE_REQUEST).test();
-    verify(testServiceProto)
-        .readValue(controllerCaptor.capture(), eq(GET_VALUE_REQUEST), valueCaptor.capture());
-    return testSubscriber;
-  }
-
   @Test
-  public void getValueUpdates_customController() {
-    TestObserver<GetValueResponse> testSubscriber =
-        testService.getValueUpdates(GET_VALUE_REQUEST, bleRpcController).test();
-    verify(testServiceProto)
-        .getValueUpdates(eq(bleRpcController), eq(GET_VALUE_REQUEST), valueCaptor.capture());
+  public void readValue_fail_canceled() {
+    TestObserver<GetValueResponse> testSubscriber = readValue();
+
+    testSubscriber.dispose();
+    controllerCaptor.getValue().setFailed(ERROR_TEXT);
+    callbackCaptor.getValue().run(GET_VALUE_RESPONSE);
+
+    testSubscriber.assertNoValues();
+    testSubscriber.assertNoErrors();
+    verify(logger).warning(contains(ERROR_TEXT));
   }
 
   @Test
   public void getValueUpdates_success() {
     TestObserver<GetValueResponse> testSubscriber = getValueUpdates();
 
-    valueCaptor.getValue().run(GET_VALUE_RESPONSE);
+    callbackCaptor.getValue().run(GET_VALUE_RESPONSE);
     assertThat(testSubscriber.values().get(0)).isEqualTo(GET_VALUE_RESPONSE);
 
-    valueCaptor.getValue().run(GET_VALUE_RESPONSE2);
+    callbackCaptor.getValue().run(GET_VALUE_RESPONSE2);
     assertThat(testSubscriber.values().get(1)).isEqualTo(GET_VALUE_RESPONSE2);
   }
 
@@ -121,22 +106,9 @@ public class ReactiveServiceTest {
     TestObserver<GetValueResponse> testSubscriber = getValueUpdates();
 
     controllerCaptor.getValue().setFailed(ERROR_TEXT);
-    valueCaptor.getValue().run(GET_VALUE_RESPONSE);
+    callbackCaptor.getValue().run(GET_VALUE_RESPONSE);
     testSubscriber.assertNoValues();
     assertThat(testSubscriber.errors().get(0).getMessage()).contains(ERROR_TEXT);
-  }
-
-  @Test
-  public void getValueUpdates_fail_canceled() {
-    TestObserver<GetValueResponse> testSubscriber = getValueUpdates();
-
-    testSubscriber.dispose();
-    controllerCaptor.getValue().setFailed(ERROR_TEXT);
-    valueCaptor.getValue().run(GET_VALUE_RESPONSE);
-
-    testSubscriber.assertNoValues();
-    testSubscriber.assertNoErrors();
-    verify(logger).warning(contains(ERROR_TEXT));
   }
 
   @Test
@@ -147,11 +119,39 @@ public class ReactiveServiceTest {
     assertThat(controllerCaptor.getValue().isCanceled()).isTrue();
   }
 
+  @Test
+  public void getValueUpdates_fail_canceled() {
+    TestObserver<GetValueResponse> testSubscriber = getValueUpdates();
+
+    testSubscriber.dispose();
+    controllerCaptor.getValue().setFailed(ERROR_TEXT);
+    callbackCaptor.getValue().run(GET_VALUE_RESPONSE);
+
+    testSubscriber.assertNoValues();
+    testSubscriber.assertNoErrors();
+    verify(logger).warning(contains(ERROR_TEXT));
+  }
+
+  @Test
+  public void getValueUpdates_customController() {
+    TestObserver<GetValueResponse> testSubscriber =
+        testService.getValueUpdates(GET_VALUE_REQUEST, bleRpcController).test();
+    verify(testServiceProto)
+        .getValueUpdates(eq(bleRpcController), eq(GET_VALUE_REQUEST), callbackCaptor.capture());
+  }
+
+  private TestObserver<GetValueResponse> readValue() {
+    TestObserver<GetValueResponse> testSubscriber = testService.readValue(GET_VALUE_REQUEST).test();
+    verify(testServiceProto)
+        .readValue(controllerCaptor.capture(), eq(GET_VALUE_REQUEST), callbackCaptor.capture());
+    return testSubscriber;
+  }
+
   private TestObserver<GetValueResponse> getValueUpdates() {
     TestObserver<GetValueResponse> testSubscriber =
         testService.getValueUpdates(GET_VALUE_REQUEST).test();
     verify(testServiceProto)
-        .getValueUpdates(controllerCaptor.capture(), eq(GET_VALUE_REQUEST), valueCaptor.capture());
+        .getValueUpdates(controllerCaptor.capture(), eq(GET_VALUE_REQUEST), callbackCaptor.capture());
     return testSubscriber;
   }
 }
