@@ -1,0 +1,62 @@
+apply plugin: 'java'
+apply plugin: 'net.ltgt.errorprone'
+apply plugin: 'com.novoda.bintray-release'
+
+repositories {
+    maven { url "https://plugins.gradle.org/m2/" }
+}
+
+sourceCompatibility = JavaVersion.VERSION_1_8
+targetCompatibility = JavaVersion.VERSION_1_8
+
+sourceSets {
+    main {
+        java {
+            srcDirs 'build/generated/source/proto/main/java'
+        }
+    }
+}
+
+configurations.all {
+    resolutionStrategy {
+        force 'com.google.code.findbugs:jsr305:3.0.0'
+        force 'com.google.guava:guava:25.0-jre'
+    }
+}
+
+dependencies {
+    compile group: 'findbugs', name: 'annotations', version: '1.0.0'
+    compile 'com.github.monnoroch:blerpcproto-android:0.2.2'
+    compile 'com.salesforce.servicelibs:jprotoc:0.8.0'
+    compile 'com.google.guava:guava:25.0-jre'
+    testCompile 'org.junit.jupiter:junit-jupiter-api:5.2.0'
+    testCompile "org.mockito:mockito-inline:2.7.22"
+    testCompile 'com.google.truth:truth:0.40'
+    testCompile 'com.google.truth.extensions:truth-java8-extension:0.40'
+    testCompile 'com.google.truth.extensions:truth-proto-extension:0.40'
+}
+
+jar {
+    sourceSets.all { sourceSet ->
+        from sourceSet.output
+        dependsOn sourceSet.getCompileTaskName('java')
+    }
+    from {
+        (configurations.runtime).collect {
+            it.isDirectory() ? it : zipTree(it)
+        }
+    }
+    manifest {
+        attributes 'Main-Class': 'com.blerpc.reactive.ReactiveBleRpcGenerator'
+    }
+}
+
+publish {
+    groupId = 'com.github.monnoroch'
+    repoName = 'blerpc-android'
+    artifactId = 'reactive-blerpc'
+    publishVersion = "${blerpcVersion}"
+    desc = 'Protobuf plugin for generating RxJava wrappers for BleRpc services.'
+    licences = ['MIT']
+    website = 'https://github.com/monnoroch/blerpc-android'
+}

@@ -1,28 +1,26 @@
 apply plugin: 'com.android.library'
-apply plugin: 'me.tatarka.retrolambda'
 apply plugin: 'com.google.protobuf'
-apply plugin: 'net.ltgt.errorprone'
-apply plugin: 'com.novoda.bintray-release'
+apply plugin: 'me.tatarka.retrolambda'
 
 android {
     compileSdkVersion 26
     buildToolsVersion "26.0.2"
     defaultConfig {
         minSdkVersion 21
-        multiDexEnabled true
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
-
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    packagingOptions {
+        exclude 'META-INF/rxjava.properties'
+    }
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
-    }
-
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
     }
 }
 
@@ -34,42 +32,40 @@ configurations.all {
 
 dependencies {
     compile group: 'findbugs', name: 'annotations', version: '1.0.0'
-    compile "com.github.monnoroch:blerpcproto-android:0.2.2"
-    compile 'com.google.guava:guava:20.0'
+    compile fileTree(dir: 'libs', include: ['*.jar'])
     compile 'com.google.protobuf:protobuf-java:3.2.0'
     compile 'com.google.protobuf:protoc:3.0.0'
-    compile 'com.google.dagger:dagger:2.7'
     compile 'io.reactivex.rxjava2:rxandroid:2.0.1'
     compile 'io.reactivex.rxjava2:rxjava:2.1.7'
-    annotationProcessor 'com.google.dagger:dagger-compiler:2.7'
-    testAnnotationProcessor 'com.google.dagger:dagger-compiler:2.7'
+    protobuf project(":blerpcproto")
+    compile project(":blerpc")
 
     testCompile "org.robolectric:robolectric:3.6.1"
     testCompile 'junit:junit:4.12'
     testCompile "org.mockito:mockito-inline:2.7.22"
     testCompile 'com.google.truth:truth:0.34'
+    androidTestCompile('com.android.support.test.espresso:espresso-core:3.0.2', {
+        exclude group: 'com.android.support', module: 'support-annotations'
+    })
 }
 
 protobuf {
     protoc {
         artifact = 'com.google.protobuf:protoc:3.0.0'
     }
-    plugins {}
+    plugins {
+        reactive {
+            path = "${project.rootProject.projectDir}/generated/reactive-blerpc"
+        }
+    }
     generateProtoTasks {
         all().each { task ->
             task.builtins {
                 java {}
             }
+            task.plugins {
+                reactive {}
+            }
         }
     }
-}
-
-publish {
-    groupId = 'com.github.monnoroch'
-    repoName = 'blerpc-android'
-    artifactId = 'blerpc-android'
-    publishVersion = "${blerpcVersion}"
-    desc = 'A library for simplifying working with blutooth low energy devices.'
-    licences = ['MIT']
-    website = 'https://github.com/monnoroch/blerpc-android'
 }

@@ -1,4 +1,11 @@
+task runFindbugs
+
 subprojects {
+    // Reactive-blerpc-test project doesn't have java files in 'src' dir. When findbugs can't find
+    // java files for checking, then it throws an error.
+    if (project.getName().contentEquals('reactive-blerpc-test')) {
+        return
+    }
     def isAndroidLibrary = project.getPlugins().hasPlugin('com.android.library')
 
     apply plugin: 'findbugs'
@@ -20,9 +27,5 @@ subprojects {
             xml.destination "${rootProject.buildDir}/linters/${project.name}.findbugs.xml"
         }
     }
-}
-
-task runFindbugs
-subprojects {
-    project -> runFindbugs.dependsOn("${project.path}:customFindbugs")
+    runFindbugs.dependsOn("${project.path}:customFindbugs")
 }
