@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+option java_package = "com.device.proto";
+option java_multiple_files = true;
+option optimize_for = CODE_SIZE;
+option java_generic_services = true;
+
+package device;
+
+import "blerpc.proto";
+
+service TestService {
+    option (com.blerpc.service) = {
+        uuid: "A0000000-0000-0000-0000-000000000000"
+    };
+
+    rpc ReadValue (GetValueRequest) returns (GetValueResponse) {
+        option (com.blerpc.characteristic) = {
+            uuid: "A0000001-0000-0000-0000-000000000000"
+            type: READ
+        };
+    }
+
+    rpc GetValueUpdates (GetValueRequest) returns (stream GetValueResponse) {
+        option (com.blerpc.characteristic) = {
+            uuid: "A0000001-0000-0000-0000-000000000000"
+            descriptor_uuid: "00000000-0000-0000-0000-000000000000"
+            type: SUBSCRIBE
+        };
+    }
+}
+
+message GetValueRequest {
+}
+
+message GetValueResponse {
+    option (com.blerpc.message) = {
+        size_bytes: 4
+    };
+    int32 int_value = 1 [(com.blerpc.field) = {
+        from_byte: 0
+        to_byte: 4
+    }];
+}
