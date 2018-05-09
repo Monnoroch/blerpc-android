@@ -52,11 +52,15 @@ jar {
     }
 }
 
+ext {
+    blerpcprotoVersion = '0.2.2'
+}
+
 publish {
     groupId = 'com.github.monnoroch'
     repoName = 'blerpc-android'
     artifactId = 'blerpcproto-android'
-    publishVersion = '0.2.2'
+    publishVersion = "${blerpcprotoVersion}"
     desc = 'Protobuf files for BleRpc-android library.'
     licences = ['MIT']
     website = 'https://github.com/monnoroch/blerpc-android'

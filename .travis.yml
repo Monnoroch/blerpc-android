@@ -19,12 +19,14 @@ before_install:
 script:
   - gradle reactive-blerpc:assemble reactive-blerpc:test
   - ci/generate-reactive-plugin.sh
-  - reactive-blerpc-test/tests/end-to-end-tests.sh
   - gradle assemble testReleaseUnitTest
+  - reactive-blerpc-test/tests/end-to-end-tests.sh
   - linters/run-linters.sh
 after_success:
   - if [ "$TRAVIS_BRANCH" == "master" ] && [ "$TRAVIS_PULL_REQUEST_BRANCH" == "" ]; then
-          gradle bintrayUpload -PbintrayUser=monnoroch -PbintrayKey="$BINTRAY_API_KEY" -PdryRun=false;
+          gradle blerpc:bintrayUpload -PbintrayUser=monnoroch -PbintrayKey="$BINTRAY_API_KEY" -PdryRun=false;
+          gradle blerpcproto:bintrayUpload -PbintrayUser=monnoroch -PbintrayKey="$BINTRAY_API_KEY" -PdryRun=false;
+          gradle reactive-blerpc:bintrayUpload -PbintrayUser=monnoroch -PbintrayKey="$BINTRAY_API_KEY" -PdryRun=false;
     fi
 notifications:
   email: false
