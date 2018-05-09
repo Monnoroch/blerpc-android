@@ -6,7 +6,7 @@ export TERM=dumb
 /tmp/proto/protoc \
   --plugin=protoc-gen-rx='generated/reactive-blerpc' \
   --proto_path='.' \
-  -I 'blerpcproto/src/main/proto/' \
+  -I 'reactive-blerpc-test/build/extracted-include-protos/main/' \
   --rx_out='reactive-blerpc-test/tests' \
   'reactive-blerpc-test/tests/protos/test_service_no_javadoc.proto'
 

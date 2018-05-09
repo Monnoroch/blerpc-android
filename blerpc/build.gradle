@@ -32,9 +32,13 @@ configurations.all {
     }
 }
 
+ext {
+    blerpcVersion = '0.2.2'
+}
+
 dependencies {
     compile group: 'findbugs', name: 'annotations', version: '1.0.0'
-    compile "com.github.monnoroch:blerpcproto-android:0.2.2"
+    compile "com.github.monnoroch:blerpcproto-android:${blerpcVersion}"
     compile 'com.google.guava:guava:20.0'
     compile 'com.google.protobuf:protobuf-java:3.2.0'
     compile 'com.google.protobuf:protoc:3.0.0'
