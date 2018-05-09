@@ -293,7 +293,7 @@ public class ReactiveBleRpcGeneratorTest {
   }
 
   @Test
-  public void buildServiceContexts_notServiceLocation_wrongServiceType() throws Exception {
+  public void buildServiceContexts_notServiceLocation_notServiceTypeNumber() throws Exception {
     PluginProtos.CodeGeneratorRequest request =
         PluginProtos.CodeGeneratorRequest.newBuilder()
             .addFileToGenerate(FILE_NAME)
@@ -329,7 +329,7 @@ public class ReactiveBleRpcGeneratorTest {
   }
 
   @Test
-  public void buildServiceContexts_notMethodLocation_wrongServiceType() throws Exception {
+  public void buildServiceContexts_notMethodLocation_notServiceTypeNumber() throws Exception {
     PluginProtos.CodeGeneratorRequest request =
         PluginProtos.CodeGeneratorRequest.newBuilder()
             .addFileToGenerate(FILE_NAME)
@@ -370,7 +370,7 @@ public class ReactiveBleRpcGeneratorTest {
   }
 
   @Test
-  public void buildServiceContexts_notMethodLocation_wrongMethodType() throws Exception {
+  public void buildServiceContexts_notMethodLocation_notMethodTypeNumber() throws Exception {
     PluginProtos.CodeGeneratorRequest request =
         PluginProtos.CodeGeneratorRequest.newBuilder()
             .addFileToGenerate(FILE_NAME)
