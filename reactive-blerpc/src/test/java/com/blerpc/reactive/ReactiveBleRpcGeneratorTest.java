@@ -133,19 +133,19 @@ public class ReactiveBleRpcGeneratorTest {
     Stream<PluginProtos.CodeGeneratorResponse.File> generatedFiles = generator.generate(REQUEST);
     ProtoTruth.assertThat(generatedFiles.collect(ImmutableList.toImmutableList()))
         .ignoringFields(PluginProtos.CodeGeneratorResponse.File.CONTENT_FIELD_NUMBER)
-        .containsAllOf(
-            PluginProtos.CodeGeneratorResponse.File.newBuilder().setName(SERVICE_FULL_PATH).build(),
-            PluginProtos.CodeGeneratorResponse.File.newBuilder()
-                .setName(FACTORY_FULL_PATH)
-                .build());
+        .containsExactlyElementsIn(
+            ImmutableList.of(
+                PluginProtos.CodeGeneratorResponse.File.newBuilder()
+                    .setName(SERVICE_FULL_PATH)
+                    .build(),
+                PluginProtos.CodeGeneratorResponse.File.newBuilder()
+                    .setName(FACTORY_FULL_PATH)
+                    .build()));
   }
 
   @Test
   public void buildServiceContexts() throws Exception {
-    ImmutableList<ReactiveBleRpcGenerator.ServiceContext> services =
-        generator.buildServiceContexts(REQUEST);
-    assertThat(services).hasSize(1);
-    assertEquals(services.get(0), createServiceContext());
+    assertEquals(generator.buildServiceContexts(REQUEST), createServiceContext());
   }
 
   @Test
