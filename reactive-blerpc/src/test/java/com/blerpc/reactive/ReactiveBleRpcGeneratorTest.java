@@ -1,11 +1,11 @@
 package com.blerpc.reactive;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.extensions.proto.ProtoTruth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.blerpc.proto.Blerpc;
 import com.google.common.collect.ImmutableList;
-import com.google.common.truth.extensions.proto.ProtoTruth;
 import com.google.protobuf.DescriptorProtos;
 import com.google.protobuf.UnknownFieldSet;
 import com.google.protobuf.compiler.PluginProtos;
@@ -131,7 +131,7 @@ public class ReactiveBleRpcGeneratorTest {
   @Test
   public void generate() throws Exception {
     Stream<PluginProtos.CodeGeneratorResponse.File> generatedFiles = generator.generate(REQUEST);
-    ProtoTruth.assertThat(generatedFiles.collect(ImmutableList.toImmutableList()))
+    assertThat(generatedFiles.collect(ImmutableList.toImmutableList()))
         .ignoringFields(PluginProtos.CodeGeneratorResponse.File.CONTENT_FIELD_NUMBER)
         .containsExactlyElementsIn(
             ImmutableList.of(
