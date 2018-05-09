@@ -277,7 +277,7 @@ public class ReactiveBleRpcGeneratorTest {
   }
 
   @Test
-  public void buildServiceContexts_filterNotServiceLocation_pathCount() throws Exception {
+  public void buildServiceContexts_notServiceLocation_wrongLength() throws Exception {
     PluginProtos.CodeGeneratorRequest request =
         PluginProtos.CodeGeneratorRequest.newBuilder()
             .addFileToGenerate(FILE_NAME)
@@ -293,7 +293,7 @@ public class ReactiveBleRpcGeneratorTest {
   }
 
   @Test
-  public void buildServiceContexts_filterNotServiceLocation_elementType() throws Exception {
+  public void buildServiceContexts_notServiceLocation_wrongServiceType() throws Exception {
     PluginProtos.CodeGeneratorRequest request =
         PluginProtos.CodeGeneratorRequest.newBuilder()
             .addFileToGenerate(FILE_NAME)
@@ -309,7 +309,7 @@ public class ReactiveBleRpcGeneratorTest {
   }
 
   @Test
-  public void buildServiceContexts_filterNotMethodLocation_pathCount() throws Exception {
+  public void buildServiceContexts__notMethodLocation_wrongLength() throws Exception {
     PluginProtos.CodeGeneratorRequest request =
         PluginProtos.CodeGeneratorRequest.newBuilder()
             .addFileToGenerate(FILE_NAME)
@@ -329,7 +329,7 @@ public class ReactiveBleRpcGeneratorTest {
   }
 
   @Test
-  public void buildServiceContexts_filterNotMethodLocation_serviceElementType() throws Exception {
+  public void buildServiceContexts_notMethodLocation_wrongServiceType() throws Exception {
     PluginProtos.CodeGeneratorRequest request =
         PluginProtos.CodeGeneratorRequest.newBuilder()
             .addFileToGenerate(FILE_NAME)
@@ -349,7 +349,7 @@ public class ReactiveBleRpcGeneratorTest {
   }
 
   @Test
-  public void buildServiceContexts_filterNotMethodLocation_methodElementType_serviceIndex()
+  public void buildServiceContexts_notMethodLocation_wrongServiceIndex()
       throws Exception {
     PluginProtos.CodeGeneratorRequest request =
         PluginProtos.CodeGeneratorRequest.newBuilder()
@@ -370,7 +370,7 @@ public class ReactiveBleRpcGeneratorTest {
   }
 
   @Test
-  public void buildServiceContexts_filterNotMethodLocation_methodElementType() throws Exception {
+  public void buildServiceContexts_notMethodLocation_wrongMethodType() throws Exception {
     PluginProtos.CodeGeneratorRequest request =
         PluginProtos.CodeGeneratorRequest.newBuilder()
             .addFileToGenerate(FILE_NAME)
