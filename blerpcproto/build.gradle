@@ -25,8 +25,8 @@ configurations.all {
 }
 
 dependencies {
-    compile group: 'findbugs', name: 'annotations', version: '1.0.0'
-    compile 'com.google.protobuf:protobuf-java:3.2.0'
+    implementation group: 'findbugs', name: 'annotations', version: '1.0.0'
+    implementation 'com.google.protobuf:protobuf-java:3.5.1'
 }
 
 protobuf {
@@ -57,6 +57,7 @@ ext {
 }
 
 publish {
+    userOrg = 'github.monnoroch'
     groupId = 'com.github.monnoroch'
     repoName = 'blerpc-android'
     artifactId = 'blerpcproto-android'
