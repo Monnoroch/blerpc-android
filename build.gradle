@@ -30,10 +30,6 @@ task clean(type: Delete) {
     delete rootProject.buildDir
 }
 
-project(':blerpc') {
-    apply plugin: 'com.android.library'
-}
-
 ext {
     reactivePluginVersion = '0.2.2'
 }
