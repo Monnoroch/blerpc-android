@@ -15,7 +15,7 @@ subprojects {
         effort = "max"
         reportLevel = "medium"
         if (isAndroidLibrary) {
-            classes = files("${project.buildDir}/intermediates/classes")
+            classes = files("${project.buildDir}/intermediates/classes", "${project.buildDir}/intermediates/javac")
         } else {
             classes = files("${project.buildDir}/classes")
         }
