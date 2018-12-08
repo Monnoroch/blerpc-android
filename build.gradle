@@ -30,10 +30,6 @@ task clean(type: Delete) {
     delete rootProject.buildDir
 }
 
-task wrapper(type: Wrapper) {
-    distributionUrl = 'https\\://services.gradle.org/distributions/gradle-4.6-all.zip'
-}
-
 ext {
     reactivePluginVersion = '0.2.2'
 }
