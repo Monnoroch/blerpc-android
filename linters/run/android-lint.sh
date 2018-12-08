@@ -7,7 +7,7 @@ exitcode=0
 DIR=$(dirname "$0")
 DIR=$(dirname "$DIR")
 
-output=$(gradle runAndroidLint)
+output=$(sh gradlew runAndroidLint)
 if [ $? -ne 0 ]
 then
     echo "${output}"

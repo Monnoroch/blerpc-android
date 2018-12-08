@@ -4,8 +4,8 @@ android:
   components:
   - platform-tools
   - tools
-  - build-tools-26.0.2
-  - android-26
+  - build-tools-28.0.3
+  - android-28
   - extra-android-m2repository
   - extra-google-google_play_services
   - extra-google-m2repository
@@ -17,9 +17,10 @@ before_install:
   - linters/install-linters.sh
   - ci/install-protoc.sh
 script:
-  - gradle reactive-blerpc:assemble reactive-blerpc:test
+  - ci/create-gradle-wrapper-4.6.sh
+  - sh gradlew reactive-blerpc:assemble reactive-blerpc:test
   - ci/generate-reactive-plugin.sh
-  - gradle assemble testReleaseUnitTest
+  - sh gradlew assemble testReleaseUnitTest
   - reactive-blerpc-test/tests/end-to-end-tests.sh
   - linters/run-linters.sh
 after_success:
