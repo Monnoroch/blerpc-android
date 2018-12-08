@@ -453,7 +453,6 @@ public class AnnotationMessageConverterTest {
         .isEqualTo(TestIntegerMessage.newBuilder()
             .setIntValue(intFrom(TEST_INT_BYTE_ARRAY))
             .build());
-    converter.deserializeResponse(null, TestIntegerMessage.getDefaultInstance(), new byte[10]);
   }
 
   @Test
