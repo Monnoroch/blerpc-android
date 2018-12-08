@@ -6,7 +6,7 @@ export TERM=dumb
 /tmp/proto/protoc \
   --plugin=protoc-gen-rx='generated/reactive-blerpc' \
   --proto_path='.' \
-  -I 'reactive-blerpc-test/build/extracted-include-protos/main/' \
+  -I 'reactive-blerpc-test/build/extracted-include-protos/debug/' \
   --rx_out='reactive-blerpc-test/tests' \
   'reactive-blerpc-test/tests/protos/test_service_deprecated.proto'
 
