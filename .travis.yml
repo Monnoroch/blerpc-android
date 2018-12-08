@@ -17,7 +17,6 @@ before_install:
   - linters/install-linters.sh
   - ci/install-protoc.sh
 script:
-  - gradle wrapper --gradle-version 4.6
   - gradle reactive-blerpc:assemble reactive-blerpc:test
   - ci/generate-reactive-plugin.sh
   - gradle assemble testReleaseUnitTest
