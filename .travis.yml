@@ -1,5 +1,4 @@
-install: gradle wrapper --gradle-version 4.6
-language: android
+language: java
 jdk: oraclejdk8
 android:
   components:
@@ -14,10 +13,15 @@ licenses:
   - android-sdk-preview-license-c81a61d9
   - android-sdk-license-.+
   - google-gdk-license-.+
+
 before_install:
   - linters/install-linters.sh
   - ci/install-protoc.sh
   - ci/install-gradle.sh
+  - sudo apt-get gradle
+addons:
+  apt:
+    update: true
 script:
 #  - sed -i 's#gradle-4.0.1-all.zip#gradle-4.6-all.zip#g' gradle/wrapper/gradle-wrapper.properties
   - cat gradle/wrapper/gradle-wrapper.properties
