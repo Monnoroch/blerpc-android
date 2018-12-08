@@ -1,3 +1,4 @@
+install: gradle wrapper --gradle-version 4.6
 language: android
 jdk: oraclejdk8
 android:
@@ -17,9 +18,7 @@ before_install:
   - linters/install-linters.sh
   - ci/install-protoc.sh
   - ci/install-gradle.sh
-  - gradle wrapper
 script:
-  - /home/travis/gradle reactive-blerpc:assemble reactive-blerpc:test
 #  - sed -i 's#gradle-4.0.1-all.zip#gradle-4.6-all.zip#g' gradle/wrapper/gradle-wrapper.properties
   - cat gradle/wrapper/gradle-wrapper.properties
   - sh gradlew reactive-blerpc:assemble reactive-blerpc:test
