@@ -7,7 +7,7 @@ exitcode=0
 DIR=$(dirname "$0")
 DIR=$(dirname "$DIR")
 
-output=$(gradle runFindbugs --stacktrace --info)
+output=$(sh gradlew runFindbugs --stacktrace --info)
 if [ $? -ne 0 ]
 then
     echo "${output}"

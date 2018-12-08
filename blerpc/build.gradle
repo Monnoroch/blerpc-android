@@ -42,14 +42,14 @@ dependencies {
     implementation "com.github.monnoroch:blerpcproto-android:${blerpcVersion}"
     implementation 'com.google.guava:guava:23.4-android'
     implementation 'com.google.protobuf:protobuf-java:3.5.1'
-    implementation 'com.google.protobuf:protoc:3.0.0'
+    implementation 'com.google.protobuf:protoc:3.6.1'
     implementation 'com.google.dagger:dagger:2.7'
     annotationProcessor 'com.google.dagger:dagger-compiler:2.7'
     testAnnotationProcessor 'com.google.dagger:dagger-compiler:2.7'
     implementation 'io.reactivex.rxjava2:rxandroid:2.1.0'
     implementation 'io.reactivex.rxjava2:rxjava:2.2.0'
 
-    testImplementation "org.robolectric:robolectric:3.7.1"
+    testImplementation "org.robolectric:robolectric:4.0.2"
     testImplementation 'junit:junit:4.12'
     testImplementation "org.mockito:mockito-inline:2.7.22"
     testImplementation 'com.google.truth:truth:0.40'
@@ -57,7 +57,7 @@ dependencies {
 
 protobuf {
     protoc {
-        artifact = 'com.google.protobuf:protoc:3.0.0'
+        artifact = 'com.google.protobuf:protoc:3.6.1'
     }
     plugins {}
     generateProtoTasks {

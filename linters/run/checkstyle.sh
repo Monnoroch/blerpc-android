@@ -7,7 +7,7 @@ exitcode=0
 DIR=$(dirname "$0")
 DIR=$(dirname "$DIR")
 
-output=$(gradle runCheckstyle)
+output=$(sh gradlew runCheckstyle)
 if [ $? -ne 0 ]
 then
     echo "${output}"
