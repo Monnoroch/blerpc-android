@@ -16,6 +16,7 @@ licenses:
 before_install:
   - linters/install-linters.sh
   - ci/install-protoc.sh
+  - ci/install-gradle.sh
 script:
   - gradle reactive-blerpc:assemble reactive-blerpc:test
   - sed -i 's#gradle-4.0.1-all.zip#gradle-4.6-all.zip#g' gradle/wrapper/gradle-wrapper.properties
