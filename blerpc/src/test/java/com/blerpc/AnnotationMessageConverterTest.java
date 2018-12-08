@@ -440,9 +440,14 @@ public class AnnotationMessageConverterTest {
   }
 
   @Test
-  public void deserializeResponse_wrongMessageByteSize() throws Exception {
-    assertError(() -> converter.deserializeResponse(null, TestIntegerMessage.getDefaultInstance(), new byte[10]),
-        "Declared size 4 of message TestIntegerMessage is not equal to device response size 10");
+  public void deserializeResponse_responseByteSizeLessThatExpected() throws Exception {
+    assertError(() -> converter.deserializeResponse(null, TestIntegerMessage.getDefaultInstance(), new byte[3]),
+        "Declared size 4 of message TestIntegerMessage is bigger, than device response size 3");
+  }
+
+  @Test
+  public void deserializeResponse_responseByteSizeBiggerThatExpected() throws Exception {
+    converter.deserializeResponse(null, TestIntegerMessage.getDefaultInstance(), new byte[10]);
   }
 
   @Test

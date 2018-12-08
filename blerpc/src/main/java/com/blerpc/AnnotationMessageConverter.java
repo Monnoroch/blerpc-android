@@ -162,8 +162,8 @@ public class AnnotationMessageConverter implements MessageConverter {
     }
     checkHasExtension(message);
     int messageBytesSize = getMessageExtension(message).getSizeBytes();
-    checkArgument(value.length == messageBytesSize,
-        "Declared size %s of message %s is not equal to device response size %s",
+    checkArgument(value.length >= messageBytesSize,
+        "Declared size %s of message %s is bigger, than device response size %s",
         messageBytesSize,
         message.getDescriptorForType().getName(),
         value.length);
