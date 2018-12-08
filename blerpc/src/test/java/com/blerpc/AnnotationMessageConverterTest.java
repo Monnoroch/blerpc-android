@@ -52,6 +52,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 public class AnnotationMessageConverterTest {
 
   private static final byte[] TEST_INT_BYTE_ARRAY = new byte[]{15, 1, -122, -96};
+  private static final byte[] TEST_INT_BYTE_ARRAY_EXTRA_BYTE = new byte[]{15, 1, -122, -96, 50};
   private static final byte[] TEST_LONG_BYTE_ARRAY = new byte[]{2, 6, 8, 2, 84, 11, -28, 0};
   private static final byte[] TEST_BOOL_BYTE_ARRAY = new byte[]{1};
   private static final byte[] TEST_BYTE_STRING_BYTE_ARRAY = new byte[]{1, 2, 3, 4, 5, 6, 7, 8};
@@ -440,9 +441,18 @@ public class AnnotationMessageConverterTest {
   }
 
   @Test
-  public void deserializeResponse_wrongMessageByteSize() throws Exception {
-    assertError(() -> converter.deserializeResponse(null, TestIntegerMessage.getDefaultInstance(), new byte[10]),
-        "Declared size 4 of message TestIntegerMessage is not equal to device response size 10");
+  public void deserializeResponse_responseByteSizeLessThatExpected() throws Exception {
+    assertError(() -> converter.deserializeResponse(null, TestIntegerMessage.getDefaultInstance(), new byte[3]),
+        "Declared size 4 of message TestIntegerMessage is bigger, than device response size 3");
+  }
+
+  @Test
+  public void deserializeResponse_responseByteSizeBiggerThatExpected() throws Exception {
+    assertThat(converter.deserializeResponse(null, TestIntegerMessage.getDefaultInstance(),
+        TEST_INT_BYTE_ARRAY_EXTRA_BYTE))
+        .isEqualTo(TestIntegerMessage.newBuilder()
+            .setIntValue(intFrom(TEST_INT_BYTE_ARRAY))
+            .build());
   }
 
   @Test
