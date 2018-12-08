@@ -8,3 +8,4 @@ cd ..
 mv tmp-project/gradlew ./
 mv tmp-project/gradlew.bat ./
 mv tmp-project/gradle ./
+rm -rf tmp-project
