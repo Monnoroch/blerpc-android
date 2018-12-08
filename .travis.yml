@@ -17,10 +17,7 @@ before_install:
   - linters/install-linters.sh
   - ci/install-protoc.sh
 script:
-  - gradle wrapper --gradle-distribution-url https://services.gradle.org/distributions/gradle-4.6-all.zip
-  - ./gradlew wrapper --gradle-version 4.6
-  - ls ./
-  - cat gradle/wrapper/gradle-wrapper.properties
+  - ci/create-gradle-wrapper-4.6.sh
   - sh gradlew reactive-blerpc:assemble reactive-blerpc:test
   - ci/generate-reactive-plugin.sh
   - gradle assemble testReleaseUnitTest
