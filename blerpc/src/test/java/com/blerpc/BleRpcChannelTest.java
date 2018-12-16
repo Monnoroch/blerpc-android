@@ -286,6 +286,15 @@ public class BleRpcChannelTest {
   }
 
   @Test
+  public void testFailAllAndResetWhenConnectGattError() throws Exception {
+    when(bluetoothDevice.connectGatt(eq(context), anyBoolean(), bluetoothCallback.capture()))
+        .thenReturn(null);
+    callMethod(controller);
+    assertCallFailed(controller);
+    onConnectionStateChange(0, BluetoothProfile.STATE_DISCONNECTED);
+  }
+
+  @Test
   public void testDoNotConnectAndFailWhenDisconnectedState() throws Exception {
     callMethod(controller);
     onConnectionStateChange(0, BluetoothProfile.STATE_DISCONNECTED);
