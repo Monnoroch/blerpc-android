@@ -1,0 +1,85 @@
+load("@build_stack_rules_proto//:compile.bzl", "proto_compile")
+
+proto_library(
+    name = "blerpc_proto",
+    srcs = ["blerpcproto/src/main/proto/blerpc.proto"],
+    visibility = ["//visibility:public"],
+    deps = ["@com_google_protobuf//:descriptor_proto"],
+)
+
+java_proto_library(
+    name = "blerpc_java_proto",
+    visibility = ["//visibility:public"],
+    deps = [":blerpc_proto"],
+)
+
+java_binary(
+    name = "reactive-blerpc",
+    srcs = ["reactive-blerpc/src/main/java/com/blerpc/reactive/ReactiveBleRpcGenerator.java"],
+    resources = [
+        "reactive-blerpc/src/main/resources/FactoryService.mustache",
+        "reactive-blerpc/src/main/resources/RxStub.mustache",
+    ],
+    main_class = "com.blerpc.reactive.ReactiveBleRpcGenerator",
+    deps = [
+        "@com_google_protobuf_protobuf_java",
+        "@com_google_guava_guava",
+        "@com_google_code_findbugs_jsr305",
+        "@findbugs_annotations",
+        "@com_salesforce_servicelibs_jprotoc",
+        ":blerpc_java_proto",
+    ],
+)
+
+load("@build_stack_rules_proto//:plugin.bzl", "proto_plugin")
+
+# This rule is needed to force building the `:reactive-blerpc_deploy.jar` target.
+# Otherwise depending on `:reactive-blerpc` doesn't force the deploy jar to be built.
+genrule(
+    name = "reactive-blerpc-helper",
+    outs = [
+        "dummy",
+    ],
+    executable = True,
+    output_to_bindir = True,
+    # Need to actually use the deploy jar, otherwise it's not forced to be build.
+    cmd = "ls $(execpath :reactive-blerpc_deploy.jar); echo OK > $@",
+    tools = [
+        ":reactive-blerpc_deploy.jar",
+    ],
+)
+
+proto_plugin(
+    name = "reactive-blerpc-generator",
+    tool = ":reactive-blerpc",
+    outputs = [
+        "{package}/com/device/proto/Rx{basename|pascal}.java",
+    ],
+    visibility = ["//visibility:public"],
+    data = [
+        ":reactive-blerpc-helper",
+    ],
+)
+
+proto_library(
+    name = "test_proto",
+    srcs = [
+        "reactive-blerpc-test/src/main/proto/test_service.proto",
+    ],
+    deps = [
+        "//:blerpc_proto",
+    ],
+)
+
+proto_compile(
+    name = "test_proto_compile",
+    outputs = [
+        "test_proto_compile/com/blerpc/reactive/BleServiceFactory.java",
+        "test_proto_compile/com/device/proto/RxTestService.java",
+    ],
+    plugins = [
+        "@build_stack_rules_proto//java",
+        "//:reactive-blerpc-generator",
+    ],
+    deps = [":test_proto"],
+)
