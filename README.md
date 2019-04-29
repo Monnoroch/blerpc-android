@@ -24,29 +24,29 @@ package my.device;
 import "blerpc.proto";
 
 service TestService {
-option (com.blerpc.service) = {
-uuid: "A0000000-0000-0000-0000-000000000000"
-};
+    option (com.blerpc.service) = {
+        uuid: "A0000000-0000-0000-0000-000000000000"
+    };
 
-rpc ReadValue (GetValueRequest) returns (GetValueResponse) {
-option (com.blerpc.characteristic) = {
-uuid: "A0000001-0000-0000-0000-000000000000"
-type: READ
-};
-}
+    rpc ReadValue (GetValueRequest) returns (GetValueResponse) {
+        option (com.blerpc.characteristic) = {
+            uuid: "A0000001-0000-0000-0000-000000000000"
+            type: READ
+        };
+    }
 }
 
 message GetValueRequest {
 }
 
 message GetValueResponse {
-option (com.blerpc.message) = {
-size_bytes: 4
-};
-int32 int_value = 1 [(com.blerpc.field) = {
-from_byte: 0
-to_byte: 4
-}];
+    option (com.blerpc.message) = {
+        size_bytes: 4
+    };
+    int32 int_value = 1 [(com.blerpc.field) = {
+        from_byte: 0
+        to_byte: 4
+    }];
 }
 ```
 You can create as many methods as you want. Each proto file must contains one service. Current version of blerpc supports `Read`, `Write` and `Subscribe` methods. See examples for more information.
@@ -91,9 +91,9 @@ And finally you can call your service method:
 // let bleWorker: BleWorker = BleWorker() declared somewhere and connected to device
 
 bleWorker.readValue(request: GetValueRequest()).map { response in
-print(response)
+    print(response)
 }.catch { error in
-print(error)
+    print(error)
 }
 ```
 

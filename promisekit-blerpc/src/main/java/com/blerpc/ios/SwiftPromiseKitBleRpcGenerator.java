@@ -1,7 +1,6 @@
 package com.blerpc.ios;
 
 import static com.google.common.base.Preconditions.checkArgument;
-
 import com.blerpc.proto.Blerpc;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
@@ -15,9 +14,7 @@ import com.salesforce.jprotoc.Generator;
 import com.salesforce.jprotoc.GeneratorException;
 import com.salesforce.jprotoc.ProtoTypeMap;
 import com.salesforce.jprotoc.ProtocPlugin;
-
 import edu.umd.cs.findbugs.annotations.SuppressWarnings;
-
 import java.io.File;
 import java.nio.file.Paths;
 import java.util.AbstractMap;
@@ -190,13 +187,13 @@ public class SwiftPromiseKitBleRpcGenerator extends Generator {
   private String extractSwiftPackageName(FileDescriptorProto proto) {
     String packageName = proto.getPackage();
     String[] splittedPackageName = packageName.split("\\.");
-    String swiftPackageName = "";
+    StringBuilder swiftPackageName = new StringBuilder();
 
     for (String substring : splittedPackageName) {
-      swiftPackageName += upperCaseFirstLetter(substring) + "_";
+      swiftPackageName.append(upperCaseFirstLetter(substring)).append("_");
     }
 
-    return swiftPackageName;
+    return swiftPackageName.toString();
   }
 
   private String fullFileName(ServiceContext context) {

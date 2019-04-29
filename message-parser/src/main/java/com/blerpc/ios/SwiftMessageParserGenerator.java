@@ -11,9 +11,7 @@ import com.google.protobuf.compiler.PluginProtos;
 import com.salesforce.jprotoc.Generator;
 import com.salesforce.jprotoc.GeneratorException;
 import com.salesforce.jprotoc.ProtocPlugin;
-
 import edu.umd.cs.findbugs.annotations.SuppressWarnings;
-
 import java.io.File;
 import java.nio.file.Paths;
 import java.util.AbstractMap;
@@ -43,7 +41,7 @@ public class SwiftMessageParserGenerator extends Generator {
   // TODO(#36): add validation for requests and responses.
   @Override
   public Stream<PluginProtos.CodeGeneratorResponse.File> generate(
-      PluginProtos.CodeGeneratorRequest request) throws GeneratorException {
+          PluginProtos.CodeGeneratorRequest request) throws GeneratorException {
     Stream<MessageContext> messages = buildMessageContexts(request);
     return messages.map(this::buildOutputFile);
   }
@@ -132,13 +130,13 @@ public class SwiftMessageParserGenerator extends Generator {
   private String extractSwiftPackageName(FileDescriptorProto proto) {
     String packageName = proto.getPackage();
     String[] splittedPackageName = packageName.split("\\.");
-    String swiftPackageName = "";
+    StringBuilder swiftPackageName = new StringBuilder();
 
     for (String substring : splittedPackageName) {
-      swiftPackageName += upperCaseFirstLetter(substring) + "_";
+      swiftPackageName.append(upperCaseFirstLetter(substring)).append("_");
     }
 
-    return swiftPackageName;
+    return swiftPackageName.toString();
   }
 
   private String upperCaseFirstLetter(String string) {
