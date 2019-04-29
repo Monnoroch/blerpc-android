@@ -67,15 +67,12 @@ public class SwiftPromiseKitBleRpcGenerator extends Generator {
   @Override
   public Stream<PluginProtos.CodeGeneratorResponse.File> generate(
       PluginProtos.CodeGeneratorRequest request) throws GeneratorException {
-    ImmutableList<ServiceContext> services = buildServiceContexts(request);
-    if (services.isEmpty()) {
-      return Stream.empty();
-    }
-    return services.stream().map(this::buildServiceFile);
+    Stream<ServiceContext> services = buildServiceContexts(request);
+    return services.map(this::buildServiceFile);
   }
 
   @VisibleForTesting
-  ImmutableList<ServiceContext> buildServiceContexts(PluginProtos.CodeGeneratorRequest request) {
+  Stream<ServiceContext> buildServiceContexts(PluginProtos.CodeGeneratorRequest request) {
     ProtoTypeMap protoTypeMap = ProtoTypeMap.of(request.getProtoFileList());
     return request
         .getProtoFileList()
@@ -91,7 +88,7 @@ public class SwiftPromiseKitBleRpcGenerator extends Generator {
                     fileLocation.getKey(),
                     fileLocation.getValue(),
                     protoTypeMap))
-        .collect(ImmutableList.toImmutableList());
+        .collect(ImmutableList.toImmutableList()).stream();
   }
 
   private Stream<AbstractMap.SimpleEntry<FileDescriptorProto, Location>> getFileLocations(
@@ -145,7 +142,8 @@ public class SwiftPromiseKitBleRpcGenerator extends Generator {
     String[] splittedCharacteristicUUID = characteristicUUID.split("-");
     String serviceUUID = splittedCharacteristicUUID[0];
     splittedCharacteristicUUID[0] = "";
-    serviceUUID = serviceUUID.substring(0,serviceUUID.length() - 1) + '0' + String.join("-", splittedCharacteristicUUID);
+    serviceUUID = serviceUUID.substring(0,serviceUUID.length() - 1) + '0' +
+            String.join("-", splittedCharacteristicUUID);
 
     methodContext.serviceUUID = serviceUUID;
 
@@ -168,8 +166,10 @@ public class SwiftPromiseKitBleRpcGenerator extends Generator {
         break;
     }
 
-    methodContext.inputType = extractSwiftPackageName(protoFile) + methodProto.getInputType().split("\\.")[methodProto.getInputType().split("\\.").length-1];
-    methodContext.outputType = extractSwiftPackageName(protoFile) + methodProto.getOutputType().split("\\.")[methodProto.getOutputType().split("\\.").length-1];
+    methodContext.inputType = extractSwiftPackageName(protoFile) +
+            methodProto.getInputType().split("\\.")[methodProto.getInputType().split("\\.").length - 1];
+    methodContext.outputType = extractSwiftPackageName(protoFile) +
+            methodProto.getOutputType().split("\\.")[methodProto.getOutputType().split("\\.").length - 1];
     methodContext.deprecated = methodProto.getOptions().getDeprecated();
     methodContext.isManyOutput = methodProto.getServerStreaming();
     return methodContext;

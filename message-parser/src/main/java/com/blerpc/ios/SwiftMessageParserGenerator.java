@@ -46,17 +46,12 @@ public class SwiftMessageParserGenerator extends Generator {
   @Override
   public Stream<PluginProtos.CodeGeneratorResponse.File> generate(
       PluginProtos.CodeGeneratorRequest request) throws GeneratorException {
-    ImmutableList<MessageContext> messages = buildMessageContexts(request);
-    if (messages.isEmpty()) {
-      return Stream.empty();
-    }
-
-    return messages.stream().map(this::buildOutputFile);
+    Stream<MessageContext> messages = buildMessageContexts(request);
+    return messages.map(this::buildOutputFile);
   }
 
   @VisibleForTesting
-  private ImmutableList<MessageContext> buildMessageContexts(PluginProtos.CodeGeneratorRequest request) {
-    ProtoTypeMap protoTypeMap = ProtoTypeMap.of(request.getProtoFileList());
+  private Stream<MessageContext> buildMessageContexts(PluginProtos.CodeGeneratorRequest request) {
     return request
         .getProtoFileList()
         .stream()
@@ -69,9 +64,7 @@ public class SwiftMessageParserGenerator extends Generator {
                     fileLocation.getKey())).findFirst().get();
   }
 
-  private ImmutableList<MessageContext> buildMessageContext(
-          FileDescriptorProto protoFile) {
-
+  private Stream<MessageContext> buildMessageContext(FileDescriptorProto protoFile) {
     List<MessageContext> arrayMessages = new ArrayList<MessageContext>();
 
     for (int i = 0; i < protoFile.getMessageTypeCount(); i++) {
@@ -114,7 +107,8 @@ public class SwiftMessageParserGenerator extends Generator {
       messageContext.fields = ImmutableList.copyOf(arrayFields);
       arrayMessages.add(messageContext);
     }
-      return ImmutableList.copyOf(arrayMessages);
+
+    return arrayMessages.stream();
   }
 
   private PluginProtos.CodeGeneratorResponse.File buildOutputFile(MessageContext context) {
@@ -170,8 +164,6 @@ public class SwiftMessageParserGenerator extends Generator {
     public String swiftPackageName;
     public String className;
     public String serviceName;
-    public boolean deprecated;
-    @Nullable public String javaDoc;
     public ImmutableList<FieldContext> fields = ImmutableList.of();
   }
 
