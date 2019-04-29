@@ -102,4 +102,3 @@ BleWorker
 PromiseKit - `pod 'PromiseKit'`
 SwiftGRPC - `pod 'SwiftGRPC'` (see instructions how to setup it https://github.com/grpc/grpc-swift)
 RxBluetoothKit - `pod 'RxBluetoothKit'`
-

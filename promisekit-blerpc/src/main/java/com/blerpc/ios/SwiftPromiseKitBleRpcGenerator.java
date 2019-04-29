@@ -166,10 +166,10 @@ public class SwiftPromiseKitBleRpcGenerator extends Generator {
         break;
     }
 
-    methodContext.inputType = extractSwiftPackageName(protoFile) +
-            methodProto.getInputType().split("\\.")[methodProto.getInputType().split("\\.").length - 1];
-    methodContext.outputType = extractSwiftPackageName(protoFile) +
-            methodProto.getOutputType().split("\\.")[methodProto.getOutputType().split("\\.").length - 1];
+    methodContext.inputType = extractSwiftPackageName(protoFile)
+            + methodProto.getInputType().split("\\.")[methodProto.getInputType().split("\\.").length - 1];
+    methodContext.outputType = extractSwiftPackageName(protoFile)
+            + methodProto.getOutputType().split("\\.")[methodProto.getOutputType().split("\\.").length - 1];
     methodContext.deprecated = methodProto.getOptions().getDeprecated();
     methodContext.isManyOutput = methodProto.getServerStreaming();
     return methodContext;

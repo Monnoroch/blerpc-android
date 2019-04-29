@@ -10,7 +10,6 @@ import com.google.protobuf.GeneratedMessage;
 import com.google.protobuf.compiler.PluginProtos;
 import com.salesforce.jprotoc.Generator;
 import com.salesforce.jprotoc.GeneratorException;
-import com.salesforce.jprotoc.ProtoTypeMap;
 import com.salesforce.jprotoc.ProtocPlugin;
 
 import edu.umd.cs.findbugs.annotations.SuppressWarnings;
@@ -21,7 +20,6 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
-import javax.annotation.Nullable;
 
 /** Protoc generator that generate Swift wrappers for messages withing service file. */
 public class SwiftMessageParserGenerator extends Generator {
