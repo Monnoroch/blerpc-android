@@ -142,8 +142,8 @@ public class SwiftPromiseKitBleRpcGenerator extends Generator {
     String[] splittedCharacteristicUUID = characteristicUUID.split("-");
     String serviceUUID = splittedCharacteristicUUID[0];
     splittedCharacteristicUUID[0] = "";
-    serviceUUID = serviceUUID.substring(0,serviceUUID.length() - 1) + '0' +
-            String.join("-", splittedCharacteristicUUID);
+    serviceUUID = serviceUUID.substring(0,serviceUUID.length() - 1) + '0'
+            + String.join("-", splittedCharacteristicUUID);
 
     methodContext.serviceUUID = serviceUUID;
 
