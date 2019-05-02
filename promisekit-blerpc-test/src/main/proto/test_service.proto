@@ -1,42 +1,42 @@
 syntax = "proto3";
 
-option java_package = "com.device.proto";
+option java_package = "com.my.device.proto";
 option java_multiple_files = true;
 option optimize_for = CODE_SIZE;
 option java_generic_services = true;
 
-package device;
+package my.device;
 
 import "blerpc.proto";
 
 // A service for testing reactive-blerpc.
 service TestService {
     option (com.blerpc.service) = {
-        uuid: "A0000000-0000-0000-0000-000000000000"
+    uuid: "A0000000-0000-0000-0000-000000000000"
     };
-
+    
     // Read value test method.
     rpc ReadValue (GetValueRequest) returns (GetValueResponse) {
         option (com.blerpc.characteristic) = {
-            uuid: "A0000001-0000-0000-0000-000000000000"
-            type: READ
+        uuid: "A0000001-0000-0000-0000-000000000000"
+        type: READ
         };
     }
-
+    
     // Write value test method.
     rpc WriteValue (SetValueRequest) returns (SetValueResponse) {
         option (com.blerpc.characteristic) = {
-            uuid: "A0000001-0000-0000-0000-000000000000"
-            type: WRITE
+        uuid: "A0000001-0000-0000-0000-000000000000"
+        type: WRITE
         };
     }
-
+    
     // Subscribe for receiving test value updates.
     rpc GetValueUpdates (GetValueRequest) returns (stream GetValueResponse) {
         option (com.blerpc.characteristic) = {
-            uuid: "A0000001-0000-0000-0000-000000000000"
-            descriptor_uuid: "00000000-0000-0000-0000-000000000000"
-            type: SUBSCRIBE
+        uuid: "A0000001-0000-0000-0000-000000000000"
+        descriptor_uuid: "00000000-0000-0000-0000-000000000000"
+        type: SUBSCRIBE
         };
     }
 }
@@ -48,13 +48,18 @@ message GetValueRequest {
 // Response message for the ReadValue and GetValueUpdates methods.
 message GetValueResponse {
     option (com.blerpc.message) = {
-        size_bytes: 4
+    size_bytes: 8
     };
     // Integer value.
     int32 int_value = 1 [(com.blerpc.field) = {
-        from_byte: 0
-        to_byte: 4
-    }];
+                         from_byte: 0
+                         to_byte: 4
+                         }];
+    // Current device status.
+    NestedMessage nested_value_id = 2 [(com.blerpc.field) = {
+                                       from_byte: 4
+                                       to_byte: 8
+                                       }];
 }
 
 // Request message for the WriteValue method.
@@ -64,11 +69,33 @@ message SetValueRequest {
 // Response message for the WriteValue.
 message SetValueResponse {
     option (com.blerpc.message) = {
-        size_bytes: 4
+    size_bytes: 5
     };
     // Integer value.
     int32 int_value = 1 [(com.blerpc.field) = {
-        from_byte: 0
-        to_byte: 4
-    }];
+                         from_byte: 0
+                         to_byte: 4
+                         }];
+    // Enum type
+    EnumTestType enum_value = 2 [(com.blerpc.field) = {
+                                 from_byte: 4
+                                 to_byte: 5
+                                 }];
+}
+
+// Nested message.
+message NestedMessage {
+    option (com.blerpc.message) = {
+    size_bytes: 4
+    };
+    // Integer value.
+    int32 nested_int_value = 1 [(com.blerpc.field) = {
+                                from_byte: 0
+                                to_byte: 4
+                                }];
+}
+
+enum EnumTestType {
+    UNKNOWN_MODE = 0;
+    VALUE_ONE = 1;
 }

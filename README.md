@@ -6,12 +6,7 @@
 
 
 ## iOS support
-iOS support consists with two separate modules:
-
-1) Swift message parser - this module parse input proto files and generate extensions to messages. Each extension has methods to encode and decode proto message based on proto options data.
-2) Swift PromiseKit service generator - generates actual calling requests over Bluettoth Low Energy and calling encode/decode methods from Swift message parser
-
-If you don't need Bluetoth Low Energy support you can use Swift message parser just to parse your proto messages based on proto options data.
+Swift PromiseKit service generator plugin generates PromiseKit wrappers to request methods over Bluettoth Low Energy and automatically encode/decode messages.
 
 ### How to use
 Firstly you need to write proto file describing your service:
@@ -23,58 +18,78 @@ package my.device;
 
 import "blerpc.proto";
 
+// A service for testing blerpc.
 service TestService {
     option (com.blerpc.service) = {
         uuid: "A0000000-0000-0000-0000-000000000000"
     };
 
+    // Read value test method.
     rpc ReadValue (GetValueRequest) returns (GetValueResponse) {
         option (com.blerpc.characteristic) = {
             uuid: "A0000001-0000-0000-0000-000000000000"
             type: READ
         };
     }
+
+    // Write value test method.
+    rpc WriteValue (SetValueRequest) returns (SetValueResponse) {
+        option (com.blerpc.characteristic) = {
+            uuid: "A0000001-0000-0000-0000-000000000000"
+            type: WRITE
+        };
+    }
+
+    // Subscribe for receiving test value updates.
+    rpc GetValueUpdates (GetValueRequest) returns (stream GetValueResponse) {
+        option (com.blerpc.characteristic) = {
+            uuid: "A0000001-0000-0000-0000-000000000000"
+            descriptor_uuid: "00000000-0000-0000-0000-000000000000"
+            type: SUBSCRIBE
+        };
+    }
 }
 
+// Request message for the ReadValue and GetValueUpdates methods.
 message GetValueRequest {
 }
 
+// Response message for the ReadValue and GetValueUpdates methods.
 message GetValueResponse {
     option (com.blerpc.message) = {
         size_bytes: 4
     };
+    // Integer value.
+    int32 int_value = 1 [(com.blerpc.field) = {
+        from_byte: 0
+        to_byte: 4
+    }];
+}
+
+// Request message for the WriteValue method.
+message SetValueRequest {
+}
+
+// Response message for the WriteValue.
+message SetValueResponse {
+    option (com.blerpc.message) = {
+        size_bytes: 4
+    };
+    // Integer value.
     int32 int_value = 1 [(com.blerpc.field) = {
         from_byte: 0
         to_byte: 4
     }];
 }
 ```
-You can create as many methods as you want. Each proto file must contains one service. Current version of blerpc supports `Read`, `Write` and `Subscribe` methods. See examples for more information.
-Assume that plugins was builded (see Android support documentation about building plugins). Then you need to compile proto file with command:
+You can create as many methods as you want. Each proto file must contains one service. Current version of blerpc supports `Read`, `Write` and `Subscribe` methods.
+
+Let's assume that plugins was builded (see Android support documentation about building plugins). Then you need to compile proto file with command:
 
 ```
 protoc service.proto --swift_out=. --swiftgrpc_out=.
 ```
 This will output swift files describing messages. Then call
-
-```
-protoc \
---plugin=protoc-gen-rx='path-to-plugin/message-parser' \
---proto_path='.' \
--I 'dependency-protos/' \
---rx_out='output-folder/' \
-'proto-to-parse/service.proto'
-```
-
-to generate extensions for that swift files to support parsing based on proto options. You can now use parsing like this:
-
-```
-let decodedProto = Device_GetValueResponse.decode(data: data)
-let encodedProto = Device_SetValueRequest.encode(proto: request)
-
-```
-
-Then optionally you can generate services to call methods over Bluetooth Low Energy. Run
 
 ```
 protoc \
@@ -85,16 +100,52 @@ protoc \
 'proto-to-parse/service.proto'
 ```
 
-And finally you can call your service method:
+to generate PromieKit services for calling methods over Bluetooth Low Energy and extensions for Swift files which we already compiled in step above to support  parsing messages.
+
+And finally you can call your service methods:
 
 ```
-// let bleWorker: BleWorker = BleWorker() declared somewhere and connected to device
+let bleWorker: BleWorker = BleWorker()
+let testService: TestService = TestService.init(bleWorker)
 
-bleWorker.readValue(request: GetValueRequest()).map { response in
+// Read method example
+testService.readValue(request: GetValueRequest()).map { response in
     print(response)
 }.catch { error in
     print(error)
 }
+
+// Write method example
+testService.writeValue(request: GetValueRequest()).map { response in
+    print(response)
+}.catch { error in
+    print(error)
+}
+
+// Single subscribe method example
+testService.getValueUpdates(completion: { response in
+    print(response)
+}, error: { error in
+    print(error)
+})
+
+testService.unsubscribeGetValueUpdates()
+
+// Multiple subscribe method example
+let handler1 = testService.getValueUpdates(completion: { response in
+    print(response)
+}, error: { error in
+    print(error)
+})
+
+let handler2 = testService.getValueUpdates(completion: { response in
+    print(response)
+}, error: { error in
+    print(error)
+})
+
+testService.unsubscribeGetValueUpdates(handler1) // physically not unsubscribed
+testService.unsubscribeGetValueUpdates(handler2) // now physically unsubscribed (because no more handlers)
 ```
 
 ### Dependencies
