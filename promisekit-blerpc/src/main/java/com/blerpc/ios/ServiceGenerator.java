@@ -7,10 +7,9 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.DescriptorProtos;
 import com.google.protobuf.compiler.PluginProtos;
-import com.salesforce.jprotoc.ProtoTypeMap;
+import edu.umd.cs.findbugs.annotations.SuppressWarnings;
 import java.util.AbstractMap;
 import java.util.stream.Stream;
-import edu.umd.cs.findbugs.annotations.SuppressWarnings;
 
 class ServiceGenerator {
 
@@ -19,7 +18,6 @@ class ServiceGenerator {
     private static final String OUTPUT_FILE_EXTENSION = ".swift";
 
     Stream<ServiceContext> buildServiceContexts(PluginProtos.CodeGeneratorRequest request) {
-        ProtoTypeMap protoTypeMap = ProtoTypeMap.of(request.getProtoFileList());
         return request
                 .getProtoFileList()
                 .stream()
@@ -32,13 +30,12 @@ class ServiceGenerator {
                         fileLocation ->
                                 buildServiceContext(
                                         fileLocation.getKey(),
-                                        fileLocation.getValue(),
-                                        protoTypeMap))
+                                        fileLocation.getValue()))
                 .collect(ImmutableList.toImmutableList()).stream();
     }
 
     ServiceContext buildServiceContext(
-            DescriptorProtos.FileDescriptorProto protoFile, DescriptorProtos.SourceCodeInfo.Location fileLocation, ProtoTypeMap typeMap) {
+            DescriptorProtos.FileDescriptorProto protoFile, DescriptorProtos.SourceCodeInfo.Location fileLocation) {
         int serviceNumber = fileLocation.getPath(SERVICE_NUMBER_OF_PATHS - 1);
         DescriptorProtos.ServiceDescriptorProto serviceProto = protoFile.getService(serviceNumber);
         ServiceContext serviceContext = new ServiceContext();
@@ -53,7 +50,7 @@ class ServiceGenerator {
                         .getLocationList()
                         .stream()
                         .filter(location -> isProtoMethod(location, serviceNumber))
-                        .map(location -> buildMethodContext(serviceProto, location, typeMap, protoFile))
+                        .map(location -> buildMethodContext(serviceProto, location, protoFile))
                         .collect(ImmutableList.toImmutableList());
 
         if (serviceContext.methods.size() > 0) {
@@ -64,8 +61,9 @@ class ServiceGenerator {
         return serviceContext;
     }
 
-    private MethodContext buildMethodContext(
-            DescriptorProtos.ServiceDescriptorProto serviceProto, DescriptorProtos.SourceCodeInfo.Location location, ProtoTypeMap typeMap, DescriptorProtos.FileDescriptorProto protoFile) {
+    private MethodContext buildMethodContext(DescriptorProtos.ServiceDescriptorProto serviceProto,
+                                             DescriptorProtos.SourceCodeInfo.Location location,
+                                             DescriptorProtos.FileDescriptorProto protoFile) {
         int methodNumber = location.getPath(METHOD_NUMBER_OF_PATHS - 1);
         DescriptorProtos.MethodDescriptorProto methodProto = serviceProto.getMethod(methodNumber);
         checkArgument(

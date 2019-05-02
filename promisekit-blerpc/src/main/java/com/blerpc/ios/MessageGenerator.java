@@ -5,11 +5,11 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.DescriptorProtos;
 import com.google.protobuf.compiler.PluginProtos;
+import edu.umd.cs.findbugs.annotations.SuppressWarnings;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
-import edu.umd.cs.findbugs.annotations.SuppressWarnings;
 
 class MessageGenerator {
 
