@@ -131,7 +131,7 @@ let handler1 = testService.getValueUpdates(request: GetValueRequest(), completio
     print(error)
 })
 
-let handler2 = testService.getValueUpdates(completion: { response in
+let handler2 = testService.getValueUpdates(request: GetValueRequest(), completion: { response in
     print(response)
 }, error: { error in
     print(error)
