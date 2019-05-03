@@ -124,17 +124,8 @@ testService.writeValue(request: SetValueRequest()).map { response in
     print(error)
 }
 
-// Single subscribe method example
-testService.getValueUpdates(completion: { response in
-    print(response)
-}, error: { error in
-    print(error)
-})
-
-testService.unsubscribeGetValueUpdates()
-
-// Multiple subscribe method example
-let handler1 = testService.getValueUpdates(completion: { response in
+// Subscribe method example
+let handler1 = testService.getValueUpdates(request: GetValueRequest(), completion: { response in
     print(response)
 }, error: { error in
     print(error)
