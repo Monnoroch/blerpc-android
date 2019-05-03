@@ -149,7 +149,7 @@ testService.unsubscribeGetValueUpdates(handler2) // now physically unsubscribed 
 ```
 
 ### Dependencies
-BleWorker
+BleWorker - see folder `SwiftBleModule`
 PromiseKit - `pod 'PromiseKit'`
 SwiftGRPC - `pod 'SwiftGRPC'` (see instructions how to setup it https://github.com/grpc/grpc-swift)
 RxBluetoothKit - `pod 'RxBluetoothKit'`
