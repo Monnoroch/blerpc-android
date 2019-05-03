@@ -1,6 +1,5 @@
 apply plugin: 'java'
 apply plugin: 'net.ltgt.errorprone'
-apply plugin: 'com.novoda.bintray-release'
 apply plugin: "org.springframework.boot"
 
 repositories {
@@ -51,15 +50,4 @@ bootJar {
     classifier = 'jdk8'
     // Make jar fully executable by prepending a shell script that knows how to launch the application.
     launchScript()
-}
-
-publish {
-    userOrg = 'github.monnoroch'
-    groupId = 'com.github.monnoroch'
-    repoName = 'blerpc-android'
-    artifactId = 'promisekit-blerpc'
-    publishVersion = "${reactivePluginVersion}"
-    desc = 'Protobuf plugin for generating RxJava wrappers for BleRpc services.'
-    licences = ['MIT']
-    website = 'https://github.com/monnoroch/blerpc-android'
 }
