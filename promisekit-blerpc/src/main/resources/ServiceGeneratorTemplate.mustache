@@ -70,42 +70,15 @@ public class {{serviceName}}: AbstractService {
     {{#typeSubscribe}}
     private var {{methodName}}Callbacks: [ServiceHandler<{{outputType}},Void>] = []
 
-    /// Send subscribe request of method {{methodName}} on device
-    /// - parameter completion: closure which calls when new data appears
-    /// - parameter error: closure which calls when error occurs
-    public func {{methodName}}(completion: @escaping ({{outputType}}) -> Void, error: @escaping (Error) -> Void) {
-        _ = self.bleWorker.discoverCharacteristic(serviceUUID: "{{serviceUUID}}", characteristicUUID: "{{characteristicUUID}}").map { [weak self] characteristic in
-            let disposable = characteristic.observeValueUpdateAndSetNotification().subscribe({ (event) in
-            		switch event {
-                case .completed:
-                    break
-                case .error(let err):
-                    error(err)
-                case .next(let characteristic):
-                    guard let data = characteristic.value else {
-                        let wrongDataError = NSError(domain: "AURA-BLE-Module.errors", code: 0, userInfo:
-                                            [NSLocalizedDescriptionKey: "AURA Device returned empty response"])
-                        error(wrongDataError)
-                        return
-                    }
-                    let proto = {{outputType}}.decode(data: data)
-                    completion(proto)
-                }
-            })
-
-            let disposableId = DisposableUUID.init(serviceUUID: UUID.init(uuidString: "{{serviceUUID}}")!,
-                                            characteristicUUID: UUID.init(uuidString: "{{characteristicUUID}}")!)
-            self?.bleWorker.disposableBag[disposableId] = disposable
-        }
-    }
-
     /// Send subscribe request of method {{methodName}} on device. Method can be used to multi subscribe feature
+    /// - parameter request: {{inputType}}
     /// - parameter completion: closure which calls when new data appears
     /// - parameter error: closure which calls when error occurs
     /// - returns: handler with with we can identify subscriber
-    public func {{methodName}}(completion: @escaping ({{outputType}}) -> Void,
-                                    error: @escaping (Error) -> Void) -> ServiceHandler<{{outputType}},Void> {
-        let handler = ServiceHandler.init(id: {{methodName}}Callbacks.count + 1, completionClosure: completion, errorClosure: error)
+    public func {{methodName}}(request: {{inputType}}, completion: @escaping ({{outputType}}) -> Void,
+                                 error: @escaping (Error) -> Void) -> ServiceHandler<{{outputType}},Void> {
+        let handler = ServiceHandler.init(id: {{methodName}}Callbacks.count + 1, completionClosure: completion,
+                 errorClosure: error, service: self, unsubscribeSelector: Selector(("unsubscribe{{upperCasedMethodName}}:")))
 
         self.accessQueue.async(flags: .barrier) {
             self.{{methodName}}Callbacks.append(handler)
@@ -155,20 +128,14 @@ public class {{serviceName}}: AbstractService {
     }
 
     /// Unsubscribe from receiving {{methodName}} updates
-    public func unsubscribe{{upperCasedMethodName}}() {
-        let disposableId = DisposableUUID.init(serviceUUID: UUID.init(uuidString: "{{serviceUUID}}")!,
-                                        characteristicUUID: UUID.init(uuidString: "{{characteristicUUID}}")!)
-        self.bleWorker.disconnectFrom(disposableUUID: disposableId)
-    }
-
-    /// Unsubscribe from receiving {{methodName}} updates
-    /// - parameter handler: handler which needs to be unsubscribed
-    public func unsubscribe{{upperCasedMethodName}}(handler: ServiceHandler<{{outputType}},Void>) {
+    /// - parameter obj: handler which needs to be unsubscribed
+    @objc private func unsubscribe{{upperCasedMethodName}}(_ obj: Any) {
+        let handler = obj as! ServiceHandler<{{outputType}},Void>
         var foundedHandlerIndex: Int?
 
         accessQueue.sync {
             for index in 0..<{{methodName}}Callbacks.count {
-            		let tempHandler = self.{{methodName}}Callbacks[index]
+                let tempHandler = self.{{methodName}}Callbacks[index]
 
                 if tempHandler.id == handler.id {
                 		foundedHandlerIndex = index
@@ -177,16 +144,18 @@ public class {{serviceName}}: AbstractService {
         }
 
         accessQueue.async(flags: .barrier) {
-        		if let index = foundedHandlerIndex {
+            if let index = foundedHandlerIndex {
                 self.{{methodName}}Callbacks.remove(at: index)
             }
     	}
 
         accessQueue.sync {
-        		if self.{{methodName}}Callbacks.count <= 0 {
-            		self.unsubscribe{{upperCasedMethodName}}()
-        		}
-        	}
+            if self.{{methodName}}Callbacks.count <= 0 {
+                let disposableId = DisposableUUID.init(serviceUUID: UUID.init(uuidString: "{{serviceUUID}}")!,
+                                                characteristicUUID: UUID.init(uuidString: "{{characteristicUUID}}")!)
+                self.bleWorker.disconnectFrom(disposableUUID: disposableId)
+            }
+        }
     }
     {{/typeSubscribe}}
 

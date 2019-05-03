@@ -9,6 +9,8 @@
 Swift PromiseKit service generator plugin generates PromiseKit wrappers to request methods over Bluettoth Low Energy and automatically encode/decode messages.
 
 ### How to use
+You need to add classes from `SwiftBleModule` to your project. These classes is high level classes ovr Bluetooth Low Energy interaction and parsing.
+
 Firstly you need to write proto file describing your service:
 
 ```
@@ -116,7 +118,7 @@ testService.readValue(request: GetValueRequest()).map { response in
 }
 
 // Write method example
-testService.writeValue(request: GetValueRequest()).map { response in
+testService.writeValue(request: SetValueRequest()).map { response in
     print(response)
 }.catch { error in
     print(error)
@@ -144,12 +146,11 @@ let handler2 = testService.getValueUpdates(completion: { response in
     print(error)
 })
 
-testService.unsubscribeGetValueUpdates(handler1) // physically not unsubscribed
-testService.unsubscribeGetValueUpdates(handler2) // now physically unsubscribed (because no more handlers)
+handler1.unsubscribe() // physically not unsubscribed
+handler2.unsubscribe() // now physically unsubscribed (because no more handlers)
 ```
 
 ### Dependencies
-BleWorker - see folder `SwiftBleModule`
 PromiseKit - `pod 'PromiseKit'`
 SwiftGRPC - `pod 'SwiftGRPC'` (see instructions how to setup it https://github.com/grpc/grpc-swift)
 RxBluetoothKit - `pod 'RxBluetoothKit'`
