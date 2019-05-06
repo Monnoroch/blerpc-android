@@ -2,7 +2,7 @@ import Foundation
 import SwiftProtobuf
 
 /// Structure which supports service callbacks and identification by *id*
-public struct ServiceHandler<P, R>: Equatable, Hashable {
+public struct BleOperationHandler<P, R>: Equatable, Hashable {
     
     // MARK: - Variables
     
@@ -16,20 +16,20 @@ public struct ServiceHandler<P, R>: Equatable, Hashable {
     let errorClosure: (Swift.Error) -> Void
     
     /// Service from where handler was created
-    internal let service: AbstractService
+    internal let service: BleAbstractService
     
     /// Unsubscribe selector
     internal let unsubscribeSelector: Selector
     
     // MARK: - Hashable Protocol support
 
-    /// Hash value to identify *ServiceHandler*
+    /// Hash value to identify *BleOperationHandler*
     public var hashValue: Int {
         return id
     }
     
     /// Custom equal operator
-    public static func == (lhs: ServiceHandler, rhs: ServiceHandler) -> Bool {
+    public static func == (lhs: BleOperationHandler, rhs: BleOperationHandler) -> Bool {
         return lhs.id == rhs.id
     }
     

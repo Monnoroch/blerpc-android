@@ -12,10 +12,10 @@
 		295AD144227C525B00E862BB /* BleModule.h in Headers */ = {isa = PBXBuildFile; fileRef = 295AD136227C525B00E862BB /* BleModule.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		295AD150227C532500E862BB /* ProtoParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 295AD14E227C532500E862BB /* ProtoParserTests.swift */; };
 		295AD158227C539A00E862BB /* BleWorker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 295AD152227C539900E862BB /* BleWorker.swift */; };
-		295AD159227C539A00E862BB /* DisposableUUID.swift in Sources */ = {isa = PBXBuildFile; fileRef = 295AD153227C539900E862BB /* DisposableUUID.swift */; };
-		295AD15A227C539A00E862BB /* ServiceHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 295AD154227C539900E862BB /* ServiceHandler.swift */; };
+		295AD159227C539A00E862BB /* BleOperationIdentifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 295AD153227C539900E862BB /* BleOperationIdentifier.swift */; };
+		295AD15A227C539A00E862BB /* BleOperationHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 295AD154227C539900E862BB /* BleOperationHandler.swift */; };
 		295AD15B227C539A00E862BB /* BleDevice.swift in Sources */ = {isa = PBXBuildFile; fileRef = 295AD155227C539900E862BB /* BleDevice.swift */; };
-		295AD15C227C539A00E862BB /* AbstractService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 295AD156227C539A00E862BB /* AbstractService.swift */; };
+		295AD15C227C539A00E862BB /* BleAbstractService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 295AD156227C539A00E862BB /* BleAbstractService.swift */; };
 		295AD15D227C539A00E862BB /* ProtoParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 295AD157227C539A00E862BB /* ProtoParser.swift */; };
 		8C8CA2462BCDEB9AF7AFF3BA /* Pods_BleModuleTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0F2C9DBB6B2E2509E79B3522 /* Pods_BleModuleTests.framework */; };
 /* End PBXBuildFile section */
@@ -41,10 +41,10 @@
 		295AD14D227C532500E862BB /* BleModuleTests-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "BleModuleTests-Bridging-Header.h"; sourceTree = "<group>"; };
 		295AD14E227C532500E862BB /* ProtoParserTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ProtoParserTests.swift; sourceTree = "<group>"; };
 		295AD152227C539900E862BB /* BleWorker.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BleWorker.swift; sourceTree = "<group>"; };
-		295AD153227C539900E862BB /* DisposableUUID.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DisposableUUID.swift; sourceTree = "<group>"; };
-		295AD154227C539900E862BB /* ServiceHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ServiceHandler.swift; sourceTree = "<group>"; };
+		295AD153227C539900E862BB /* BleOperationIdentifier.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BleOperationIdentifier.swift; sourceTree = "<group>"; };
+		295AD154227C539900E862BB /* BleOperationHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BleOperationHandler.swift; sourceTree = "<group>"; };
 		295AD155227C539900E862BB /* BleDevice.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BleDevice.swift; sourceTree = "<group>"; };
-		295AD156227C539A00E862BB /* AbstractService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AbstractService.swift; sourceTree = "<group>"; };
+		295AD156227C539A00E862BB /* BleAbstractService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BleAbstractService.swift; sourceTree = "<group>"; };
 		295AD157227C539A00E862BB /* ProtoParser.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ProtoParser.swift; sourceTree = "<group>"; };
 		91E8FE62978A8755B5B1F229 /* Pods_BleModule.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_BleModule.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		B9067CE4AC8ECA43E716EE5B /* Pods-BleModule.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-BleModule.release.xcconfig"; path = "Target Support Files/Pods-BleModule/Pods-BleModule.release.xcconfig"; sourceTree = "<group>"; };
@@ -96,12 +96,12 @@
 		295AD135227C525B00E862BB /* BleModule */ = {
 			isa = PBXGroup;
 			children = (
-				295AD156227C539A00E862BB /* AbstractService.swift */,
+				295AD156227C539A00E862BB /* BleAbstractService.swift */,
 				295AD155227C539900E862BB /* BleDevice.swift */,
 				295AD152227C539900E862BB /* BleWorker.swift */,
-				295AD153227C539900E862BB /* DisposableUUID.swift */,
+				295AD153227C539900E862BB /* BleOperationIdentifier.swift */,
+				295AD154227C539900E862BB /* BleOperationHandler.swift */,
 				295AD157227C539A00E862BB /* ProtoParser.swift */,
-				295AD154227C539900E862BB /* ServiceHandler.swift */,
 				295AD136227C525B00E862BB /* BleModule.h */,
 				295AD137227C525B00E862BB /* Info.plist */,
 			);
@@ -342,11 +342,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				295AD159227C539A00E862BB /* DisposableUUID.swift in Sources */,
-				295AD15C227C539A00E862BB /* AbstractService.swift in Sources */,
+				295AD159227C539A00E862BB /* BleOperationIdentifier.swift in Sources */,
+				295AD15C227C539A00E862BB /* BleAbstractService.swift in Sources */,
 				295AD15B227C539A00E862BB /* BleDevice.swift in Sources */,
 				295AD15D227C539A00E862BB /* ProtoParser.swift in Sources */,
-				295AD15A227C539A00E862BB /* ServiceHandler.swift in Sources */,
+				295AD15A227C539A00E862BB /* BleOperationHandler.swift in Sources */,
 				295AD158227C539A00E862BB /* BleWorker.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

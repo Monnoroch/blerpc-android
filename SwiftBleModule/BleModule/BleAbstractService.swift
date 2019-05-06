@@ -1,7 +1,7 @@
 import Foundation
 
-/// Abstract service calls to support injection of BleWorker
-public class AbstractService {
+/// Ble abstract service that supports injection of BleWorker
+public class BleAbstractService: NSObject {
     
     // MARK: - Variables
     
@@ -15,6 +15,11 @@ public class AbstractService {
     /// - returns: service with injected BleWorker
     public init (_ bleWorker: BleWorker) {
         self.bleWorker = bleWorker
+    }
+    
+    /// Block default init
+    private override init() {
+        fatalError()
     }
     
 }

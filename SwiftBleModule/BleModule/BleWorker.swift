@@ -4,33 +4,28 @@ import RxBluetoothKit
 import RxSwift
 import PromiseKit
 
-/// Main class to interact with BLE Device
+/// Main class to interact with Ble Device
 public class BleWorker {
     
     // MARK: - Variables
     
     /// Bluetooth Central Manager
-    internal let manager: CentralManager = CentralManager(queue: .main)
+    private let manager: CentralManager = CentralManager(queue: .main)
     
     /// Disposable which holds current device connection
-    internal var disposable: Disposable? = nil
+    private var deviceConnection: Disposable? = nil
     
     /// Disposable which holds current device disconnection observing
     private var diconnectionDisposable: Disposable? = nil
 
     /// Data structure which holds key value for characteristic and it's disposable. Used to stop receiving updates from characteristics
-    internal var disposableBag: [DisposableUUID: Disposable?] = [:]
-    
-    /// Error for wrong characteristic connection
-    internal let wrongCharacteristicError: NSError = NSError(domain: "AURA-BLE-Module.errors", code: 0, userInfo: [NSLocalizedDescriptionKey: "To use this functionality please update AURA Band firmware and try again"])
-    internal let wrongDataError = NSError(domain: "AURA-BLE-Module.errors", code: 0, userInfo:
-        [NSLocalizedDescriptionKey: "AURA Device returned empty response"])
+    internal var disposableBag: [BleOperationIdentifier: Disposable?] = [:]
 
     /// Connected peripheral
     internal var connectedPeripheral: Peripheral?
     
     /// Check if iOS Device connected to peripheral or not
-    public var isConnected: Bool {
+    public var isPeripheralConnected: Bool {
         get {
             return connectedPeripheral != nil
         }
@@ -44,16 +39,14 @@ public class BleWorker {
     /// Start scanning for peripherals
     /// - parameter complition: callback when new device was founded
     public func scanPeripherals(complition: @escaping (BleDevice) -> Void) {
-        disposable = manager.scanForPeripherals(withServices: nil).subscribe(onNext: { peripheral in
-            if self.isAuraDevice(deviceName: peripheral.peripheral.name) {
-                complition(BleDevice.init(peripheral: peripheral))
-            }
+        deviceConnection = manager.scanForPeripherals(withServices: nil).subscribe(onNext: { peripheral in
+            complition(BleDevice.init(peripheral: peripheral))
         })
     }
     
     /// Stop scan peripherals
     public func stopScanPeripherals() {
-        disposable?.dispose()
+        deviceConnection?.dispose()
     }
     
     /// Connecting to peripheral with *UUID*
@@ -80,7 +73,7 @@ public class BleWorker {
     public func connectToPeripheral(peripheral: BleDevice) -> Promise<Void> {
         return Promise { seal in
             self.stopScanPeripherals()
-            self.disposable = manager.establishConnection(peripheral.peripheral).subscribe(onNext: { _ in
+            self.deviceConnection = manager.establishConnection(peripheral.peripheral).subscribe(onNext: { _ in
                 self.connectedPeripheral = peripheral.peripheral
                 self.startObservingDisconnection()
                 seal.fulfill(())
@@ -97,7 +90,7 @@ public class BleWorker {
         }
         
         diconnectionDisposable?.dispose()
-        disposable?.dispose()
+        deviceConnection?.dispose()
         connectedPeripheral = nil
     }
     
@@ -109,25 +102,27 @@ public class BleWorker {
     
     /// Check if current device has a service
     /// - parameter serviceUUID: *UUID* of a service
-    public func isHasService(serviceUUID: String) -> Promise<Void> {
+    public func isHasService(serviceUUID: String) -> Promise<Bool> {
         return Promise { seal in
             _ = self.connectedPeripheral?.discoverServices([CBUUID.init(string: serviceUUID)]).subscribe(onSuccess: { services in
                 if services.count > 0 {
-                    seal.fulfill(())
+                    seal.fulfill(true)
                 } else {
-                    seal.reject(self.wrongCharacteristicError)
+                    seal.fulfill(false)
                 }
-            }, onError: { (error) in
-                seal.reject(self.wrongCharacteristicError)
+            }, onError: { error in
+                seal.reject(error)
             })
         }
     }
+    
+    // MARK: - Internal methods
     
     /// Discovers characteristic
     /// - parameter serviceUUID: *UUID* of a service
     /// - parameter characteristicUUID: *UUID* of a characteristic
     /// - returns: characteristic
-    public func discoverCharacteristic(serviceUUID: String, characteristicUUID: String) -> Promise<Characteristic> {
+    internal func discoverCharacteristic(serviceUUID: String, characteristicUUID: String) -> Promise<Characteristic> {
         return Promise { seal in
             _ = self.connectedPeripheral?.discoverServices([CBUUID.init(string: serviceUUID)]).asObservable()
                 .flatMap {
@@ -137,7 +132,8 @@ public class BleWorker {
                     if characteristics.count > 0 {
                         seal.fulfill(characteristics[0])
                     } else {
-                        seal.reject(self.wrongCharacteristicError)
+                        let wrongCharacteristicError: NSError = NSError(domain: "ble-module.errors", code: 0, userInfo: [NSLocalizedDescriptionKey: "Cant's find characteristic"])
+                        seal.reject(wrongCharacteristicError)
                     }
                 }, onError: { err in
                     seal.reject(err)
@@ -145,35 +141,12 @@ public class BleWorker {
         }
     }
     
-    /// Method for disconnecting from characteristic. Used to stop receiving updates from characteristics
-    /// - parameter serviceUUID: *UUID* of a service
-    /// - parameter characteristicUUID: *UUID* of a characteristic
-    internal func disconnectFrom(serviceUUID: String, characteristicUUID: String) {
-        let disposableId = DisposableUUID.init(serviceUUID: UUID.init(uuidString: serviceUUID)!, characteristicUUID: UUID.init(uuidString: characteristicUUID)!)
-        let savedDisposable = self.disposableBag[disposableId]
-        savedDisposable??.dispose()
-        self.disposableBag[disposableId] = nil
-    }
-    
     /// Method for disconnecting from characteristic. Based on *DisposableUUID*
-    /// - parameter disposableUUID: *DisposableUUID* which contains *serviceUUID* and *characteristicUUID*
-    internal func disconnectFrom(disposableUUID: DisposableUUID) {
-        let savedDisposable = self.disposableBag[disposableUUID]
+    /// - parameter identifier: *OperationIdentifier* which contains *serviceUUID* and *characteristicUUID*
+    internal func disconnectFrom(_ identifier: BleOperationIdentifier) {
+        let savedDisposable = self.disposableBag[identifier]
         savedDisposable??.dispose()
-        self.disposableBag[disposableUUID] = nil
-    }
-    
-    /// Stop scan peripherals
-    /// - parameter deviceName: *optional* device name
-    /// - returns: if *deviceName* has *aura* in name
-    internal func isAuraDevice(deviceName: String?) -> Bool {
-        if let deviceNameG = deviceName {
-            if deviceNameG.lowercased().contains("aura") {
-                return true
-            }
-        }
-        
-        return false
+        self.disposableBag[identifier] = nil
     }
     
     // MARK: - Private methods
@@ -181,7 +154,6 @@ public class BleWorker {
     /// Method used to start detecting disconnection from connected peripheral
     private func startObservingDisconnection() {
         diconnectionDisposable = manager.observeDisconnect().subscribe(onNext: { (peripheral, disconnectReason) in
-            print("DISCONNECT REASON = \(disconnectReason)")
             self.disconnectFromPeripheral()
         }, onError: { (error) in
             self.disconnectFromPeripheral()

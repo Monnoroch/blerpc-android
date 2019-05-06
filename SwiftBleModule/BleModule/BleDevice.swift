@@ -1,7 +1,7 @@
 import Foundation
 import RxBluetoothKit
 
-/// High Level BLE Device
+/// High Level Ble Device
 public class BleDevice {
 
     // MARK: - Variables
@@ -10,10 +10,10 @@ public class BleDevice {
     public let identifier: String
     
     /// Device name
-    public let name: String
+    public let name: String?
     
     /// Internal Device peripheral description
-    internal let peripheral: Peripheral
+    public let peripheral: Peripheral
 
     // MARK: - Initializers
     
@@ -21,9 +21,14 @@ public class BleDevice {
     /// - parameter peripheral: peripheral received from scan
     /// - returns: BleDevice
     public init(peripheral: ScannedPeripheral) {
-        self.name = peripheral.peripheral.name ?? "Unknown Device"
+        self.name = peripheral.peripheral.name
         self.identifier = peripheral.peripheral.identifier.uuidString
         self.peripheral = peripheral.peripheral
     }
 
+    /// Block default init
+    private init() {
+        fatalError()
+    }
+    
 }
