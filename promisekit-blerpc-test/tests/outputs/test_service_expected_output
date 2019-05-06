@@ -5,7 +5,7 @@ import RxSwift
 import PromiseKit
 
 /// TestService service
-public class TestService: AbstractService {
+public class TestService: BleAbstractService {
 
     /// UUID of service
     public static let TestServiceUUID: String = "A0000000-0000-0000-0000-000000000000"
@@ -21,13 +21,18 @@ public class TestService: AbstractService {
             _ = self.bleWorker.discoverCharacteristic(serviceUUID: "A0000000-0000-0000-0000-000000000000", characteristicUUID: "A0000001-0000-0000-0000-000000000000").map { characteristic in
                 _ = characteristic.readValue().subscribe(onSuccess: { (characteristic) in
                     guard let data = characteristic.value else {
-                        let wrongDataError = NSError(domain: "AURA-BLE-Module.errors", code: 0, userInfo:
-                                    [NSLocalizedDescriptionKey: "AURA Device returned empty response"])
+                        let wrongDataError = NSError(domain: "ble-module.errors", code: 0, userInfo:
+                                            [NSLocalizedDescriptionKey: "Device returned empty response"])
                         seal.reject(wrongDataError)
                         return
                     }
-                    let proto = My_Device_GetValueResponse.decode(data: data)
-                    seal.fulfill(proto)
+
+                    do {
+                        let proto = try My_Device_GetValueResponse.decode(data: data)
+                        seal.fulfill(proto)
+                    } catch {
+                        seal.reject(error)
+                    }
                 }, onError: { (error) in
                     seal.reject(error)
                 })
@@ -44,23 +49,32 @@ public class TestService: AbstractService {
     /// - warning: rejects when there is error in sending data
     public func writeValue(request: My_Device_SetValueRequest) -> Promise<My_Device_SetValueResponse> {
         return Promise { seal in
-            let data = My_Device_SetValueRequest.encode(proto: request)
-            _ = self.bleWorker.discoverCharacteristic(serviceUUID: "A0000000-0000-0000-0000-000000000000", characteristicUUID: "A0000001-0000-0000-0000-000000000000").map { characteristic in
-                _ = characteristic.writeValue(data, type: .withResponse).subscribe { event in
-                    switch event {
-                    case .success:
-                        guard let data = characteristic.value else {
-                            let wrongDataError = NSError(domain: "AURA-BLE-Module.errors", code: 0, userInfo:
-                                        [NSLocalizedDescriptionKey: "AURA Device returned empty response"])
-                            seal.reject(wrongDataError)
-                            return
+            do {
+                let data = try My_Device_SetValueRequest.encode(proto: request)
+                _ = self.bleWorker.discoverCharacteristic(serviceUUID: "A0000000-0000-0000-0000-000000000000", characteristicUUID: "A0000001-0000-0000-0000-000000000000").map { characteristic in
+                    _ = characteristic.writeValue(data, type: .withResponse).subscribe { event in
+                        switch event {
+                        case .success:
+                            guard let data = characteristic.value else {
+                                let wrongDataError = NSError(domain: "ble-module.errors", code: 0, userInfo:
+                                                    [NSLocalizedDescriptionKey: "Device returned empty response"])
+                                seal.reject(wrongDataError)
+                                return
+                            }
+
+                            do {
+                                let proto = try My_Device_SetValueResponse.decode(data: data)
+                                seal.fulfill(proto)
+                            } catch {
+                                seal.reject(error)
+                            }
+                        case .error(let error):
+                            seal.reject(error)
                         }
-                        let proto = My_Device_SetValueResponse.decode(data: data)
-                        seal.fulfill(proto)
-                    case .error(let error):
-                        seal.reject(error)
                     }
                 }
+            } catch {
+                seal.reject(error)
             }
         }
     }
@@ -68,44 +82,17 @@ public class TestService: AbstractService {
 
 
 
-    private var getValueUpdatesCallbacks: [ServiceHandler<My_Device_GetValueResponse,Void>] = []
-
-    /// Send subscribe request of method getValueUpdates on device
-    /// - parameter completion: closure which calls when new data appears
-    /// - parameter error: closure which calls when error occurs
-    public func getValueUpdates(completion: @escaping (My_Device_GetValueResponse) -> Void, error: @escaping (Error) -> Void) {
-        _ = self.bleWorker.discoverCharacteristic(serviceUUID: "A0000000-0000-0000-0000-000000000000", characteristicUUID: "A0000001-0000-0000-0000-000000000000").map { [weak self] characteristic in
-            let disposable = characteristic.observeValueUpdateAndSetNotification().subscribe({ (event) in
-            		switch event {
-                case .completed:
-                    break
-                case .error(let err):
-                    error(err)
-                case .next(let characteristic):
-                    guard let data = characteristic.value else {
-                        let wrongDataError = NSError(domain: "AURA-BLE-Module.errors", code: 0, userInfo:
-                                            [NSLocalizedDescriptionKey: "AURA Device returned empty response"])
-                        error(wrongDataError)
-                        return
-                    }
-                    let proto = My_Device_GetValueResponse.decode(data: data)
-                    completion(proto)
-                }
-            })
-
-            let disposableId = DisposableUUID.init(serviceUUID: UUID.init(uuidString: "A0000000-0000-0000-0000-000000000000")!,
-                                            characteristicUUID: UUID.init(uuidString: "A0000001-0000-0000-0000-000000000000")!)
-            self?.bleWorker.disposableBag[disposableId] = disposable
-        }
-    }
+    private var getValueUpdatesCallbacks: [BleOperationHandler<My_Device_GetValueResponse,Void>] = []
 
     /// Send subscribe request of method getValueUpdates on device. Method can be used to multi subscribe feature
+    /// - parameter request: My_Device_GetValueRequest
     /// - parameter completion: closure which calls when new data appears
     /// - parameter error: closure which calls when error occurs
     /// - returns: handler with with we can identify subscriber
-    public func getValueUpdates(completion: @escaping (My_Device_GetValueResponse) -> Void,
-                                    error: @escaping (Error) -> Void) -> ServiceHandler<My_Device_GetValueResponse,Void> {
-        let handler = ServiceHandler.init(id: getValueUpdatesCallbacks.count + 1, completionClosure: completion, errorClosure: error)
+    public func getValueUpdates(request: My_Device_GetValueRequest, completion: @escaping (My_Device_GetValueResponse) -> Void,
+                                 error: @escaping (Error) -> Void) -> BleOperationHandler<My_Device_GetValueResponse,Void> {
+        let handler = BleOperationHandler.init(id: getValueUpdatesCallbacks.count + 1, completionClosure: completion,
+                 errorClosure: error, service: self, unsubscribeSelector: Selector(("unsubscribeGetValueUpdates:")))
 
         self.accessQueue.async(flags: .barrier) {
             self.getValueUpdatesCallbacks.append(handler)
@@ -125,27 +112,33 @@ public class TestService: AbstractService {
                             case .next(let characteristic):
                                 guard let data = characteristic.value else {
                                     guard let selfG = self else { return }
-                                    
-                                    let wrongDataError = NSError(domain: "AURA-BLE-Module.errors", code: 0, userInfo:
-                                        [NSLocalizedDescriptionKey: "AURA Device returned empty response"])
+
+                                    let wrongDataError = NSError(domain: "ble-module.errors", code: 0, userInfo:
+                                                        [NSLocalizedDescriptionKey: "Device returned empty response"])
                                     for errorCallback in selfG.getValueUpdatesCallbacks {
                                         errorCallback.errorClosure(wrongDataError)
                                     }
                                     return
                                 }
                                 guard let selfG = self else { return }
-                                
-                    			let proto = My_Device_GetValueResponse.decode(data: data)
-                                
-                                for completionCallback in selfG.getValueUpdatesCallbacks {
-                                    completionCallback.completionClosure(proto)
+
+                                do {
+                                    let proto = try My_Device_GetValueResponse.decode(data: data)
+
+                                    for completionCallback in selfG.getValueUpdatesCallbacks {
+                                        completionCallback.completionClosure(proto)
+                                    }
+                                } catch {
+                                    for errorCallback in selfG.getValueUpdatesCallbacks {
+                                        errorCallback.errorClosure(error)
+                                    }
                                 }
                             }
                         })
                         
-            				let disposableId = DisposableUUID.init(serviceUUID: UUID.init(uuidString: "A0000000-0000-0000-0000-000000000000")!,
-                                            			characteristicUUID: UUID.init(uuidString: "A0000001-0000-0000-0000-000000000000")!)
-            				self?.bleWorker.disposableBag[disposableId] = disposable
+                        let disposableId = BleOperationIdentifier.init(serviceUUID: UUID.init(uuidString: "A0000000-0000-0000-0000-000000000000")!,
+                                            			        characteristicUUID: UUID.init(uuidString: "A0000001-0000-0000-0000-000000000000")!)
+                        self?.bleWorker.disposableBag[disposableId] = disposable
                     }
                 }
             }
@@ -155,20 +148,14 @@ public class TestService: AbstractService {
     }
 
     /// Unsubscribe from receiving getValueUpdates updates
-    public func unsubscribeGetValueUpdates() {
-        let disposableId = DisposableUUID.init(serviceUUID: UUID.init(uuidString: "A0000000-0000-0000-0000-000000000000")!,
-                                        characteristicUUID: UUID.init(uuidString: "A0000001-0000-0000-0000-000000000000")!)
-        self.bleWorker.disconnectFrom(disposableUUID: disposableId)
-    }
-
-    /// Unsubscribe from receiving getValueUpdates updates
-    /// - parameter handler: handler which needs to be unsubscribed
-    public func unsubscribeGetValueUpdates(handler: ServiceHandler<My_Device_GetValueResponse,Void>) {
+    /// - parameter obj: handler which needs to be unsubscribed
+    @objc private func unsubscribeGetValueUpdates(_ obj: Any) {
+        let handler = obj as! BleOperationHandler<My_Device_GetValueResponse,Void>
         var foundedHandlerIndex: Int?
 
         accessQueue.sync {
             for index in 0..<getValueUpdatesCallbacks.count {
-            		let tempHandler = self.getValueUpdatesCallbacks[index]
+                let tempHandler = self.getValueUpdatesCallbacks[index]
 
                 if tempHandler.id == handler.id {
                 		foundedHandlerIndex = index
@@ -177,16 +164,18 @@ public class TestService: AbstractService {
         }
 
         accessQueue.async(flags: .barrier) {
-        		if let index = foundedHandlerIndex {
+            if let index = foundedHandlerIndex {
                 self.getValueUpdatesCallbacks.remove(at: index)
             }
     	}
 
         accessQueue.sync {
-        		if self.getValueUpdatesCallbacks.count <= 0 {
-            		self.unsubscribeGetValueUpdates()
-        		}
-        	}
+            if self.getValueUpdatesCallbacks.count <= 0 {
+                let disposableId = BleOperationIdentifier.init(serviceUUID: UUID.init(uuidString: "A0000000-0000-0000-0000-000000000000")!,
+                                                characteristicUUID: UUID.init(uuidString: "A0000001-0000-0000-0000-000000000000")!)
+                self.bleWorker.disconnectFrom(disposableId)
+            }
+        }
     }
 
 }
