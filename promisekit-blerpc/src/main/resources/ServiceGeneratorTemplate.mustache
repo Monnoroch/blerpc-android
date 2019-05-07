@@ -10,8 +10,6 @@ public class {{serviceName}}: BleAbstractService {
     /// UUID of service
     public static let {{serviceName}}UUID: String = "{{serviceUUID}}"
 
-    private let accessQueue = DispatchQueue(label: "{{serviceName}}Queue", attributes: .concurrent)
-
 {{#methods}}
     {{#typeRead}}
     /// Send read request of method {{methodName}} on device
@@ -82,66 +80,43 @@ public class {{serviceName}}: BleAbstractService {
     {{/typeWrite}}
 
     {{#typeSubscribe}}
-    private var {{methodName}}Callbacks: [BleOperationHandler<{{outputType}},Void>] = []
-
-    /// Send subscribe request of method {{methodName}} on device. Method can be used to multi subscribe feature
+    /// Send subscribe request of method {{methodName}} on device
     /// - parameter request: {{inputType}}
     /// - parameter completion: closure which calls when new data appears
-    /// - parameter error: closure which calls when error occurs
-    /// - returns: handler with with we can identify subscriber
+    /// - parameter onError: closure which calls when error occurs
+    /// - returns: handler with with we can identify operation
     public func {{methodName}}(request: {{inputType}}, completion: @escaping ({{outputType}}) -> Void,
-                                 error: @escaping (Error) -> Void) -> BleOperationHandler<{{outputType}},Void> {
-        let handler = BleOperationHandler.init(id: {{methodName}}Callbacks.count + 1, completionClosure: completion,
-                 errorClosure: error, service: self, unsubscribeSelector: Selector(("unsubscribe{{upperCasedMethodName}}:")))
+                                 onError: @escaping (Error) -> Void) -> BleOperationHandler {
+        let handler = BleOperationHandler.init(id: self.bleWorker.generateId(), service: self, selector: Selector(("unsubscribe{{upperCasedMethodName}}:")))
 
-        self.accessQueue.async(flags: .barrier) {
-            self.{{methodName}}Callbacks.append(handler)
-            
-            if self.{{methodName}}Callbacks.count <= 1 {
-                self.accessQueue.async {
-                    _ = self.bleWorker.discoverCharacteristic(serviceUUID: "{{serviceUUID}}", characteristicUUID: "{{characteristicUUID}}").map { [weak self] characteristic in
-                        let disposable = characteristic.observeValueUpdateAndSetNotification().subscribe({ (event) in
-                            switch event {
-                            case .completed:
-                                break
-                            case .error(let err):
-                                guard let selfG = self else { return }
-                                for errorCallback in selfG.{{methodName}}Callbacks {
-                                    errorCallback.errorClosure(err)
-                                }
-                            case .next(let characteristic):
-                                guard let data = characteristic.value else {
-                                    guard let selfG = self else { return }
+        _ = self.bleWorker.discoverCharacteristic(serviceUUID: "{{serviceUUID}}", characteristicUUID: "{{characteristicUUID}}").map { [weak self] characteristic in
+            let disposable = characteristic.observeValueUpdateAndSetNotification().subscribe({ (event) in
+                switch event {
+                case .completed:
+                    break
+                case .error(let error):
+                    onError(error)
+                case .next(let characteristic):
+                    guard let data = characteristic.value else {
+                        let wrongDataError = NSError(domain: "ble-module.errors", code: 0, userInfo:
+                                            [NSLocalizedDescriptionKey: "Device returned empty response"])
+                        onError(wrongDataError)
+                        return
+                    }
 
-                                    let wrongDataError = NSError(domain: "ble-module.errors", code: 0, userInfo:
-                                                        [NSLocalizedDescriptionKey: "Device returned empty response"])
-                                    for errorCallback in selfG.{{methodName}}Callbacks {
-                                        errorCallback.errorClosure(wrongDataError)
-                                    }
-                                    return
-                                }
-                                guard let selfG = self else { return }
-
-                                do {
-                                    let proto = try {{outputType}}.decode(data: data)
-
-                                    for completionCallback in selfG.{{methodName}}Callbacks {
-                                        completionCallback.completionClosure(proto)
-                                    }
-                                } catch {
-                                    for errorCallback in selfG.{{methodName}}Callbacks {
-                                        errorCallback.errorClosure(error)
-                                    }
-                                }
-                            }
-                        })
-                        
-                        let disposableId = BleOperationIdentifier.init(serviceUUID: UUID.init(uuidString: "{{serviceUUID}}")!,
-                                            			        characteristicUUID: UUID.init(uuidString: "{{characteristicUUID}}")!)
-                        self?.bleWorker.disposableBag[disposableId] = disposable
+                    do {
+                        let proto = try {{outputType}}.decode(data: data)
+                        completion(proto)
+                    } catch {
+                        onError(error)
                     }
                 }
-            }
+            })
+                        
+            let disposableId = BleOperationIdentifier.init(serviceUUID: UUID.init(uuidString: "{{serviceUUID}}")!,
+                                                    characteristicUUID: UUID.init(uuidString: "{{characteristicUUID}}")!,
+                                                                    id: handler.id)
+            self?.bleWorker.disposableBag[disposableId] = disposable
         }
 
         return handler
@@ -150,32 +125,11 @@ public class {{serviceName}}: BleAbstractService {
     /// Unsubscribe from receiving {{methodName}} updates
     /// - parameter obj: handler which needs to be unsubscribed
     @objc private func unsubscribe{{upperCasedMethodName}}(_ obj: Any) {
-        let handler = obj as! BleOperationHandler<{{outputType}},Void>
-        var foundedHandlerIndex: Int?
-
-        accessQueue.sync {
-            for index in 0..<{{methodName}}Callbacks.count {
-                let tempHandler = self.{{methodName}}Callbacks[index]
-
-                if tempHandler.id == handler.id {
-                		foundedHandlerIndex = index
-                }
-            }
-        }
-
-        accessQueue.async(flags: .barrier) {
-            if let index = foundedHandlerIndex {
-                self.{{methodName}}Callbacks.remove(at: index)
-            }
-    	}
-
-        accessQueue.sync {
-            if self.{{methodName}}Callbacks.count <= 0 {
-                let disposableId = BleOperationIdentifier.init(serviceUUID: UUID.init(uuidString: "{{serviceUUID}}")!,
-                                                characteristicUUID: UUID.init(uuidString: "{{characteristicUUID}}")!)
-                self.bleWorker.disconnectFrom(disposableId)
-            }
-        }
+        let handler = obj as! BleOperationHandler
+        let operation = BleOperationIdentifier.init(serviceUUID: UUID.init(uuidString: "{{serviceUUID}}")!,
+                                                characteristicUUID: UUID.init(uuidString: "{{characteristicUUID}}")!,
+                                                                id: handler.id)
+        self.bleWorker.disconnect(from: operation)
     }
     {{/typeSubscribe}}
 

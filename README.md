@@ -109,6 +109,7 @@ And finally you can call your service methods:
 ```
 let bleWorker: BleWorker = BleWorker()
 let testService: TestService = TestService.init(bleWorker)
+let testService2: TestService = TestService.init(bleWorker)
 
 // Read method example
 testService.readValue(request: GetValueRequest()).map { response in
@@ -127,18 +128,27 @@ testService.writeValue(request: SetValueRequest()).map { response in
 // Subscribe method example
 let handler1 = testService.getValueUpdates(request: GetValueRequest(), completion: { response in
     print(response)
-}, error: { error in
+}, onError: { error in
     print(error)
 })
 
 let handler2 = testService.getValueUpdates(request: GetValueRequest(), completion: { response in
     print(response)
-}, error: { error in
+}, onError: { error in
     print(error)
 })
 
-handler1.unsubscribe() // physically not unsubscribed
-handler2.unsubscribe() // now physically unsubscribed (because no more handlers)
+// You can even subscribe to the same method on different service
+let handler3 = testService2.getValueUpdates(request: GetValueRequest(), completion: { response in
+    print(response)
+}, onError: { error in
+    print(error)
+})
+
+handler1.cancel() // physically not unsubscribed
+handler3.cancel() // physically not unsubscribed
+handler2.cancel() // now physically unsubscribed (because no more handlers)
+
 ```
 
 ### Dependencies

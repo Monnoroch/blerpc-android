@@ -24,6 +24,12 @@ public class BleWorker {
     /// Connected peripheral
     internal var connectedPeripheral: Peripheral?
     
+    /// Queue to synchronize operations
+    private let accessQueue = DispatchQueue(label: "BleWorkerQueue", attributes: .concurrent)
+    
+    /// Global operation id, on 64 bit systems Int64
+    private var internalOperationId: Int = 0
+    
     /// Check if iOS Device connected to peripheral or not
     public var isPeripheralConnected: Bool {
         get {
@@ -124,29 +130,49 @@ public class BleWorker {
     /// - returns: characteristic
     internal func discoverCharacteristic(serviceUUID: String, characteristicUUID: String) -> Promise<Characteristic> {
         return Promise { seal in
-            _ = self.connectedPeripheral?.discoverServices([CBUUID.init(string: serviceUUID)]).asObservable()
-                .flatMap {
-                    Observable.from($0)
+            _ = self.connectedPeripheral?.discoverServices([CBUUID.init(string: serviceUUID)]).asObservable().flatMap { elem in
+                Observable.from(elem)
+            }.flatMap { elem in
+                elem.discoverCharacteristics([CBUUID.init(string: characteristicUUID)])}.subscribe(onNext: { (characteristics) in
+                if characteristics.count > 0 {
+                    seal.fulfill(characteristics[0])
+                } else {
+                    let wrongCharacteristicError: NSError = NSError(domain: "ble-module.errors", code: 0, userInfo: [NSLocalizedDescriptionKey: "Cant's find characteristic"])
+                    seal.reject(wrongCharacteristicError)
                 }
-                .flatMap { $0.discoverCharacteristics([CBUUID.init(string: characteristicUUID)])}.subscribe(onNext: { (characteristics) in
-                    if characteristics.count > 0 {
-                        seal.fulfill(characteristics[0])
-                    } else {
-                        let wrongCharacteristicError: NSError = NSError(domain: "ble-module.errors", code: 0, userInfo: [NSLocalizedDescriptionKey: "Cant's find characteristic"])
-                        seal.reject(wrongCharacteristicError)
-                    }
-                }, onError: { err in
-                    seal.reject(err)
-                })
+            }, onError: { err in
+                seal.reject(err)
+            })
         }
     }
     
-    /// Method for disconnecting from characteristic. Based on *DisposableUUID*
-    /// - parameter identifier: *OperationIdentifier* which contains *serviceUUID* and *characteristicUUID*
-    internal func disconnectFrom(_ identifier: BleOperationIdentifier) {
-        let savedDisposable = self.disposableBag[identifier]
-        savedDisposable??.dispose()
-        self.disposableBag[identifier] = nil
+    /// Method for disconnecting from characteristic, synchronized
+    /// - parameter identifier: *BleOperationIdentifier* which contains *serviceUUID* and *characteristicUUID*
+    internal func disconnect(from: BleOperationIdentifier) {
+        accessQueue.sync {
+            let savedDisposable = self.disposableBag[from]
+            savedDisposable??.dispose()
+            self.disposableBag[from] = nil
+        }
+    }
+    
+    /// Adds operation to *disposableBag*, synchronized
+    /// - parameter operation: ble operation
+    /// - parameter disposable: disposable for this operaiton
+    internal func add(operation: BleOperationIdentifier, disposable: Disposable) {
+        accessQueue.sync {
+            self.disposableBag[operation] = disposable
+        }
+    }
+    
+    /// Generates operation id, synchronized
+    /// - returns: generated id
+    internal func generateId() -> Int {
+        accessQueue.sync {
+            internalOperationId += 1
+        }
+        
+        return internalOperationId
     }
     
     // MARK: - Private methods

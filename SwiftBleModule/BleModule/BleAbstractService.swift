@@ -19,7 +19,7 @@ public class BleAbstractService: NSObject {
     
     /// Block default init
     private override init() {
-        fatalError()
+        fatalError("Please use init(bleWorker:) instead.")
     }
     
 }

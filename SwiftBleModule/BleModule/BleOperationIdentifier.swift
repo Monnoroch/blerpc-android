@@ -11,6 +11,9 @@ public struct BleOperationIdentifier: Hashable {
     /// UUID of characteristic
     let characteristicUUID: UUID
     
+    /// Operation id
+    let id: Int
+    
     // MARK: - Hashable Protocol support
     
     /// Hash value to identify *BleOperationIdentifier*
@@ -24,7 +27,7 @@ public struct BleOperationIdentifier: Hashable {
     }
     
     private func toString() -> String {
-        return "\(serviceUUID.uuidString) - \(characteristicUUID.uuidString)"
+        return "\(serviceUUID.uuidString) - \(characteristicUUID.uuidString) - \(id)"
     }
     
 }

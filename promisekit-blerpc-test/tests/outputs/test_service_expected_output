@@ -4,54 +4,76 @@ import CoreBluetooth
 import RxSwift
 import PromiseKit
 
-/// TestService service
-public class TestService: BleAbstractService {
+/// PedometerService service
+public class PedometerService: BleAbstractService {
 
     /// UUID of service
-    public static let TestServiceUUID: String = "A0000000-0000-0000-0000-000000000000"
+    public static let PedometerServiceUUID: String = "F000BB90-0451-4000-B000-000000000000"
 
-    private let accessQueue = DispatchQueue(label: "TestServiceQueue", attributes: .concurrent)
 
-    /// Send read request of method readValue on device
-    /// - parameter request: My_Device_GetValueRequest
-    /// - returns: My_Device_GetValueResponse if success
-    /// - warning: rejects when there is error in sending data
-    public func readValue(request: My_Device_GetValueRequest) -> Promise<My_Device_GetValueResponse> {
-        return Promise { seal in
-            _ = self.bleWorker.discoverCharacteristic(serviceUUID: "A0000000-0000-0000-0000-000000000000", characteristicUUID: "A0000001-0000-0000-0000-000000000000").map { characteristic in
-                _ = characteristic.readValue().subscribe(onSuccess: { (characteristic) in
+
+    /// Send subscribe request of method getStepsUpdates on device
+    /// - parameter request: Aura_Device_GetStepsRequest
+    /// - parameter completion: closure which calls when new data appears
+    /// - parameter onError: closure which calls when error occurs
+    /// - returns: handler with with we can identify operation
+    public func getStepsUpdates(request: Aura_Device_GetStepsRequest, completion: @escaping (Aura_Device_GetStepsResponse) -> Void,
+                                 onError: @escaping (Error) -> Void) -> BleOperationHandler {
+        let handler = BleOperationHandler.init(id: self.bleWorker.generateId(), service: self, selector: Selector(("unsubscribeGetStepsUpdates:")))
+
+        _ = self.bleWorker.discoverCharacteristic(serviceUUID: "F000BB90-0451-4000-B000-000000000000", characteristicUUID: "F000BB91-0451-4000-B000-000000000000").map { [weak self] characteristic in
+            let disposable = characteristic.observeValueUpdateAndSetNotification().subscribe({ (event) in
+                switch event {
+                case .completed:
+                    break
+                case .error(let error):
+                    onError(error)
+                case .next(let characteristic):
                     guard let data = characteristic.value else {
                         let wrongDataError = NSError(domain: "ble-module.errors", code: 0, userInfo:
                                             [NSLocalizedDescriptionKey: "Device returned empty response"])
-                        seal.reject(wrongDataError)
+                        onError(wrongDataError)
                         return
                     }
 
                     do {
-                        let proto = try My_Device_GetValueResponse.decode(data: data)
-                        seal.fulfill(proto)
+                        let proto = try Aura_Device_GetStepsResponse.decode(data: data)
+                        completion(proto)
                     } catch {
-                        seal.reject(error)
+                        onError(error)
                     }
-                }, onError: { (error) in
-                    seal.reject(error)
-                })
-            }
+                }
+            })
+                        
+            let disposableId = BleOperationIdentifier.init(serviceUUID: UUID.init(uuidString: "F000BB90-0451-4000-B000-000000000000")!,
+                                                    characteristicUUID: UUID.init(uuidString: "F000BB91-0451-4000-B000-000000000000")!,
+                                                                    id: handler.id)
+            self?.bleWorker.disposableBag[disposableId] = disposable
         }
+
+        return handler
+    }
+
+    /// Unsubscribe from receiving getStepsUpdates updates
+    /// - parameter obj: handler which needs to be unsubscribed
+    @objc private func unsubscribeGetStepsUpdates(_ obj: Any) {
+        let handler = obj as! BleOperationHandler
+        let operation = BleOperationIdentifier.init(serviceUUID: UUID.init(uuidString: "F000BB90-0451-4000-B000-000000000000")!,
+                                                characteristicUUID: UUID.init(uuidString: "F000BB91-0451-4000-B000-000000000000")!,
+                                                                id: handler.id)
+        self.bleWorker.disconnect(from: operation)
     }
 
 
-
-
-    /// Send write request of method writeValue on device
-    /// - parameter request: My_Device_SetValueRequest
-    /// - returns: My_Device_SetValueResponse if success
+    /// Send write request of method setMeasurementPeriod on device
+    /// - parameter request: Aura_Device_SetPedometerMeasurementPeriodRequest
+    /// - returns: Aura_Device_SetPedometerMeasurementPeriodResponse if success
     /// - warning: rejects when there is error in sending data
-    public func writeValue(request: My_Device_SetValueRequest) -> Promise<My_Device_SetValueResponse> {
+    public func setMeasurementPeriod(request: Aura_Device_SetPedometerMeasurementPeriodRequest) -> Promise<Aura_Device_SetPedometerMeasurementPeriodResponse> {
         return Promise { seal in
             do {
-                let data = try My_Device_SetValueRequest.encode(proto: request)
-                _ = self.bleWorker.discoverCharacteristic(serviceUUID: "A0000000-0000-0000-0000-000000000000", characteristicUUID: "A0000001-0000-0000-0000-000000000000").map { characteristic in
+                let data = try Aura_Device_SetPedometerMeasurementPeriodRequest.encode(proto: request)
+                _ = self.bleWorker.discoverCharacteristic(serviceUUID: "F000BB90-0451-4000-B000-000000000000", characteristicUUID: "F000BB92-0451-4000-B000-000000000000").map { characteristic in
                     _ = characteristic.writeValue(data, type: .withResponse).subscribe { event in
                         switch event {
                         case .success:
@@ -63,7 +85,7 @@ public class TestService: BleAbstractService {
                             }
 
                             do {
-                                let proto = try My_Device_SetValueResponse.decode(data: data)
+                                let proto = try Aura_Device_SetPedometerMeasurementPeriodResponse.decode(data: data)
                                 seal.fulfill(proto)
                             } catch {
                                 seal.reject(error)
@@ -82,100 +104,202 @@ public class TestService: BleAbstractService {
 
 
 
-    private var getValueUpdatesCallbacks: [BleOperationHandler<My_Device_GetValueResponse,Void>] = []
-
-    /// Send subscribe request of method getValueUpdates on device. Method can be used to multi subscribe feature
-    /// - parameter request: My_Device_GetValueRequest
+    /// Send subscribe request of method getAccelerometerDataUpdates on device
+    /// - parameter request: Aura_Device_GetAccelerometerDataRequest
     /// - parameter completion: closure which calls when new data appears
-    /// - parameter error: closure which calls when error occurs
-    /// - returns: handler with with we can identify subscriber
-    public func getValueUpdates(request: My_Device_GetValueRequest, completion: @escaping (My_Device_GetValueResponse) -> Void,
-                                 error: @escaping (Error) -> Void) -> BleOperationHandler<My_Device_GetValueResponse,Void> {
-        let handler = BleOperationHandler.init(id: getValueUpdatesCallbacks.count + 1, completionClosure: completion,
-                 errorClosure: error, service: self, unsubscribeSelector: Selector(("unsubscribeGetValueUpdates:")))
+    /// - parameter onError: closure which calls when error occurs
+    /// - returns: handler with with we can identify operation
+    public func getAccelerometerDataUpdates(request: Aura_Device_GetAccelerometerDataRequest, completion: @escaping (Aura_Device_GetAccelerometerDataResponse) -> Void,
+                                 onError: @escaping (Error) -> Void) -> BleOperationHandler {
+        let handler = BleOperationHandler.init(id: self.bleWorker.generateId(), service: self, selector: Selector(("unsubscribeGetAccelerometerDataUpdates:")))
 
-        self.accessQueue.async(flags: .barrier) {
-            self.getValueUpdatesCallbacks.append(handler)
-            
-            if self.getValueUpdatesCallbacks.count <= 1 {
-                self.accessQueue.async {
-                    _ = self.bleWorker.discoverCharacteristic(serviceUUID: "A0000000-0000-0000-0000-000000000000", characteristicUUID: "A0000001-0000-0000-0000-000000000000").map { [weak self] characteristic in
-                        let disposable = characteristic.observeValueUpdateAndSetNotification().subscribe({ (event) in
-                            switch event {
-                            case .completed:
-                                break
-                            case .error(let err):
-                                guard let selfG = self else { return }
-                                for errorCallback in selfG.getValueUpdatesCallbacks {
-                                    errorCallback.errorClosure(err)
-                                }
-                            case .next(let characteristic):
-                                guard let data = characteristic.value else {
-                                    guard let selfG = self else { return }
+        _ = self.bleWorker.discoverCharacteristic(serviceUUID: "F000BB90-0451-4000-B000-000000000000", characteristicUUID: "F000BB93-0451-4000-B000-000000000000").map { [weak self] characteristic in
+            let disposable = characteristic.observeValueUpdateAndSetNotification().subscribe({ (event) in
+                switch event {
+                case .completed:
+                    break
+                case .error(let error):
+                    onError(error)
+                case .next(let characteristic):
+                    guard let data = characteristic.value else {
+                        let wrongDataError = NSError(domain: "ble-module.errors", code: 0, userInfo:
+                                            [NSLocalizedDescriptionKey: "Device returned empty response"])
+                        onError(wrongDataError)
+                        return
+                    }
 
-                                    let wrongDataError = NSError(domain: "ble-module.errors", code: 0, userInfo:
-                                                        [NSLocalizedDescriptionKey: "Device returned empty response"])
-                                    for errorCallback in selfG.getValueUpdatesCallbacks {
-                                        errorCallback.errorClosure(wrongDataError)
-                                    }
-                                    return
-                                }
-                                guard let selfG = self else { return }
-
-                                do {
-                                    let proto = try My_Device_GetValueResponse.decode(data: data)
-
-                                    for completionCallback in selfG.getValueUpdatesCallbacks {
-                                        completionCallback.completionClosure(proto)
-                                    }
-                                } catch {
-                                    for errorCallback in selfG.getValueUpdatesCallbacks {
-                                        errorCallback.errorClosure(error)
-                                    }
-                                }
-                            }
-                        })
-                        
-                        let disposableId = BleOperationIdentifier.init(serviceUUID: UUID.init(uuidString: "A0000000-0000-0000-0000-000000000000")!,
-                                            			        characteristicUUID: UUID.init(uuidString: "A0000001-0000-0000-0000-000000000000")!)
-                        self?.bleWorker.disposableBag[disposableId] = disposable
+                    do {
+                        let proto = try Aura_Device_GetAccelerometerDataResponse.decode(data: data)
+                        completion(proto)
+                    } catch {
+                        onError(error)
                     }
                 }
-            }
+            })
+                        
+            let disposableId = BleOperationIdentifier.init(serviceUUID: UUID.init(uuidString: "F000BB90-0451-4000-B000-000000000000")!,
+                                                    characteristicUUID: UUID.init(uuidString: "F000BB93-0451-4000-B000-000000000000")!,
+                                                                    id: handler.id)
+            self?.bleWorker.disposableBag[disposableId] = disposable
         }
 
         return handler
     }
 
-    /// Unsubscribe from receiving getValueUpdates updates
+    /// Unsubscribe from receiving getAccelerometerDataUpdates updates
     /// - parameter obj: handler which needs to be unsubscribed
-    @objc private func unsubscribeGetValueUpdates(_ obj: Any) {
-        let handler = obj as! BleOperationHandler<My_Device_GetValueResponse,Void>
-        var foundedHandlerIndex: Int?
+    @objc private func unsubscribeGetAccelerometerDataUpdates(_ obj: Any) {
+        let handler = obj as! BleOperationHandler
+        let operation = BleOperationIdentifier.init(serviceUUID: UUID.init(uuidString: "F000BB90-0451-4000-B000-000000000000")!,
+                                                characteristicUUID: UUID.init(uuidString: "F000BB93-0451-4000-B000-000000000000")!,
+                                                                id: handler.id)
+        self.bleWorker.disconnect(from: operation)
+    }
 
-        accessQueue.sync {
-            for index in 0..<getValueUpdatesCallbacks.count {
-                let tempHandler = self.getValueUpdatesCallbacks[index]
 
-                if tempHandler.id == handler.id {
-                		foundedHandlerIndex = index
+
+    /// Send subscribe request of method getGyroscopeDataUpdates on device
+    /// - parameter request: Aura_Device_GetGyroscopeDataRequest
+    /// - parameter completion: closure which calls when new data appears
+    /// - parameter onError: closure which calls when error occurs
+    /// - returns: handler with with we can identify operation
+    public func getGyroscopeDataUpdates(request: Aura_Device_GetGyroscopeDataRequest, completion: @escaping (Aura_Device_GetGyroscopeDataResponse) -> Void,
+                                 onError: @escaping (Error) -> Void) -> BleOperationHandler {
+        let handler = BleOperationHandler.init(id: self.bleWorker.generateId(), service: self, selector: Selector(("unsubscribeGetGyroscopeDataUpdates:")))
+
+        _ = self.bleWorker.discoverCharacteristic(serviceUUID: "F000BB90-0451-4000-B000-000000000000", characteristicUUID: "F000BB94-0451-4000-B000-000000000000").map { [weak self] characteristic in
+            let disposable = characteristic.observeValueUpdateAndSetNotification().subscribe({ (event) in
+                switch event {
+                case .completed:
+                    break
+                case .error(let error):
+                    onError(error)
+                case .next(let characteristic):
+                    guard let data = characteristic.value else {
+                        let wrongDataError = NSError(domain: "ble-module.errors", code: 0, userInfo:
+                                            [NSLocalizedDescriptionKey: "Device returned empty response"])
+                        onError(wrongDataError)
+                        return
+                    }
+
+                    do {
+                        let proto = try Aura_Device_GetGyroscopeDataResponse.decode(data: data)
+                        completion(proto)
+                    } catch {
+                        onError(error)
+                    }
                 }
-            }
+            })
+                        
+            let disposableId = BleOperationIdentifier.init(serviceUUID: UUID.init(uuidString: "F000BB90-0451-4000-B000-000000000000")!,
+                                                    characteristicUUID: UUID.init(uuidString: "F000BB94-0451-4000-B000-000000000000")!,
+                                                                    id: handler.id)
+            self?.bleWorker.disposableBag[disposableId] = disposable
         }
 
-        accessQueue.async(flags: .barrier) {
-            if let index = foundedHandlerIndex {
-                self.getValueUpdatesCallbacks.remove(at: index)
-            }
-    	}
+        return handler
+    }
 
-        accessQueue.sync {
-            if self.getValueUpdatesCallbacks.count <= 0 {
-                let disposableId = BleOperationIdentifier.init(serviceUUID: UUID.init(uuidString: "A0000000-0000-0000-0000-000000000000")!,
-                                                characteristicUUID: UUID.init(uuidString: "A0000001-0000-0000-0000-000000000000")!)
-                self.bleWorker.disconnectFrom(disposableId)
+    /// Unsubscribe from receiving getGyroscopeDataUpdates updates
+    /// - parameter obj: handler which needs to be unsubscribed
+    @objc private func unsubscribeGetGyroscopeDataUpdates(_ obj: Any) {
+        let handler = obj as! BleOperationHandler
+        let operation = BleOperationIdentifier.init(serviceUUID: UUID.init(uuidString: "F000BB90-0451-4000-B000-000000000000")!,
+                                                characteristicUUID: UUID.init(uuidString: "F000BB94-0451-4000-B000-000000000000")!,
+                                                                id: handler.id)
+        self.bleWorker.disconnect(from: operation)
+    }
+
+
+
+    /// Send subscribe request of method getMagnetometerDataUpdates on device
+    /// - parameter request: Aura_Device_GetMagnetometerDataRequest
+    /// - parameter completion: closure which calls when new data appears
+    /// - parameter onError: closure which calls when error occurs
+    /// - returns: handler with with we can identify operation
+    public func getMagnetometerDataUpdates(request: Aura_Device_GetMagnetometerDataRequest, completion: @escaping (Aura_Device_GetMagnetometerDataResponse) -> Void,
+                                 onError: @escaping (Error) -> Void) -> BleOperationHandler {
+        let handler = BleOperationHandler.init(id: self.bleWorker.generateId(), service: self, selector: Selector(("unsubscribeGetMagnetometerDataUpdates:")))
+
+        _ = self.bleWorker.discoverCharacteristic(serviceUUID: "F000BB90-0451-4000-B000-000000000000", characteristicUUID: "F000BB95-0451-4000-B000-000000000000").map { [weak self] characteristic in
+            let disposable = characteristic.observeValueUpdateAndSetNotification().subscribe({ (event) in
+                switch event {
+                case .completed:
+                    break
+                case .error(let error):
+                    onError(error)
+                case .next(let characteristic):
+                    guard let data = characteristic.value else {
+                        let wrongDataError = NSError(domain: "ble-module.errors", code: 0, userInfo:
+                                            [NSLocalizedDescriptionKey: "Device returned empty response"])
+                        onError(wrongDataError)
+                        return
+                    }
+
+                    do {
+                        let proto = try Aura_Device_GetMagnetometerDataResponse.decode(data: data)
+                        completion(proto)
+                    } catch {
+                        onError(error)
+                    }
+                }
+            })
+                        
+            let disposableId = BleOperationIdentifier.init(serviceUUID: UUID.init(uuidString: "F000BB90-0451-4000-B000-000000000000")!,
+                                                    characteristicUUID: UUID.init(uuidString: "F000BB95-0451-4000-B000-000000000000")!,
+                                                                    id: handler.id)
+            self?.bleWorker.disposableBag[disposableId] = disposable
+        }
+
+        return handler
+    }
+
+    /// Unsubscribe from receiving getMagnetometerDataUpdates updates
+    /// - parameter obj: handler which needs to be unsubscribed
+    @objc private func unsubscribeGetMagnetometerDataUpdates(_ obj: Any) {
+        let handler = obj as! BleOperationHandler
+        let operation = BleOperationIdentifier.init(serviceUUID: UUID.init(uuidString: "F000BB90-0451-4000-B000-000000000000")!,
+                                                characteristicUUID: UUID.init(uuidString: "F000BB95-0451-4000-B000-000000000000")!,
+                                                                id: handler.id)
+        self.bleWorker.disconnect(from: operation)
+    }
+
+
+    /// Send write request of method configurePositionSensor on device
+    /// - parameter request: Aura_Device_ConfigurePositionSensorRequest
+    /// - returns: Aura_Device_ConfigurePositionSensorResponse if success
+    /// - warning: rejects when there is error in sending data
+    public func configurePositionSensor(request: Aura_Device_ConfigurePositionSensorRequest) -> Promise<Aura_Device_ConfigurePositionSensorResponse> {
+        return Promise { seal in
+            do {
+                let data = try Aura_Device_ConfigurePositionSensorRequest.encode(proto: request)
+                _ = self.bleWorker.discoverCharacteristic(serviceUUID: "F000BB90-0451-4000-B000-000000000000", characteristicUUID: "F000BB96-0451-4000-B000-000000000000").map { characteristic in
+                    _ = characteristic.writeValue(data, type: .withResponse).subscribe { event in
+                        switch event {
+                        case .success:
+                            guard let data = characteristic.value else {
+                                let wrongDataError = NSError(domain: "ble-module.errors", code: 0, userInfo:
+                                                    [NSLocalizedDescriptionKey: "Device returned empty response"])
+                                seal.reject(wrongDataError)
+                                return
+                            }
+
+                            do {
+                                let proto = try Aura_Device_ConfigurePositionSensorResponse.decode(data: data)
+                                seal.fulfill(proto)
+                            } catch {
+                                seal.reject(error)
+                            }
+                        case .error(let error):
+                            seal.reject(error)
+                        }
+                    }
+                }
+            } catch {
+                seal.reject(error)
             }
         }
     }
+
 
 }

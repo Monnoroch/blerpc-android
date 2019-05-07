@@ -1,25 +1,19 @@
 import Foundation
 import SwiftProtobuf
 
-/// Structure which supports service callbacks and identification by *id*
-public struct BleOperationHandler<P, R>: Equatable, Hashable {
+/// Structure which supports service method cancelation and identification
+public struct BleOperationHandler: Equatable, Hashable {
     
     // MARK: - Variables
     
     /// Id of handler
     let id: Int
     
-    /// Completion closure
-    let completionClosure: (P) -> R
-    
-    /// Error closure
-    let errorClosure: (Swift.Error) -> Void
-    
     /// Service from where handler was created
     internal let service: BleAbstractService
     
-    /// Unsubscribe selector
-    internal let unsubscribeSelector: Selector
+    /// Cencel selector
+    internal let selector: Selector
     
     // MARK: - Hashable Protocol support
 
@@ -34,9 +28,9 @@ public struct BleOperationHandler<P, R>: Equatable, Hashable {
     }
     
     /// Automatically resolves unsubscribe
-    public func unsubscribe() {
-        if service.responds(to: unsubscribeSelector) {
-            Thread.detachNewThreadSelector(unsubscribeSelector, toTarget: service, with: self)
+    public func cancel() {
+        if service.responds(to: selector) {
+            Thread.detachNewThreadSelector(selector, toTarget: service, with: self)
         }
     }
     
