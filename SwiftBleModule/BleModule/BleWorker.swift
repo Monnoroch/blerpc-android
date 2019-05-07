@@ -168,11 +168,10 @@ public class BleWorker {
     /// Generates operation id, synchronized
     /// - returns: generated id
     internal func generateId() -> Int {
-        accessQueue.sync {
+        return accessQueue.sync {
             internalOperationId += 1
+            return internalOperationId
         }
-        
-        return internalOperationId
     }
     
     // MARK: - Private methods
