@@ -82,54 +82,41 @@ public class {{serviceName}}: BleAbstractService {
     {{#typeSubscribe}}
     /// Send subscribe request of method {{methodName}} on device
     /// - parameter request: {{inputType}}
-    /// - parameter completion: closure which calls when new data appears
-    /// - parameter onError: closure which calls when error occurs
-    /// - returns: handler with with we can identify operation
-    public func {{methodName}}(request: {{inputType}}, completion: @escaping ({{outputType}}) -> Void,
-                                 onError: @escaping (Error) -> Void) -> BleOperationHandler {
-        let handler = BleOperationHandler.init(id: self.bleWorker.generateId(), service: self, selector: Selector(("unsubscribe{{upperCasedMethodName}}:")))
-
-        _ = self.bleWorker.discoverCharacteristic(serviceUUID: "{{serviceUUID}}", characteristicUUID: "{{characteristicUUID}}").map { [weak self] characteristic in
-            let disposable = characteristic.observeValueUpdateAndSetNotification().subscribe({ (event) in
-                switch event {
-                case .completed:
-                    break
-                case .error(let error):
-                    onError(error)
-                case .next(let characteristic):
-                    guard let data = characteristic.value else {
-                        let wrongDataError = NSError(domain: "ble-module.errors", code: 0, userInfo:
-                                            [NSLocalizedDescriptionKey: "Device returned empty response"])
-                        onError(wrongDataError)
-                        return
-                    }
-
-                    do {
-                        let proto = try {{outputType}}.decode(data: data)
-                        completion(proto)
-                    } catch {
-                        onError(error)
-                    }
-                }
-            })
+    /// - returns: *Observable* to operation
+    public func {{methodName}}(request: {{inputType}}) -> Observable<{{outputType}}> {
+        return Observable.create { observer in
+            var disposable: Disposable?
+            
+            _ = self.bleWorker.discoverCharacteristic(serviceUUID: "{{serviceUUID}}", characteristicUUID: "{{characteristicUUID}}")
+            .subscribe(onNext: { characteristic in
+                disposable = characteristic.observeValueUpdateAndSetNotification().subscribe({ (event) in
+                    switch event {
+                    case .completed:
+                        observer.onCompleted()
+                    case .error(let error):
+                        observer.onError(error)
+                    case .next(let characteristic):
+                        guard let data = characteristic.value else {
+                            let wrongDataError = NSError(domain: "ble-module.errors", code: 0, userInfo:
+                                [NSLocalizedDescriptionKey: "Device returned empty response"])
+                            observer.onError(wrongDataError)
+                            return
+                        }
                         
-            let disposableId = BleOperationIdentifier.init(serviceUUID: UUID.init(uuidString: "{{serviceUUID}}")!,
-                                                    characteristicUUID: UUID.init(uuidString: "{{characteristicUUID}}")!,
-                                                                    id: handler.id)
-            self?.bleWorker.disposableBag[disposableId] = disposable
+                        do {
+                            let proto = try {{outputType}}.decode(data: data)
+                            observer.onNext(proto)
+                        } catch {
+                            observer.onError(error)
+                        }
+                    }
+                })
+            })
+            
+            return Disposables.create {
+                disposable?.dispose()
+            }
         }
-
-        return handler
-    }
-
-    /// Unsubscribe from receiving {{methodName}} updates
-    /// - parameter obj: handler which needs to be unsubscribed
-    @objc private func unsubscribe{{upperCasedMethodName}}(_ obj: Any) {
-        let handler = obj as! BleOperationHandler
-        let operation = BleOperationIdentifier.init(serviceUUID: UUID.init(uuidString: "{{serviceUUID}}")!,
-                                                characteristicUUID: UUID.init(uuidString: "{{characteristicUUID}}")!,
-                                                                id: handler.id)
-        self.bleWorker.disconnect(from: operation)
     }
     {{/typeSubscribe}}
 

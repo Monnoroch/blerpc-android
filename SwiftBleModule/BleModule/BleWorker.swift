@@ -18,9 +18,6 @@ public class BleWorker {
     /// Disposable which holds current device disconnection observing
     private var diconnectionDisposable: Disposable? = nil
 
-    /// Data structure which holds key value for characteristic and it's disposable. Used to stop receiving updates from characteristics
-    internal var disposableBag: [BleOperationIdentifier: Disposable?] = [:]
-
     /// Connected peripheral
     internal var connectedPeripheral: Peripheral?
     
@@ -91,10 +88,6 @@ public class BleWorker {
     
     /// Disconnecting from peripheral
     public func disconnectFromPeripheral() {
-        for (_, value) in disposableBag {
-            value?.dispose()
-        }
-        
         diconnectionDisposable?.dispose()
         deviceConnection?.dispose()
         connectedPeripheral = nil
@@ -128,49 +121,20 @@ public class BleWorker {
     /// - parameter serviceUUID: *UUID* of a service
     /// - parameter characteristicUUID: *UUID* of a characteristic
     /// - returns: characteristic
-    internal func discoverCharacteristic(serviceUUID: String, characteristicUUID: String) -> Promise<Characteristic> {
-        return Promise { seal in
-            _ = self.connectedPeripheral?.discoverServices([CBUUID.init(string: serviceUUID)]).asObservable().flatMap { elem in
-                Observable.from(elem)
-            }.flatMap { elem in
-                elem.discoverCharacteristics([CBUUID.init(string: characteristicUUID)])}.subscribe(onNext: { (characteristics) in
-                if characteristics.count > 0 {
-                    seal.fulfill(characteristics[0])
-                } else {
-                    let wrongCharacteristicError: NSError = NSError(domain: "ble-module.errors", code: 0, userInfo: [NSLocalizedDescriptionKey: "Cant's find characteristic"])
-                    seal.reject(wrongCharacteristicError)
-                }
-            }, onError: { err in
-                seal.reject(err)
+    internal func discoverCharacteristic(serviceUUID: String, characteristicUUID: String) -> Observable<Characteristic> {
+        return Observable.create { observer in
+            let disposable = self.connectedPeripheral?.discoverServices([CBUUID.init(string: serviceUUID)]).asObservable().flatMap { Observable.from($0)
+            }.flatMap {
+                $0.discoverCharacteristics([CBUUID.init(string: characteristicUUID)])
+            }.asObservable().flatMap {
+                Observable.from($0)
+            }.subscribe(onNext: { characteristic in
+                observer.onNext(characteristic)
             })
-        }
-    }
-    
-    /// Method for disconnecting from characteristic, synchronized
-    /// - parameter identifier: *BleOperationIdentifier* which contains *serviceUUID* and *characteristicUUID*
-    internal func disconnect(from: BleOperationIdentifier) {
-        accessQueue.sync {
-            let savedDisposable = self.disposableBag[from]
-            savedDisposable??.dispose()
-            self.disposableBag[from] = nil
-        }
-    }
-    
-    /// Adds operation to *disposableBag*, synchronized
-    /// - parameter operation: ble operation
-    /// - parameter disposable: disposable for this operaiton
-    internal func add(operation: BleOperationIdentifier, disposable: Disposable) {
-        accessQueue.sync {
-            self.disposableBag[operation] = disposable
-        }
-    }
-    
-    /// Generates operation id, synchronized
-    /// - returns: generated id
-    internal func generateId() -> Int {
-        return accessQueue.sync {
-            internalOperationId += 1
-            return internalOperationId
+            
+            return Disposables.create {
+                disposable?.dispose()
+            }
         }
     }
     

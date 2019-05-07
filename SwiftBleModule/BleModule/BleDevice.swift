@@ -28,7 +28,7 @@ public class BleDevice {
 
     /// Block default init
     private init() {
-        fatalError()
+        fatalError("Please use init(peripheral:) instead.")
     }
     
 }

@@ -126,28 +126,28 @@ testService.writeValue(request: SetValueRequest()).map { response in
 }
 
 // Subscribe method example
-let handler1 = testService.getValueUpdates(request: GetValueRequest(), completion: { response in
+let handler1 = testService.getValueUpdates(request: GetValueRequest()).subscribe(onNext: { response in
     print(response)
 }, onError: { error in
     print(error)
 })
 
-let handler2 = testService.getValueUpdates(request: GetValueRequest(), completion: { response in
+let handler2 = testService.getValueUpdates(request: GetValueRequest()).subscribe(onNext: { response in
     print(response)
 }, onError: { error in
     print(error)
 })
 
 // You can even subscribe to the same method on different service
-let handler3 = testService2.getValueUpdates(request: GetValueRequest(), completion: { response in
+let handler3 = testService2.getValueUpdates(request: GetValueRequest()).subscribe(onNext: { response in
     print(response)
 }, onError: { error in
     print(error)
 })
 
-handler1.cancel() // physically not unsubscribed
-handler3.cancel() // physically not unsubscribed
-handler2.cancel() // now physically unsubscribed (because no more handlers)
+handler1.dispose() // physically not unsubscribed
+handler3.dispose() // physically not unsubscribed
+handler2.dispose() // now physically unsubscribed (because no more handlers)
 
 ```
 
