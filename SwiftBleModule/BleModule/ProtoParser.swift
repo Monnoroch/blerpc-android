@@ -37,8 +37,8 @@ public class ProtoDecoder {
     /// - parameter data: data from which need to convert
     /// - returns: converted value Int
     private class func decodeInt(fromByte: Int, data: Data) -> Int {
-        return data.bytes.withUnsafeBufferPointer {
-            ($0.baseAddress!.withMemoryRebound(to: Int.self, capacity: 1) { $0 })
+        return data.bytes.withUnsafeBufferPointer { ptr in
+            (ptr.baseAddress!.withMemoryRebound(to: Int.self, capacity: 1) { ptr in ptr })
         }.pointee
     }
     
@@ -47,8 +47,8 @@ public class ProtoDecoder {
     /// - parameter data: data from which need to convert
     /// - returns: converted value IntUInt1632
     private class func decodeUInt16(fromByte: Int, data: Data) -> UInt16 {
-        return data.bytes.withUnsafeBufferPointer {
-            ($0.baseAddress!.withMemoryRebound(to: UInt16.self, capacity: 1) { $0 })
+        return data.bytes.withUnsafeBufferPointer { ptr in
+            (ptr.baseAddress!.withMemoryRebound(to: UInt16.self, capacity: 1) { ptr in ptr })
         }.pointee
     }
     
@@ -58,8 +58,8 @@ public class ProtoDecoder {
     /// - returns: converted value Int16
     private class func decodeInt16(fromByte: Int, data: Data) -> Int16 {
         let subData = data.subdata(in: Range(fromByte..<fromByte+2))
-        return subData.bytes.withUnsafeBufferPointer {
-            ($0.baseAddress!.withMemoryRebound(to: Int16.self, capacity: 1) { $0 })
+        return subData.bytes.withUnsafeBufferPointer { ptr in
+            (ptr.baseAddress!.withMemoryRebound(to: Int16.self, capacity: 1) { ptr in ptr })
         }.pointee
     }
     
@@ -68,8 +68,8 @@ public class ProtoDecoder {
     /// - parameter data: data from which need to convert
     /// - returns: converted value UInt32
     private class func decodeUInt32(fromByte: Int, data: Data) -> UInt32 {
-        return data.bytes.withUnsafeBufferPointer {
-            ($0.baseAddress!.withMemoryRebound(to: UInt32.self, capacity: 1) { $0 })
+        return data.bytes.withUnsafeBufferPointer { ptr in
+            (ptr.baseAddress!.withMemoryRebound(to: UInt32.self, capacity: 1) { ptr in ptr })
         }.pointee
     }
     
@@ -78,8 +78,8 @@ public class ProtoDecoder {
     /// - parameter data: data from which need to convert
     /// - returns: converted value Int32
     private class func decodeInt32(fromByte: Int, data: Data) -> Int32 {
-        return data.subdata(in: Range(fromByte..<4)).bytes.withUnsafeBufferPointer {
-            ($0.baseAddress!.withMemoryRebound(to: Int32.self, capacity: 1) { $0 })
+        return data.subdata(in: Range(fromByte..<4)).bytes.withUnsafeBufferPointer { ptr in
+            (ptr.baseAddress!.withMemoryRebound(to: Int32.self, capacity: 1) { ptr in ptr })
         }.pointee
     }
     

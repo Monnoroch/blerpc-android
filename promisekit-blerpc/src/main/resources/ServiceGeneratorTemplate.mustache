@@ -2,7 +2,6 @@ import Foundation
 import RxBluetoothKit
 import CoreBluetooth
 import RxSwift
-import PromiseKit
 
 /// {{serviceName}} service
 public class {{serviceName}}: BleAbstractService {
@@ -14,28 +13,33 @@ public class {{serviceName}}: BleAbstractService {
     {{#typeRead}}
     /// Send read request of method {{methodName}} on device
     /// - parameter request: {{inputType}}
-    /// - returns: {{outputType}} if success
-    /// - warning: rejects when there is error in sending data
-    public func {{methodName}}(request: {{inputType}}) -> Promise<{{outputType}}> {
-        return Promise { seal in
-            _ = self.bleWorker.discoverCharacteristic(serviceUUID: "{{serviceUUID}}", characteristicUUID: "{{characteristicUUID}}").map { characteristic in
-                _ = characteristic.readValue().subscribe(onSuccess: { (characteristic) in
-                    guard let data = characteristic.value else {
-                        let wrongDataError = NSError(domain: "ble-module.errors", code: 0, userInfo:
-                                            [NSLocalizedDescriptionKey: "Device returned empty response"])
-                        seal.reject(wrongDataError)
-                        return
-                    }
-
+    /// - returns: *Observable* to operation with {{outputType}}
+    public func {{methodName}}(request: {{inputType}}) -> Observable<{{outputType}}> {
+        return Observable.create { [weak self] observer in
+            var disposable: Disposable?
+            
+            do {
+                let data = try {{inputType}}.encode(proto: request)
+                
+                disposable = self?.bleWorker.read(request: data, serviceUUID: "{{serviceUUID}}", characteristicUUID: "{{characteristicUUID}}")
+                .subscribe(onNext: { (response) in
                     do {
-                        let proto = try {{outputType}}.decode(data: data)
-                        seal.fulfill(proto)
+                        let proto = try {{outputType}}.decode(data: response)
+                        observer.onNext(proto)
                     } catch {
-                        seal.reject(error)
+                        observer.onError(error)
                     }
                 }, onError: { (error) in
-                    seal.reject(error)
+                    observer.onError(error)
+                }, onCompleted: {
+                    observer.onCompleted()
                 })
+            } catch {
+                observer.onError(error)
+            }
+            
+            return Disposables.create {
+                disposable?.dispose()
             }
         }
     }
@@ -44,36 +48,33 @@ public class {{serviceName}}: BleAbstractService {
     {{#typeWrite}}
     /// Send write request of method {{methodName}} on device
     /// - parameter request: {{inputType}}
-    /// - returns: {{outputType}} if success
-    /// - warning: rejects when there is error in sending data
-    public func {{methodName}}(request: {{inputType}}) -> Promise<{{outputType}}> {
-        return Promise { seal in
+    /// - returns: *Observable* to operation with {{outputType}}
+    public func {{methodName}}(request: {{inputType}}) -> Observable<{{outputType}}> {
+        return Observable.create { [weak self] observer in
+            var disposable: Disposable?
+            
             do {
                 let data = try {{inputType}}.encode(proto: request)
-                _ = self.bleWorker.discoverCharacteristic(serviceUUID: "{{serviceUUID}}", characteristicUUID: "{{characteristicUUID}}").map { characteristic in
-                    _ = characteristic.writeValue(data, type: .withResponse).subscribe { event in
-                        switch event {
-                        case .success:
-                            guard let data = characteristic.value else {
-                                let wrongDataError = NSError(domain: "ble-module.errors", code: 0, userInfo:
-                                                    [NSLocalizedDescriptionKey: "Device returned empty response"])
-                                seal.reject(wrongDataError)
-                                return
-                            }
-
-                            do {
-                                let proto = try {{outputType}}.decode(data: data)
-                                seal.fulfill(proto)
-                            } catch {
-                                seal.reject(error)
-                            }
-                        case .error(let error):
-                            seal.reject(error)
-                        }
+                
+                disposable = self?.bleWorker.write(request: data, serviceUUID: "{{serviceUUID}}", characteristicUUID: "{{characteristicUUID}}")
+                .subscribe(onNext: { (response) in
+                    do {
+                        let proto = try {{outputType}}.decode(data: response)
+                        observer.onNext(proto)
+                    } catch {
+                        observer.onError(error)
                     }
-                }
+                }, onError: { (error) in
+                    observer.onError(error)
+                }, onCompleted: {
+                    observer.onCompleted()
+                })
             } catch {
-                seal.reject(error)
+                observer.onError(error)
+            }
+            
+            return Disposables.create {
+                disposable?.dispose()
             }
         }
     }
@@ -84,34 +85,28 @@ public class {{serviceName}}: BleAbstractService {
     /// - parameter request: {{inputType}}
     /// - returns: *Observable* to operation
     public func {{methodName}}(request: {{inputType}}) -> Observable<{{outputType}}> {
-        return Observable.create { observer in
+        return Observable.create { [weak self] observer in
             var disposable: Disposable?
             
-            _ = self.bleWorker.discoverCharacteristic(serviceUUID: "{{serviceUUID}}", characteristicUUID: "{{characteristicUUID}}")
-            .subscribe(onNext: { characteristic in
-                disposable = characteristic.observeValueUpdateAndSetNotification().subscribe({ (event) in
-                    switch event {
-                    case .completed:
-                        observer.onCompleted()
-                    case .error(let error):
+            do {
+                let data = try {{inputType}}.encode(proto: request)
+                
+                disposable = self?.bleWorker.subscribe(request: data, serviceUUID: "{{serviceUUID}}", characteristicUUID: "{{characteristicUUID}}")
+                .subscribe(onNext: { (response) in
+                    do {
+                        let proto = try {{outputType}}.decode(data: response)
+                        observer.onNext(proto)
+                    } catch {
                         observer.onError(error)
-                    case .next(let characteristic):
-                        guard let data = characteristic.value else {
-                            let wrongDataError = NSError(domain: "ble-module.errors", code: 0, userInfo:
-                                [NSLocalizedDescriptionKey: "Device returned empty response"])
-                            observer.onError(wrongDataError)
-                            return
-                        }
-                        
-                        do {
-                            let proto = try {{outputType}}.decode(data: data)
-                            observer.onNext(proto)
-                        } catch {
-                            observer.onError(error)
-                        }
                     }
+                }, onError: { (error) in
+                    observer.onError(error)
+                }, onCompleted: {
+                    observer.onCompleted()
                 })
-            })
+            } catch {
+                observer.onError(error)
+            }
             
             return Disposables.create {
                 disposable?.dispose()
