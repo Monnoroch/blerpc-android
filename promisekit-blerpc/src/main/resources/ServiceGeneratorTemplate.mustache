@@ -13,29 +13,27 @@ public class {{serviceName}}: BleAbstractService {
     {{#typeRead}}
     /// Send read request of method {{methodName}} on device
     /// - parameter request: {{inputType}}
-    /// - returns: *Observable* to operation with {{outputType}}
-    public func {{methodName}}(request: {{inputType}}) -> Observable<{{outputType}}> {
-        return Observable.create { [weak self] observer in
+    /// - returns: *Single* to operation with {{outputType}}
+    public func {{methodName}}(request: {{inputType}}) -> Single<{{outputType}}> {
+        return Single.create { [weak self] observer in
             var disposable: Disposable?
             
             do {
                 let data = try {{inputType}}.encode(proto: request)
                 
                 disposable = self?.bleWorker.read(request: data, serviceUUID: "{{serviceUUID}}", characteristicUUID: "{{characteristicUUID}}")
-                .subscribe(onNext: { (response) in
+                .subscribe(onSuccess: { (response) in
                     do {
                         let proto = try {{outputType}}.decode(data: response)
-                        observer.onNext(proto)
+                        observer(.success(proto))
                     } catch {
-                        observer.onError(error)
+                        observer(.error(error))
                     }
                 }, onError: { (error) in
-                    observer.onError(error)
-                }, onCompleted: {
-                    observer.onCompleted()
+                    observer(.error(error))
                 })
             } catch {
-                observer.onError(error)
+                observer(.error(error))
             }
             
             return Disposables.create {
@@ -48,29 +46,27 @@ public class {{serviceName}}: BleAbstractService {
     {{#typeWrite}}
     /// Send write request of method {{methodName}} on device
     /// - parameter request: {{inputType}}
-    /// - returns: *Observable* to operation with {{outputType}}
-    public func {{methodName}}(request: {{inputType}}) -> Observable<{{outputType}}> {
-        return Observable.create { [weak self] observer in
+    /// - returns: *Single* to operation with {{outputType}}
+    public func {{methodName}}(request: {{inputType}}) -> Single<{{outputType}}> {
+        return Single.create { [weak self] observer in
             var disposable: Disposable?
             
             do {
                 let data = try {{inputType}}.encode(proto: request)
                 
                 disposable = self?.bleWorker.write(request: data, serviceUUID: "{{serviceUUID}}", characteristicUUID: "{{characteristicUUID}}")
-                .subscribe(onNext: { (response) in
+                .subscribe(onSuccess: { (response) in
                     do {
                         let proto = try {{outputType}}.decode(data: response)
-                        observer.onNext(proto)
+                        observer(.success(proto))
                     } catch {
-                        observer.onError(error)
+                        observer(.error(error))
                     }
                 }, onError: { (error) in
-                    observer.onError(error)
-                }, onCompleted: {
-                    observer.onCompleted()
+                    observer(.error(error))
                 })
             } catch {
-                observer.onError(error)
+                observer(.error(error))
             }
             
             return Disposables.create {

@@ -125,11 +125,12 @@ public class BleWorker {
     internal func subscribe(request: Data, serviceUUID: String, characteristicUUID: String) -> Observable<Data> {
         return Observable.create { [weak self] observer in
             var disposable: Disposable?
-            disposable = self?.discoverCharacteristic(serviceUUID: serviceUUID, characteristicUUID: characteristicUUID)
-            .subscribe(onNext: { characteristic in
+            disposable = self?.discoverCharacteristic(serviceUUID: serviceUUID, characteristicUUID: characteristicUUID).subscribe(onSuccess: { (characteristic) in
                 disposable = characteristic.observeValueUpdateAndSetNotification().subscribe({ (event) in
                     self?.completeSubscription(event: event, observer: observer)
                 })
+            }, onError: { (error) in
+                observer.onError(error)
             })
             
             return Disposables.create {
@@ -143,14 +144,15 @@ public class BleWorker {
     /// - parameter serviceUUID: *UUID* of a service
     /// - parameter characteristicUUID: *UUID* of a characteristic
     /// - returns: *Observable* Data
-    internal func read(request: Data, serviceUUID: String, characteristicUUID: String) -> Observable<Data> {
-        return Observable.create { [weak self] observer in
+    internal func read(request: Data, serviceUUID: String, characteristicUUID: String) -> Single<Data> {
+        return Single.create { [weak self] observer in
             var disposable: Disposable?
-            disposable = self?.discoverCharacteristic(serviceUUID: serviceUUID, characteristicUUID: characteristicUUID)
-            .subscribe(onNext: { characteristic in
+            disposable = self?.discoverCharacteristic(serviceUUID: serviceUUID, characteristicUUID: characteristicUUID).subscribe(onSuccess: { (characteristic) in
                 disposable = characteristic.readValue().subscribe({ (event) in
                     self?.completeReadWrite(event: event, observer: observer)
                 })
+            }, onError: { (error) in
+                observer(.error(error))
             })
             
             return Disposables.create {
@@ -164,15 +166,17 @@ public class BleWorker {
     /// - parameter serviceUUID: *UUID* of a service
     /// - parameter characteristicUUID: *UUID* of a characteristic
     /// - returns: *Observable* Data
-    internal func write(request: Data, serviceUUID: String, characteristicUUID: String) -> Observable<Data> {
-        return Observable.create { [weak self] observer in
+    internal func write(request: Data, serviceUUID: String, characteristicUUID: String) -> Single<Data> {
+        return Single.create { [weak self] observer in
             var disposable: Disposable?
             disposable = self?.discoverCharacteristic(serviceUUID: serviceUUID, characteristicUUID: characteristicUUID)
-            .subscribe(onNext: { characteristic in
-                disposable = characteristic.writeValue(request, type: .withResponse).subscribe({ (event) in
-                    self?.completeReadWrite(event: event, observer: observer)
+                .subscribe(onSuccess: { (characteristic) in
+                    disposable = characteristic.writeValue(request, type: .withResponse).subscribe({ (event) in
+                        self?.completeReadWrite(event: event, observer: observer)
+                    })
+                }, onError: { (error) in
+                    observer(.error(error))
                 })
-            })
             
             return Disposables.create {
                 disposable?.dispose()
@@ -186,8 +190,8 @@ public class BleWorker {
     /// - parameter serviceUUID: *UUID* of a service
     /// - parameter characteristicUUID: *UUID* of a characteristic
     /// - returns: characteristic
-    private func discoverCharacteristic(serviceUUID: String, characteristicUUID: String) -> Observable<Characteristic> {
-        return Observable.create { [weak self] observer in
+    private func discoverCharacteristic(serviceUUID: String, characteristicUUID: String) -> Single<Characteristic> {
+        return Single.create { [weak self] observer in
             let disposable = self?.connectedPeripheral?.discoverServices([CBUUID.init(string: serviceUUID)])
                 .asObservable().flatMap { services in
                     Observable.from(services)
@@ -196,7 +200,7 @@ public class BleWorker {
                 }.asObservable().flatMap { characteristics in
                     Observable.from(characteristics)
                 }.subscribe(onNext: { characteristic in
-                    observer.onNext(characteristic)
+                    observer(.success(characteristic))
                 })
             
             return Disposables.create {
@@ -229,20 +233,20 @@ public class BleWorker {
     /// Method called after iOS device received response from Ble device for read or write events
     /// - parameter event: event response
     /// - parameter observer: injected observer
-    private func completeReadWrite(event: SingleEvent<Characteristic>, observer: AnyObserver<Data>) {
+    private func completeReadWrite(event: SingleEvent<Characteristic>, observer: (SingleEvent<Data>) -> Void) {
         switch event {
         case .error(let error):
-            observer.onError(error)
+            observer(.error(error))
         case .success(let characteristic):
             guard let data = characteristic.value else {
                 let wrongDataError = NSError(domain: "blerpc.errors", code: 0, userInfo:
                     [NSLocalizedDescriptionKey: "Device returned empty response"])
-                observer.onError(wrongDataError)
+                observer(.error(wrongDataError))
                 return
             }
             
-            observer.onNext(data)
-            observer.onCompleted()
+            
+            observer(.success(data))
         }
     }
     

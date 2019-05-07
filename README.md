@@ -112,42 +112,46 @@ let testService: TestService = TestService.init(bleWorker)
 let testService2: TestService = TestService.init(bleWorker)
 
 // Read method example
-testService.readValue(request: GetValueRequest()).map { response in
+let handler1 = testService.readValue(request: GetValueRequest()).subscribe(onSuccess: { response in
     print(response)
-}.catch { error in
+}, onError: { error in
     print(error)
 }
+
+handler1.dispose() // you can cancel read request
 
 // Write method example
-testService.writeValue(request: SetValueRequest()).map { response in
+let handler2 = testService.writeValue(request: SetValueRequest()).subscribe(onSuccess: { response in
     print(response)
-}.catch { error in
+}, onError: { error in
     print(error)
 }
 
+handler2.dispose() // you can cancel write request
+
 // Subscribe method example
-let handler1 = testService.getValueUpdates(request: GetValueRequest()).subscribe(onNext: { response in
+let handler3 = testService.getValueUpdates(request: GetValueRequest()).subscribe(onNext: { response in
     print(response)
 }, onError: { error in
     print(error)
 })
 
-let handler2 = testService.getValueUpdates(request: GetValueRequest()).subscribe(onNext: { response in
+let handler4 = testService.getValueUpdates(request: GetValueRequest()).subscribe(onNext: { response in
     print(response)
 }, onError: { error in
     print(error)
 })
 
 // You can even subscribe to the same method on different service
-let handler3 = testService2.getValueUpdates(request: GetValueRequest()).subscribe(onNext: { response in
+let handler5 = testService2.getValueUpdates(request: GetValueRequest()).subscribe(onNext: { response in
     print(response)
 }, onError: { error in
     print(error)
 })
 
-handler1.dispose() // physically not unsubscribed
 handler3.dispose() // physically not unsubscribed
-handler2.dispose() // now physically unsubscribed (because no more handlers)
+handler5.dispose() // physically not unsubscribed
+handler4.dispose() // now physically unsubscribed (because no more handlers)
 
 ```
 
