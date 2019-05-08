@@ -6,10 +6,10 @@
 
 
 ## iOS support
-Swift PromiseKit service generator plugin generates PromiseKit wrappers to request methods over Bluettoth Low Energy and automatically encode/decode messages.
+Swift Reactive Ble Rpc service generator plugin generates `Rx.Swift` wrappers to request methods over Bluettoth Low Energy and automatically encode/decode messages.
 
 ### How to use
-You need to add classes from `SwiftBleModule` to your project. These classes is high level classes ovr Bluetooth Low Energy interaction and parsing.
+You need to add classes from `SwiftBleRpcLibrary` to your project. These classes is high level classes over Bluetooth Low Energy interaction and parsing.
 
 Firstly you need to write proto file describing your service:
 
@@ -95,19 +95,21 @@ This will output swift files describing messages. Then call
 
 ```
 protoc \
---plugin=protoc-gen-rx='path-to-plugin/promisekit-blerpc' \
+--plugin=protoc-gen-rx='path-to-plugin/swift-reactive-blerpc' \
 --proto_path='.' \
 -I 'dependency-protos/' \
 --rx_out='output-folder/' \
 'proto-to-parse/service.proto'
 ```
 
-to generate PromieKit services for calling methods over Bluetooth Low Energy and extensions for Swift files which we already compiled in step above to support  parsing messages.
+to generate reactive Rpc services for calling methods over Bluetooth Low Energy and extensions for Swift files which we already compiled in step above to support  parsing messages.
 
 And finally you can call your service methods:
 
 ```
-let bleWorker: BleWorker = BleWorker()
+let bleWorker: BleWorker = BleWorker.init(peripheral: peripheral)
+_ = bleWorker.connectToPeripheral() // connect to device when needed
+
 let testService: TestService = TestService.init(bleWorker)
 let testService2: TestService = TestService.init(bleWorker)
 
@@ -142,7 +144,7 @@ let handler4 = testService.getValueUpdates(request: GetValueRequest()).subscribe
     print(error)
 })
 
-// You can even subscribe to the same method on different service
+// You can subscribe to the same method on different service
 let handler5 = testService2.getValueUpdates(request: GetValueRequest()).subscribe(onNext: { response in
     print(response)
 }, onError: { error in
@@ -156,6 +158,5 @@ handler4.dispose() // now physically unsubscribed (because no more handlers)
 ```
 
 ### Dependencies
-PromiseKit - `pod 'PromiseKit'`
 SwiftGRPC - `pod 'SwiftGRPC'` (see instructions how to setup it https://github.com/grpc/grpc-swift)
 RxBluetoothKit - `pod 'RxBluetoothKit'`

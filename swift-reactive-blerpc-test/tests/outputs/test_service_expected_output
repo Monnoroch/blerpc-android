@@ -1,0 +1,113 @@
+import Foundation
+import RxBluetoothKit
+import CoreBluetooth
+import RxSwift
+
+/// TestService service
+public class TestService: BleRpcService {
+
+    /// UUID of service
+    public static let TestServiceUUID: String = "A0000000-0000-0000-0000-000000000000"
+
+    /// Send read request of method readValue on device
+    /// - parameter request: My_Device_GetValueRequest
+    /// - returns: *Single* to operation with My_Device_GetValueResponse
+    public func readValue(request: My_Device_GetValueRequest) -> Single<My_Device_GetValueResponse> {
+        return Single.create { [weak self] observer in
+            var disposable: Disposable?
+            
+            do {
+                let data = try My_Device_GetValueRequest.encode(proto: request)
+                
+                disposable = self?.bleWorker.read(request: data, serviceUUID: "A0000000-0000-0000-0000-000000000000", characteristicUUID: "A0000001-0000-0000-0000-000000000000")
+                .subscribe(onSuccess: { (response) in
+                    do {
+                        let proto = try My_Device_GetValueResponse.decode(data: response)
+                        observer(.success(proto))
+                    } catch {
+                        observer(.error(error))
+                    }
+                }, onError: { (error) in
+                    observer(.error(error))
+                })
+            } catch {
+                observer(.error(error))
+            }
+            
+            return Disposables.create {
+                disposable?.dispose()
+            }
+        }
+    }
+
+
+
+
+    /// Send write request of method writeValue on device
+    /// - parameter request: My_Device_SetValueRequest
+    /// - returns: *Single* to operation with My_Device_SetValueResponse
+    public func writeValue(request: My_Device_SetValueRequest) -> Single<My_Device_SetValueResponse> {
+        return Single.create { [weak self] observer in
+            var disposable: Disposable?
+            
+            do {
+                let data = try My_Device_SetValueRequest.encode(proto: request)
+                
+                disposable = self?.bleWorker.write(request: data, serviceUUID: "A0000000-0000-0000-0000-000000000000", characteristicUUID: "A0000001-0000-0000-0000-000000000000")
+                .subscribe(onSuccess: { (response) in
+                    do {
+                        let proto = try My_Device_SetValueResponse.decode(data: response)
+                        observer(.success(proto))
+                    } catch {
+                        observer(.error(error))
+                    }
+                }, onError: { (error) in
+                    observer(.error(error))
+                })
+            } catch {
+                observer(.error(error))
+            }
+            
+            return Disposables.create {
+                disposable?.dispose()
+            }
+        }
+    }
+
+
+
+
+    /// Send subscribe request of method getValueUpdates on device
+    /// - parameter request: My_Device_GetValueRequest
+    /// - returns: *Observable* to operation
+    public func getValueUpdates(request: My_Device_GetValueRequest) -> Observable<My_Device_GetValueResponse> {
+        return Observable.create { [weak self] observer in
+            var disposable: Disposable?
+            
+            do {
+                let data = try My_Device_GetValueRequest.encode(proto: request)
+                
+                disposable = self?.bleWorker.subscribe(request: data, serviceUUID: "A0000000-0000-0000-0000-000000000000", characteristicUUID: "A0000001-0000-0000-0000-000000000000")
+                .subscribe(onNext: { (response) in
+                    do {
+                        let proto = try My_Device_GetValueResponse.decode(data: response)
+                        observer.onNext(proto)
+                    } catch {
+                        observer.onError(error)
+                    }
+                }, onError: { (error) in
+                    observer.onError(error)
+                }, onCompleted: {
+                    observer.onCompleted()
+                })
+            } catch {
+                observer.onError(error)
+            }
+            
+            return Disposables.create {
+                disposable?.dispose()
+            }
+        }
+    }
+
+}

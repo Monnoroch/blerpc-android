@@ -168,5 +168,9 @@ gradle-app.setting
 # # Work around https://youtrack.jetbrains.com/issue/IDEA-116898
 # gradle/wrapper/gradle-wrapper.properties
 /gradle.properties
+
+# Generated files
 generated
-promisekit-blerpc-test/tests/com
+
+# Swift/iOS files
+swift-reactive-blerpc-test/tests/com
