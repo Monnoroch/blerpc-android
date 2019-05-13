@@ -2,6 +2,7 @@ import Foundation
 import CoreBluetooth
 import RxBluetoothKit
 import RxSwift
+import RxSwiftExt
 
 /// Class which holds all operation with data transfer between iOS and Ble Device
 public class BleWorker {
@@ -44,32 +45,21 @@ public class BleWorker {
     
     // MARK: - Public methods
     
-    /// Connecting to peripheral
-    public func connectToPeripheral() -> PublishSubject<Void> {
-        let subject = PublishSubject<Void>()
-        
-        self.deviceConnection = self.manager.establishConnection(self.connectedPeripheral).subscribe(onNext: { [weak self] _ in
-            self?.startObservingDisconnection()
-            subject.onNext(())
-            subject.onCompleted()
-        }, onError: { (error) in
-            subject.onError(error)
-        }, onCompleted: nil, onDisposed: nil)
-        
-        return subject
-    }
-    
     /// Check if current device has a service
     /// - parameter serviceUUID: *UUID* of a service
     public func isHasService(serviceUUID: String) -> Single<Bool> {
         return Single.create { [weak self] observer in
-            _ = self?.connectedPeripheral.discoverServices([CBUUID.init(string: serviceUUID)]).subscribe(onSuccess: { services in
-                if services.count > 0 {
-                    observer(.success((true)))
-                } else {
-                    observer(.success((false)))
-                }
-            }, onError: { error in
+            _ = self?.connectIfNeeded().asObservable().retry(.exponentialDelayed(maxCount: 3, initial: 1.0, multiplier: 1.0)).subscribe(onNext: { (Void) in
+                _ = self?.connectedPeripheral.discoverServices([CBUUID.init(string: serviceUUID)]).subscribe(onSuccess: { services in
+                    if services.count > 0 {
+                        observer(.success((true)))
+                    } else {
+                        observer(.success((false)))
+                    }
+                }, onError: { error in
+                    observer(.error(error))
+                })
+            }, onError: { (error) in
                 observer(.error(error))
             })
             
@@ -99,9 +89,13 @@ public class BleWorker {
     internal func subscribe(request: Data, serviceUUID: String, characteristicUUID: String) -> Observable<Data> {
         return Observable.create { [weak self] observer in
             var disposable: Disposable?
-            disposable = self?.discoverCharacteristic(serviceUUID: serviceUUID, characteristicUUID: characteristicUUID).subscribe(onSuccess: { (characteristic) in
-                disposable = characteristic.observeValueUpdateAndSetNotification().subscribe({ (event) in
-                    self?.completeSubscription(event: event, observer: observer)
+            disposable = self?.connectIfNeeded().asObservable().retry(.exponentialDelayed(maxCount: 3, initial: 1.0, multiplier: 1.0)).subscribe(onNext: { (Void) in
+                disposable = self?.discoverCharacteristic(serviceUUID: serviceUUID, characteristicUUID: characteristicUUID).subscribe(onSuccess: { (characteristic) in
+                    disposable = characteristic.observeValueUpdateAndSetNotification().subscribe({ (event) in
+                        self?.completeSubscription(event: event, observer: observer)
+                    })
+                }, onError: { (error) in
+                    observer.onError(error)
                 })
             }, onError: { (error) in
                 observer.onError(error)
@@ -121,9 +115,13 @@ public class BleWorker {
     internal func read(request: Data, serviceUUID: String, characteristicUUID: String) -> Single<Data> {
         return Single.create { [weak self] observer in
             var disposable: Disposable?
-            disposable = self?.discoverCharacteristic(serviceUUID: serviceUUID, characteristicUUID: characteristicUUID).subscribe(onSuccess: { (characteristic) in
-                disposable = characteristic.readValue().subscribe({ (event) in
-                    self?.completeReadWrite(event: event, observer: observer)
+            disposable = self?.connectIfNeeded().asObservable().retry(.exponentialDelayed(maxCount: 3, initial: 1.0, multiplier: 1.0)).subscribe(onNext: { (Void) in
+                disposable = self?.discoverCharacteristic(serviceUUID: serviceUUID, characteristicUUID: characteristicUUID).subscribe(onSuccess: { (characteristic) in
+                    disposable = characteristic.readValue().subscribe({ (event) in
+                        self?.completeReadWrite(event: event, observer: observer)
+                    })
+                }, onError: { (error) in
+                    observer(.error(error))
                 })
             }, onError: { (error) in
                 observer(.error(error))
@@ -143,7 +141,8 @@ public class BleWorker {
     internal func write(request: Data, serviceUUID: String, characteristicUUID: String) -> Single<Data> {
         return Single.create { [weak self] observer in
             var disposable: Disposable?
-            disposable = self?.discoverCharacteristic(serviceUUID: serviceUUID, characteristicUUID: characteristicUUID)
+            disposable = self?.connectIfNeeded().asObservable().retry(.exponentialDelayed(maxCount: 3, initial: 1.0, multiplier: 1.0)).subscribe(onNext: { (Void) in
+                disposable = self?.discoverCharacteristic(serviceUUID: serviceUUID, characteristicUUID: characteristicUUID)
                 .subscribe(onSuccess: { (characteristic) in
                     disposable = characteristic.writeValue(request, type: .withResponse).subscribe({ (event) in
                         self?.completeReadWrite(event: event, observer: observer)
@@ -151,6 +150,9 @@ public class BleWorker {
                 }, onError: { (error) in
                     observer(.error(error))
                 })
+            }, onError: { error in
+                observer(.error(error))
+            })
             
             return Disposables.create {
                 disposable?.dispose()
@@ -159,6 +161,41 @@ public class BleWorker {
     }
     
     // MARK: - Private methods
+    
+    /// Connecting to peripheral
+    private func connectToPeripheral() -> PublishSubject<Void> {
+        let subject = PublishSubject<Void>()
+        
+        self.deviceConnection = self.manager.establishConnection(self.connectedPeripheral).subscribe(onNext: { [weak self] _ in
+            self?.startObservingDisconnection()
+            subject.onNext(())
+            subject.onCompleted()
+            }, onError: { (error) in
+                subject.onError(error)
+        }, onCompleted: nil, onDisposed: nil)
+        
+        return subject
+    }
+    
+    /// Check current conenction state and if not connected - trying to connect to device
+    private func connectIfNeeded() -> Single<Void> {
+        return Single.create { [weak self] observer in
+            if let isConnected = self?.isPeripheralConnected, isConnected == true {
+                observer(.success(()))
+                return Disposables.create()
+            } else {
+                let disposable = self?.connectToPeripheral().subscribe(onNext: { (Void) in
+                    observer(.success(()))
+                }, onError: { (error) in
+                    observer(.error(error))
+                }, onCompleted: nil, onDisposed: nil)
+                
+                return Disposables.create {
+                    disposable?.dispose()
+                }
+            }
+        }
+    }
     
     /// Discovers characteristic
     /// - parameter serviceUUID: *UUID* of a service

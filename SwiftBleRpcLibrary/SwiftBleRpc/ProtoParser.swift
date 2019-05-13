@@ -122,7 +122,7 @@ public class ProtoDecoder {
         
         switch typeG {
         case .int32:
-            if from >= data.count {
+            if to > data.count {
                 throw ProtoParserErrors.wrongData
             } else {
                 if to - from == 1 {
@@ -134,13 +134,13 @@ public class ProtoDecoder {
                 }
             }
         case .byte:
-            if to >= data.count {
+            if to > data.count {
                 throw ProtoParserErrors.wrongData
             } else {
                 return data.subdata(in: Range.init(NSRange.init(location: from, length: to - from))!)
             }
         case .bool:
-            if from >= data.count {
+            if to > data.count {
                 throw ProtoParserErrors.wrongData
             } else {
                 return ProtoDecoder.decodeBool(fromByte: from, data: data)

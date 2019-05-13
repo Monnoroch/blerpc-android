@@ -108,7 +108,6 @@ And finally you can call your service methods:
 
 ```
 let bleWorker: BleWorker = BleWorker.init(peripheral: peripheral)
-_ = bleWorker.connectToPeripheral() // connect to device when needed
 
 let testService: TestService = TestService.init(bleWorker)
 let testService2: TestService = TestService.init(bleWorker)
@@ -160,3 +159,4 @@ handler4.dispose() // now physically unsubscribed (because no more handlers)
 ### Dependencies
 SwiftGRPC - `pod 'SwiftGRPC'` (see instructions how to setup it https://github.com/grpc/grpc-swift)
 RxBluetoothKit - `pod 'RxBluetoothKit'`
+RxSwiftExt - `pod 'RxSwiftExt'`

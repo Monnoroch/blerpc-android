@@ -18,7 +18,7 @@ public class BleRpcService {
     }
     
     /// Block default init
-    private override init() {
+    private init() {
         fatalError("Please use init(bleWorker:) instead.")
     }
     

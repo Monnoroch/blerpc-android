@@ -16,25 +16,17 @@ public class {{serviceName}}: BleRpcService {
     /// - returns: *Single* to operation with {{outputType}}
     public func {{methodName}}(request: {{inputType}}) -> Single<{{outputType}}> {
         return Single.create { [weak self] observer in
-            var disposable: Disposable?
-            
-            do {
-                let data = try {{inputType}}.encode(proto: request)
-                
-                disposable = self?.bleWorker.read(request: data, serviceUUID: "{{serviceUUID}}", characteristicUUID: "{{characteristicUUID}}")
-                .subscribe(onSuccess: { (response) in
-                    do {
-                        let proto = try {{outputType}}.decode(data: response)
-                        observer(.success(proto))
-                    } catch {
-                        observer(.error(error))
-                    }
-                }, onError: { (error) in
-                    observer(.error(error))
-                })
-            } catch {
-                observer(.error(error))
+            let data = try? {{inputType}}.encode(proto: request)
+
+            guard let requestData = data else {
+                observer(.error(ProtoParserErrors.wrongData))
+                return Disposables.create()
             }
+
+            let disposable = self?.bleWorker.read(request: requestData, serviceUUID: {{serviceName}}.{{serviceName}}UUID, characteristicUUID: "{{characteristicUUID}}")
+            .map { response in
+                try {{outputType}}.decode(data: response)
+            }.subscribe(observer)
             
             return Disposables.create {
                 disposable?.dispose()
@@ -49,25 +41,17 @@ public class {{serviceName}}: BleRpcService {
     /// - returns: *Single* to operation with {{outputType}}
     public func {{methodName}}(request: {{inputType}}) -> Single<{{outputType}}> {
         return Single.create { [weak self] observer in
-            var disposable: Disposable?
-            
-            do {
-                let data = try {{inputType}}.encode(proto: request)
-                
-                disposable = self?.bleWorker.write(request: data, serviceUUID: "{{serviceUUID}}", characteristicUUID: "{{characteristicUUID}}")
-                .subscribe(onSuccess: { (response) in
-                    do {
-                        let proto = try {{outputType}}.decode(data: response)
-                        observer(.success(proto))
-                    } catch {
-                        observer(.error(error))
-                    }
-                }, onError: { (error) in
-                    observer(.error(error))
-                })
-            } catch {
-                observer(.error(error))
+            let data = try? {{inputType}}.encode(proto: request)
+
+            guard let requestData = data else {
+                observer(.error(ProtoParserErrors.wrongData))
+                return Disposables.create()
             }
+
+            let disposable = self?.bleWorker.write(request: requestData, serviceUUID: {{serviceName}}.{{serviceName}}UUID, characteristicUUID: "{{characteristicUUID}}")
+            .map { response in
+                try {{outputType}}.decode(data: response)
+            }.subscribe(observer)
             
             return Disposables.create {
                 disposable?.dispose()
@@ -82,27 +66,17 @@ public class {{serviceName}}: BleRpcService {
     /// - returns: *Observable* to operation
     public func {{methodName}}(request: {{inputType}}) -> Observable<{{outputType}}> {
         return Observable.create { [weak self] observer in
-            var disposable: Disposable?
-            
-            do {
-                let data = try {{inputType}}.encode(proto: request)
-                
-                disposable = self?.bleWorker.subscribe(request: data, serviceUUID: "{{serviceUUID}}", characteristicUUID: "{{characteristicUUID}}")
-                .subscribe(onNext: { (response) in
-                    do {
-                        let proto = try {{outputType}}.decode(data: response)
-                        observer.onNext(proto)
-                    } catch {
-                        observer.onError(error)
-                    }
-                }, onError: { (error) in
-                    observer.onError(error)
-                }, onCompleted: {
-                    observer.onCompleted()
-                })
-            } catch {
-                observer.onError(error)
+            let data = try? {{inputType}}.encode(proto: request)
+
+            guard let requestData = data else {
+                observer.onError(ProtoParserErrors.wrongData)
+                return Disposables.create()
             }
+
+            let disposable = self?.bleWorker.subscribe(request: requestData, serviceUUID: {{serviceName}}.{{serviceName}}UUID, characteristicUUID: "{{characteristicUUID}}")
+            .map { response in
+                try {{outputType}}.decode(data: response)
+            }.subscribe(observer)
             
             return Disposables.create {
                 disposable?.dispose()
