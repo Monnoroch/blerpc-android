@@ -1,0 +1,54 @@
+import Foundation
+import RxBluetoothKit
+import CoreBluetooth
+import RxSwift
+
+/// TestService service.
+public class TestService: BleRpcService {
+
+    /// UUID of service.
+    public static let TestServiceUUID: String = "A0000000-0000-0000-0000-000000000000"
+
+    /// Send read request of method readValue on device.
+    /// - parameter request: Device_GetValueRequest.
+    /// - returns: *Single* to operation with Device_GetValueResponse.
+    public func readValue(request: Device_GetValueRequest) -> Single<Device_GetValueResponse> {
+        return Single.create { [weak self] observer in
+            let data = try? Device_GetValueRequest.bleRpcEncode(proto: request)
+
+            guard let requestData = data else {
+                observer(.error(ProtoParserErrors.wrongData))
+                return Disposables.create()
+            }
+
+            return self?.bleWorker.read(request: requestData, serviceUUID: TestService.TestServiceUUID, characteristicUUID: "A0000001-0000-0000-0000-000000000000")
+            .map { response in
+                try Device_GetValueResponse.bleRpcDecode(data: response)
+            }.subscribe(observer) ?? Disposables.create()
+        }
+    }
+
+
+
+
+
+    /// Send subscribe request of method getValueUpdates on device.
+    /// - parameter request: Device_GetValueRequest.
+    /// - returns: *Observable* to operation.
+    public func getValueUpdates(request: Device_GetValueRequest) -> Observable<Device_GetValueResponse> {
+        return Observable.create { [weak self] observer in
+            let data = try? Device_GetValueRequest.bleRpcEncode(proto: request)
+
+            guard let requestData = data else {
+                observer.onError(ProtoParserErrors.wrongData)
+                return Disposables.create()
+            }
+
+            return self?.bleWorker.subscribe(request: requestData, serviceUUID: TestService.TestServiceUUID, characteristicUUID: "A0000001-0000-0000-0000-000000000000")
+            .map { response in
+                try Device_GetValueResponse.bleRpcDecode(data: response)
+            }.subscribe(observer) ?? Disposables.create()
+        }
+    }
+
+}

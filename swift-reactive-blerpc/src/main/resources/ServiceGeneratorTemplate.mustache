@@ -3,84 +3,72 @@ import RxBluetoothKit
 import CoreBluetooth
 import RxSwift
 
-/// {{serviceName}} service
+/// {{serviceName}} service.
 public class {{serviceName}}: BleRpcService {
 
-    /// UUID of service
+    /// UUID of service.
     public static let {{serviceName}}UUID: String = "{{serviceUUID}}"
 
 {{#methods}}
     {{#typeRead}}
-    /// Send read request of method {{methodName}} on device
-    /// - parameter request: {{inputType}}
-    /// - returns: *Single* to operation with {{outputType}}
+    /// Send read request of method {{methodName}} on device.
+    /// - parameter request: {{inputType}}.
+    /// - returns: *Single* to operation with {{outputType}}.
     public func {{methodName}}(request: {{inputType}}) -> Single<{{outputType}}> {
         return Single.create { [weak self] observer in
-            let data = try? {{inputType}}.encode(proto: request)
+            let data = try? {{inputType}}.bleRpcEncode(proto: request)
 
             guard let requestData = data else {
                 observer(.error(ProtoParserErrors.wrongData))
                 return Disposables.create()
             }
 
-            let disposable = self?.bleWorker.read(request: requestData, serviceUUID: {{serviceName}}.{{serviceName}}UUID, characteristicUUID: "{{characteristicUUID}}")
+            return self?.bleWorker.read(request: requestData, serviceUUID: {{serviceName}}.{{serviceName}}UUID, characteristicUUID: "{{characteristicUUID}}")
             .map { response in
-                try {{outputType}}.decode(data: response)
-            }.subscribe(observer)
-            
-            return Disposables.create {
-                disposable?.dispose()
-            }
+                try {{outputType}}.bleRpcDecode(data: response)
+            }.subscribe(observer) ?? Disposables.create()
         }
     }
     {{/typeRead}}
 
     {{#typeWrite}}
-    /// Send write request of method {{methodName}} on device
-    /// - parameter request: {{inputType}}
-    /// - returns: *Single* to operation with {{outputType}}
+    /// Send write request of method {{methodName}} on device.
+    /// - parameter request: {{inputType}}.
+    /// - returns: *Single* to operation with {{outputType}}.
     public func {{methodName}}(request: {{inputType}}) -> Single<{{outputType}}> {
         return Single.create { [weak self] observer in
-            let data = try? {{inputType}}.encode(proto: request)
+            let data = try? {{inputType}}.bleRpcEncode(proto: request)
 
             guard let requestData = data else {
                 observer(.error(ProtoParserErrors.wrongData))
                 return Disposables.create()
             }
 
-            let disposable = self?.bleWorker.write(request: requestData, serviceUUID: {{serviceName}}.{{serviceName}}UUID, characteristicUUID: "{{characteristicUUID}}")
+            return self?.bleWorker.write(request: requestData, serviceUUID: {{serviceName}}.{{serviceName}}UUID, characteristicUUID: "{{characteristicUUID}}")
             .map { response in
-                try {{outputType}}.decode(data: response)
-            }.subscribe(observer)
-            
-            return Disposables.create {
-                disposable?.dispose()
-            }
+                try {{outputType}}.bleRpcDecode(data: response)
+            }.subscribe(observer) ?? Disposables.create()
         }
     }
     {{/typeWrite}}
 
     {{#typeSubscribe}}
-    /// Send subscribe request of method {{methodName}} on device
-    /// - parameter request: {{inputType}}
-    /// - returns: *Observable* to operation
+    /// Send subscribe request of method {{methodName}} on device.
+    /// - parameter request: {{inputType}}.
+    /// - returns: *Observable* to operation.
     public func {{methodName}}(request: {{inputType}}) -> Observable<{{outputType}}> {
         return Observable.create { [weak self] observer in
-            let data = try? {{inputType}}.encode(proto: request)
+            let data = try? {{inputType}}.bleRpcEncode(proto: request)
 
             guard let requestData = data else {
                 observer.onError(ProtoParserErrors.wrongData)
                 return Disposables.create()
             }
 
-            let disposable = self?.bleWorker.subscribe(request: requestData, serviceUUID: {{serviceName}}.{{serviceName}}UUID, characteristicUUID: "{{characteristicUUID}}")
+            return self?.bleWorker.subscribe(request: requestData, serviceUUID: {{serviceName}}.{{serviceName}}UUID, characteristicUUID: "{{characteristicUUID}}")
             .map { response in
-                try {{outputType}}.decode(data: response)
-            }.subscribe(observer)
-            
-            return Disposables.create {
-                disposable?.dispose()
-            }
+                try {{outputType}}.bleRpcDecode(data: response)
+            }.subscribe(observer) ?? Disposables.create()
         }
     }
     {{/typeSubscribe}}

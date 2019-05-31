@@ -110,6 +110,8 @@ And finally you can call your service methods:
 let bleWorker: BleWorker = BleWorker.init(peripheral: peripheral)
 
 let testService: TestService = TestService.init(bleWorker)
+
+// You can use as many services as you want. You can even use the same services multiple times
 let testService2: TestService = TestService.init(bleWorker)
 
 // Read method example

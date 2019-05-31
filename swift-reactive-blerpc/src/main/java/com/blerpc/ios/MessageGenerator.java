@@ -64,6 +64,21 @@ class MessageGenerator {
                     fieldContext.isPrimitiveType = true;
                 }
 
+                switch (fieldContext.type) {
+                    case "TYPE_INT32":
+                        fieldContext.swiftType = "ProtoType.int32";
+                        break;
+                    case  "TYPE_BYTES":
+                        fieldContext.swiftType = "ProtoType.byte";
+                        break;
+                    case  "TYPE_BOOL":
+                        fieldContext.swiftType = "ProtoType.bool";
+                        break;
+                    default:
+                        fieldContext.swiftType = "ProtoType.unknown";
+                        break;
+                }
+
                 fieldContext.toByte = field.getOptions().getExtension(Blerpc.field).getToByte();
                 fieldContext.fromByte = field.getOptions().getExtension(Blerpc.field).getFromByte();
                 arrayFields.add(fieldContext);
@@ -126,6 +141,7 @@ class MessageGenerator {
     @VisibleForTesting
     public static class FieldContext {
         public String type;
+        public String swiftType;
         public boolean isEnum;
         public boolean isProtoObject;
         public boolean isPrimitiveType;
