@@ -2,19 +2,11 @@ import Foundation
 import CoreBluetooth
 import RxBluetoothKit
 import RxSwift
-import RxSwiftExt
 
 /// Class which holds all operation with data transfer between iOS and Ble Device.
 public class BleWorker {
     
     // MARK: - Variables
-    
-    /// Check if iOS Device connected to peripheral or not.
-    public var isPeripheralConnected: Bool {
-        get {
-            return connectedPeripheral.isConnected
-        }
-    }
     
     /// Bluetooth Central Manager.
     private let manager: CentralManager
@@ -30,9 +22,6 @@ public class BleWorker {
     
     /// BleWorker queue which used to make thread safe read/write
     private let accessQueue: DispatchQueue = DispatchQueue.init(label: "bleWorkerQueue")
-
-    /// Behavior of retry policy
-    private let retryBehavior: RepeatBehavior = RepeatBehavior.exponentialDelayed(maxCount: 3, initial: 1.0, multiplier: 1.0)
     
     /// Error sended when ble device returned empty response
     private let wrongDataError = NSError(domain: "blerpc.errors", code: 0, userInfo:
@@ -61,12 +50,6 @@ public class BleWorker {
         deviceConnection?.dispose()
     }
     
-    /// Get connection state.
-    /// - returns: connection state.
-    public func connectionState() -> BluetoothState {
-        return manager.state
-    }
-    
     // MARK: - Internal methods
     
     /// Call subscribe request over Ble.
@@ -76,7 +59,7 @@ public class BleWorker {
     /// - returns: *Observable* Data.
     internal func subscribe(request: Data, serviceUUID: String, characteristicUUID: String) -> Observable<Data> {
         return Observable.create { [weak self] observer in
-            return self?.connectIfNeeded().asObservable().retry(self!.retryBehavior)
+            return self?.connectIfNeeded().asObservable()
             .flatMap { _ -> Observable<Characteristic> in
                 guard let `self` = self else {
                     return Observable.empty()
@@ -97,7 +80,7 @@ public class BleWorker {
     /// - returns: *Observable* Data.
     internal func read(request: Data, serviceUUID: String, characteristicUUID: String) -> Single<Data> {
         return Single.create { [weak self] observer in
-            return self?.connectIfNeeded().asObservable().retry(self!.retryBehavior)
+            return self?.connectIfNeeded().asObservable()
             .flatMap { _ -> Observable<Characteristic> in
                 guard let `self` = self else {
                     return Observable.empty()
@@ -118,7 +101,7 @@ public class BleWorker {
     /// - returns: *Observable* Data.
     internal func write(request: Data, serviceUUID: String, characteristicUUID: String) -> Single<Data> {
         return Single.create { [weak self] observer in
-            return self?.connectIfNeeded().asObservable().retry(self!.retryBehavior)
+            return self?.connectIfNeeded().asObservable()
             .flatMap { _ -> Observable<Characteristic> in
                 guard let `self` = self else {
                     return Observable.empty()
@@ -156,7 +139,7 @@ public class BleWorker {
     private func connectIfNeeded() -> Single<Void> {
         return Single.create { [weak self] observer in
             self?.accessQueue.sync {
-                if let isConnected = self?.isPeripheralConnected, isConnected == true {
+                if let isConnected = self?.connectedPeripheral.isConnected, isConnected == true {
                     observer(.success(()))
                     return Disposables.create()
                 } else {

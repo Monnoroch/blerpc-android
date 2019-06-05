@@ -14,17 +14,17 @@ public class TestService: BleRpcService {
     /// - returns: *Single* to operation with Device_GetValueResponse.
     public func readValue(request: Device_GetValueRequest) -> Single<Device_GetValueResponse> {
         return Single.create { [weak self] observer in
-            let data = try? Device_GetValueRequest.bleRpcEncode(proto: request)
+            do {
+                let data = try Device_GetValueRequest.bleRpcEncode(proto: request)
 
-            guard let requestData = data else {
-                observer(.error(ProtoParserErrors.wrongData))
+                return self?.bleWorker.read(request: data, serviceUUID: TestService.TestServiceUUID, characteristicUUID: "A0000001-0000-0000-0000-000000000000")
+                .map { response in
+                    try Device_GetValueResponse.bleRpcDecode(data: response)
+                }.subscribe(observer) ?? Disposables.create()
+            } catch {
+                observer(.error(error))
                 return Disposables.create()
             }
-
-            return self?.bleWorker.read(request: requestData, serviceUUID: TestService.TestServiceUUID, characteristicUUID: "A0000001-0000-0000-0000-000000000000")
-            .map { response in
-                try Device_GetValueResponse.bleRpcDecode(data: response)
-            }.subscribe(observer) ?? Disposables.create()
         }
     }
 
@@ -37,17 +37,17 @@ public class TestService: BleRpcService {
     /// - returns: *Observable* to operation.
     public func getValueUpdates(request: Device_GetValueRequest) -> Observable<Device_GetValueResponse> {
         return Observable.create { [weak self] observer in
-            let data = try? Device_GetValueRequest.bleRpcEncode(proto: request)
+            do {
+                let data = try Device_GetValueRequest.bleRpcEncode(proto: request)
 
-            guard let requestData = data else {
-                observer.onError(ProtoParserErrors.wrongData)
+                return self?.bleWorker.subscribe(request: data, serviceUUID: TestService.TestServiceUUID, characteristicUUID: "A0000001-0000-0000-0000-000000000000")
+                .map { response in
+                    try Device_GetValueResponse.bleRpcDecode(data: response)
+                }.subscribe(observer) ?? Disposables.create()
+            } catch {
+                observer.onError(error)
                 return Disposables.create()
             }
-
-            return self?.bleWorker.subscribe(request: requestData, serviceUUID: TestService.TestServiceUUID, characteristicUUID: "A0000001-0000-0000-0000-000000000000")
-            .map { response in
-                try Device_GetValueResponse.bleRpcDecode(data: response)
-            }.subscribe(observer) ?? Disposables.create()
         }
     }
 

@@ -16,17 +16,17 @@ public class {{serviceName}}: BleRpcService {
     /// - returns: *Single* to operation with {{outputType}}.
     public func {{methodName}}(request: {{inputType}}) -> Single<{{outputType}}> {
         return Single.create { [weak self] observer in
-            let data = try? {{inputType}}.bleRpcEncode(proto: request)
+            do {
+                let data = try {{inputType}}.bleRpcEncode(proto: request)
 
-            guard let requestData = data else {
-                observer(.error(ProtoParserErrors.wrongData))
+                return self?.bleWorker.read(request: data, serviceUUID: {{serviceName}}.{{serviceName}}UUID, characteristicUUID: "{{characteristicUUID}}")
+                .map { response in
+                    try {{outputType}}.bleRpcDecode(data: response)
+                }.subscribe(observer) ?? Disposables.create()
+            } catch {
+                observer(.error(error))
                 return Disposables.create()
             }
-
-            return self?.bleWorker.read(request: requestData, serviceUUID: {{serviceName}}.{{serviceName}}UUID, characteristicUUID: "{{characteristicUUID}}")
-            .map { response in
-                try {{outputType}}.bleRpcDecode(data: response)
-            }.subscribe(observer) ?? Disposables.create()
         }
     }
     {{/typeRead}}
@@ -37,17 +37,17 @@ public class {{serviceName}}: BleRpcService {
     /// - returns: *Single* to operation with {{outputType}}.
     public func {{methodName}}(request: {{inputType}}) -> Single<{{outputType}}> {
         return Single.create { [weak self] observer in
-            let data = try? {{inputType}}.bleRpcEncode(proto: request)
+            do {
+                let data = try {{inputType}}.bleRpcEncode(proto: request)
 
-            guard let requestData = data else {
-                observer(.error(ProtoParserErrors.wrongData))
+                return self?.bleWorker.write(request: data, serviceUUID: {{serviceName}}.{{serviceName}}UUID, characteristicUUID: "{{characteristicUUID}}")
+                .map { response in
+                    try {{outputType}}.bleRpcDecode(data: response)
+                }.subscribe(observer) ?? Disposables.create()
+            } catch {
+                observer(.error(error))
                 return Disposables.create()
             }
-
-            return self?.bleWorker.write(request: requestData, serviceUUID: {{serviceName}}.{{serviceName}}UUID, characteristicUUID: "{{characteristicUUID}}")
-            .map { response in
-                try {{outputType}}.bleRpcDecode(data: response)
-            }.subscribe(observer) ?? Disposables.create()
         }
     }
     {{/typeWrite}}
@@ -58,17 +58,17 @@ public class {{serviceName}}: BleRpcService {
     /// - returns: *Observable* to operation.
     public func {{methodName}}(request: {{inputType}}) -> Observable<{{outputType}}> {
         return Observable.create { [weak self] observer in
-            let data = try? {{inputType}}.bleRpcEncode(proto: request)
+            do {
+                let data = try {{inputType}}.bleRpcEncode(proto: request)
 
-            guard let requestData = data else {
-                observer.onError(ProtoParserErrors.wrongData)
+                return self?.bleWorker.subscribe(request: data, serviceUUID: {{serviceName}}.{{serviceName}}UUID, characteristicUUID: "{{characteristicUUID}}")
+                .map { response in
+                    try {{outputType}}.bleRpcDecode(data: response)
+                }.subscribe(observer) ?? Disposables.create()
+            } catch {
+                observer.onError(error)
                 return Disposables.create()
             }
-
-            return self?.bleWorker.subscribe(request: requestData, serviceUUID: {{serviceName}}.{{serviceName}}UUID, characteristicUUID: "{{characteristicUUID}}")
-            .map { response in
-                try {{outputType}}.bleRpcDecode(data: response)
-            }.subscribe(observer) ?? Disposables.create()
         }
     }
     {{/typeSubscribe}}
