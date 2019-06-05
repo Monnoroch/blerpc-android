@@ -116,11 +116,11 @@ public class ProtoDecoder {
     /// - parameter type: the type of output's object data.
     /// - returns: converted object.
     public class func decode(data: Data, from: Int, to: Int, type: ProtoType?) throws -> Any {
-        guard let typeG = type else {
+        guard let `type` = type else {
             throw ProtoParserErrors.notSupportedType
         }
         
-        switch typeG {
+        switch type {
         case .int32:
             if to > data.count {
                 throw ProtoParserErrors.wrongData
@@ -190,11 +190,11 @@ public class ProtoEncoder {
     /// - parameter type: the type of output's object data.
     /// - returns: converted Data.
     public class func encode(object: Any, from: Int, to: Int, type: ProtoType?) throws -> Data {
-        guard let typeG = type else {
+        guard let `type` = type else {
             throw ProtoParserErrors.notSupportedType
         }
         
-        switch typeG {
+        switch type {
         case .int32:
             var valueP = object
             let data = NSData(bytes: &valueP, length: to - from)
