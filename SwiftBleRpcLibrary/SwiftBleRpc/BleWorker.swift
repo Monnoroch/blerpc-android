@@ -34,6 +34,10 @@ public class BleWorker {
     /// Behavior of retry policy
     private let retryBehavior: RepeatBehavior = RepeatBehavior.exponentialDelayed(maxCount: 3, initial: 1.0, multiplier: 1.0)
     
+    /// Error sended when ble device returned empty response
+    private let wrongDataError = NSError(domain: "blerpc.errors", code: 0, userInfo:
+        [NSLocalizedDescriptionKey: "Device returned empty response"])
+    
     // MARK: - Initializers
     
     /// Block default init.
@@ -151,7 +155,7 @@ public class BleWorker {
     /// Check current conenction state and if not connected - trying to connect to device.
     private func connectIfNeeded() -> Single<Void> {
         return Single.create { [weak self] observer in
-            self?.accessQueue.sync{
+            self?.accessQueue.sync {
                 if let isConnected = self?.isPeripheralConnected, isConnected == true {
                     observer(.success(()))
                     return Disposables.create()
@@ -196,8 +200,6 @@ public class BleWorker {
             observer.onError(error)
         case .next(let characteristic):
             guard let data = characteristic.value else {
-                let wrongDataError = NSError(domain: "blerpc.errors", code: 0, userInfo:
-                    [NSLocalizedDescriptionKey: "Device returned empty response"])
                 observer.onError(wrongDataError)
                 return
             }
@@ -215,8 +217,6 @@ public class BleWorker {
             observer(.error(error))
         case .next(let characteristic):
             guard let data = characteristic.value else {
-                let wrongDataError = NSError(domain: "blerpc.errors", code: 0, userInfo:
-                    [NSLocalizedDescriptionKey: "Device returned empty response"])
                 observer(.error(wrongDataError))
                 return
             }
