@@ -1,11 +1,10 @@
+import CoreBluetooth
 import Foundation
 import RxBluetoothKit
-import CoreBluetooth
 import RxSwift
 
 /// TestService service.
 public class TestService: BleRpcService {
-
     /// UUID of service.
     public static let TestServiceUUID: String = "A0000000-0000-0000-0000-000000000000"
 
@@ -17,7 +16,10 @@ public class TestService: BleRpcService {
             do {
                 let data = try Device_GetValueRequest.bleRpcEncode(proto: request)
 
-                return self?.bleWorker.read(request: data, serviceUUID: TestService.TestServiceUUID, characteristicUUID: "A0000001-0000-0000-0000-000000000000")
+                return self?.bleWorker.read(
+                    request: data,
+                    serviceUUID: TestService.TestServiceUUID,
+                    characteristicUUID: "A0000001-0000-0000-0000-000000000000")
                 .map { response in
                     try Device_GetValueResponse.bleRpcDecode(data: response)
                 }.subscribe(observer) ?? Disposables.create()
@@ -28,10 +30,6 @@ public class TestService: BleRpcService {
         }
     }
 
-
-
-
-
     /// Send subscribe request of method getValueUpdates on device.
     /// - parameter request: Device_GetValueRequest.
     /// - returns: *Observable* to operation.
@@ -40,7 +38,10 @@ public class TestService: BleRpcService {
             do {
                 let data = try Device_GetValueRequest.bleRpcEncode(proto: request)
 
-                return self?.bleWorker.subscribe(request: data, serviceUUID: TestService.TestServiceUUID, characteristicUUID: "A0000001-0000-0000-0000-000000000000")
+                return self?.bleWorker.subscribe(
+                    request: data,
+                    serviceUUID: TestService.TestServiceUUID,
+                    characteristicUUID: "A0000001-0000-0000-0000-000000000000")
                 .map { response in
                     try Device_GetValueResponse.bleRpcDecode(data: response)
                 }.subscribe(observer) ?? Disposables.create()
@@ -50,5 +51,4 @@ public class TestService: BleRpcService {
             }
         }
     }
-
 }

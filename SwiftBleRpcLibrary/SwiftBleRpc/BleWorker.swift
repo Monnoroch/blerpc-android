@@ -19,7 +19,8 @@ public class BleWorker {
 
     /// Behavior of retry policy. Also used to wait until connection will be established from another request
     private static let retryBehavior: RepeatBehavior = RepeatBehavior.exponentialDelayed(
-        maxCount: 3, initial: 1.0, multiplier: 1.0)
+        maxCount: 3, initial: 1.0, multiplier: 1.0
+    )
 
     /// Max count for retrying connection of Ble device
 
