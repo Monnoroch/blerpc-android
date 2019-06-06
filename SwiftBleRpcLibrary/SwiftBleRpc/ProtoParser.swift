@@ -1,5 +1,5 @@
-import Foundation
 import CryptoSwift
+import Foundation
 
 /// Type-aliases to "convert" protobuf types to Swift types.
 public typealias TYPE_INT32 = Int32
@@ -9,7 +9,7 @@ public typealias TYPE_BYTES = Data
 /// Type of proto field.
 public enum ProtoType: String, CaseIterable {
     case unknown = "TYPE_UNKNOWN"
-    case int32 =  "TYPE_INT32"
+    case int32 = "TYPE_INT32"
     case byte = "TYPE_BYTES"
     case bool = "TYPE_BOOL"
 }
@@ -18,17 +18,15 @@ public enum ProtoType: String, CaseIterable {
 
 /// Describes errors appeared during encoding/decoding proto objects.
 public enum ProtoParserErrors: Error {
-    
     /// Called when client tryying to parse unsupported type.
     case notSupportedType
-    
+
     /// Called when ewaong data sended to parser.
     case wrongData
 }
 
 /// Decoder bytes helper.
 public class ProtoDecoder {
-    
     /// Decode data to UInt8.
     /// - parameter fromByte: starting byte.
     /// - parameter fromByte: data from which need to convert.
@@ -39,68 +37,88 @@ public class ProtoDecoder {
         result |= data[fromByte] & 0xFF
         return result
     }
-    
+
     /// Decode data to Int.
     /// - parameter fromByte: starting byte.
     /// - parameter data: data from which need to convert.
     /// - returns: converted value Int.
-    private class func decodeInt(fromByte: Int, data: Data) -> Int {
+    private class func decodeInt(fromByte _: Int, data: Data) -> Int {
         return data.bytes.withUnsafeBufferPointer { ptr in
-            (ptr.baseAddress!.withMemoryRebound(to: Int.self, capacity: 1) { ptr in ptr })
+            (
+                ptr.baseAddress!.withMemoryRebound(to: Int.self, capacity: 1) { ptr in
+                    ptr
+                }
+            )
         }.pointee
     }
-    
+
     /// Decode data to UInt16.
     /// - parameter fromByte: starting byte.
     /// - parameter data: data from which need to convert.
     /// - returns: converted value IntUInt1632.
-    private class func decodeUInt16(fromByte: Int, data: Data) -> UInt16 {
+    private class func decodeUInt16(fromByte _: Int, data: Data) -> UInt16 {
         return data.bytes.withUnsafeBufferPointer { ptr in
-            (ptr.baseAddress!.withMemoryRebound(to: UInt16.self, capacity: 1) { ptr in ptr })
+            (
+                ptr.baseAddress!.withMemoryRebound(to: UInt16.self, capacity: 1) { ptr in
+                    ptr
+                }
+            )
         }.pointee
     }
-    
+
     /// Decode data to Int16.
     /// - parameter fromByte: starting byte.
     /// - parameter data: data from which need to convert.
     /// - returns: converted value Int16.
     private class func decodeInt16(fromByte: Int, data: Data) -> Int16 {
-        let subData = data.subdata(in: fromByte..<fromByte+2)
+        let subData = data.subdata(in: fromByte ..< fromByte + 2)
         return subData.bytes.withUnsafeBufferPointer { ptr in
-            (ptr.baseAddress!.withMemoryRebound(to: Int16.self, capacity: 1) { ptr in ptr })
+            (
+                ptr.baseAddress!.withMemoryRebound(to: Int16.self, capacity: 1) { ptr in
+                    ptr
+                }
+            )
         }.pointee
     }
-    
+
     /// Decode data to UInt32.
     /// - parameter fromByte: starting byte.
     /// - parameter data: data from which need to convert.
     /// - returns: converted value UInt32.
-    private class func decodeUInt32(fromByte: Int, data: Data) -> UInt32 {
+    private class func decodeUInt32(fromByte _: Int, data: Data) -> UInt32 {
         return data.bytes.withUnsafeBufferPointer { ptr in
-            (ptr.baseAddress!.withMemoryRebound(to: UInt32.self, capacity: 1) { ptr in ptr })
+            (
+                ptr.baseAddress!.withMemoryRebound(to: UInt32.self, capacity: 1) { ptr in
+                    ptr
+                }
+            )
         }.pointee
     }
-    
+
     /// Decode data to Int32.
     /// - parameter fromByte: starting byte.
     /// - parameter data: data from which need to convert.
     /// - returns: converted value Int32.
     private class func decodeInt32(fromByte: Int, data: Data) -> Int32 {
-        return data.subdata(in: fromByte..<4).bytes.withUnsafeBufferPointer { ptr in
-            (ptr.baseAddress!.withMemoryRebound(to: Int32.self, capacity: 1) { ptr in ptr })
+        return data.subdata(in: fromByte ..< 4).bytes.withUnsafeBufferPointer { ptr in
+            (
+                ptr.baseAddress!.withMemoryRebound(to: Int32.self, capacity: 1) { ptr in
+                    ptr
+                }
+            )
         }.pointee
     }
-    
+
     /// Decode data to String.
     /// - parameter fromByte: starting byte.
     /// - parameter toByte: ending byte.
     /// - parameter data: data from which need to convert.
     /// - returns: converted value String.
     private class func decodeString(fromByte: Int, toByte: Int, data: Data) -> String? {
-        let subData = data.subdata(in: Range<Int>.init(fromByte...toByte - fromByte))
+        let subData = data.subdata(in: Range<Int>.init(fromByte ... toByte - fromByte))
         return String(data: subData, encoding: String.Encoding.utf8)
     }
-    
+
     /// Decode data to Bool.
     /// - parameter fromByte: starting byte.
     /// - parameter data: data from which need to convert.
@@ -108,7 +126,7 @@ public class ProtoDecoder {
     private class func decodeBool(fromByte: Int, data: Data) -> Bool {
         return ProtoDecoder.decodeUInt8(fromByte: fromByte, data: data) != 0
     }
-    
+
     /// Decode data to output object.
     /// - parameter data: data which need to be converted.
     /// - parameter from: from byte inside data.
@@ -116,10 +134,10 @@ public class ProtoDecoder {
     /// - parameter type: the type of output's object data.
     /// - returns: converted object.
     public class func decode(data: Data, from: Int, to: Int, type: ProtoType?) throws -> Any {
-        guard let `type` = type else {
+        guard let type = type else {
             throw ProtoParserErrors.notSupportedType
         }
-        
+
         switch type {
         case .int32:
             if to > data.count {
@@ -137,7 +155,7 @@ public class ProtoDecoder {
             if to > data.count {
                 throw ProtoParserErrors.wrongData
             } else {
-                return data.subdata(in: Range.init(NSRange.init(location: from, length: to - from))!)
+                return data.subdata(in: Range(NSRange(location: from, length: to - from))!)
             }
         case .bool:
             if to > data.count {
@@ -149,12 +167,10 @@ public class ProtoDecoder {
             throw ProtoParserErrors.notSupportedType
         }
     }
-    
 }
 
 /// Encoder bytes helper.
 public class ProtoEncoder {
-    
     /// Encode Int to Data.
     /// - parameter value: value to convert (Int32).
     /// - returns: converted Data.
@@ -163,7 +179,7 @@ public class ProtoEncoder {
         let data = NSData(bytes: &valueP, length: 1)
         return data as Data
     }
-    
+
     /// Encode Int to Data.
     /// - parameter value: value to convert (Int16).
     /// - returns: converted Data.
@@ -172,7 +188,7 @@ public class ProtoEncoder {
         let data = NSData(bytes: &valueP, length: 2)
         return data as Data
     }
-    
+
     /// Encode Int to Data.
     /// - parameter value: value to convert (Int32).
     /// - parameter lenth: in how much bytes to encode.
@@ -182,7 +198,7 @@ public class ProtoEncoder {
         let data = NSData(bytes: &valueP, length: lenth)
         return data as Data
     }
-    
+
     /// Encode any object to data.
     /// - parameter object: any object to convert.
     /// - parameter from: from byte inside data.
@@ -190,10 +206,10 @@ public class ProtoEncoder {
     /// - parameter type: the type of output's object data.
     /// - returns: converted Data.
     public class func encode(object: Any, from: Int, to: Int, type: ProtoType?) throws -> Data {
-        guard let `type` = type else {
+        guard let type = type else {
             throw ProtoParserErrors.notSupportedType
         }
-        
+
         switch type {
         case .int32:
             var valueP = object
@@ -209,5 +225,4 @@ public class ProtoEncoder {
             throw ProtoParserErrors.notSupportedType
         }
     }
-    
 }

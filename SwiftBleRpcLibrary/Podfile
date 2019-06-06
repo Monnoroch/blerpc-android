@@ -6,6 +6,7 @@ def shared_pods
   pod 'RxBluetoothKit' # working with bluetooth
   pod 'SwiftGRPC' # support compiled proto files
   pod 'CryptoSwift' # data parsing helpers
+  pod 'RxSwiftExt' # usefull extensions for rx
 end
 
 target 'SwiftBleRpc' do
