@@ -9,15 +9,17 @@ import com.google.protobuf.DescriptorProtos;
 import com.google.protobuf.compiler.PluginProtos;
 import edu.umd.cs.findbugs.annotations.SuppressWarnings;
 import java.util.AbstractMap;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-class ServiceGenerator {
+public class ServiceGenerator {
 
     private static final int METHOD_NUMBER_OF_PATHS = 4;
     private static final int SERVICE_NUMBER_OF_PATHS = 2;
     private static final String OUTPUT_FILE_EXTENSION = ".swift";
 
-    Stream<ServiceContext> buildServiceContexts(PluginProtos.CodeGeneratorRequest request) {
+    public Stream<ServiceContext> buildServiceContexts(PluginProtos.CodeGeneratorRequest request) {
         return request
                 .getProtoFileList()
                 .stream()
@@ -26,15 +28,14 @@ class ServiceGenerator {
                 .flatMap(this::getFileLocations)
                 .filter(this::isProtoService)
                 .filter(this::isBleRpcService)
-                .map(
-                        fileLocation ->
+                .map(fileLocation ->
                                 buildServiceContext(
                                         fileLocation.getKey(),
                                         fileLocation.getValue()))
                 .collect(ImmutableList.toImmutableList()).stream();
     }
 
-    ServiceContext buildServiceContext(
+    private ServiceContext buildServiceContext(
             DescriptorProtos.FileDescriptorProto protoFile, DescriptorProtos.SourceCodeInfo.Location fileLocation) {
         int serviceNumber = fileLocation.getPath(SERVICE_NUMBER_OF_PATHS - 1);
         DescriptorProtos.ServiceDescriptorProto serviceProto = protoFile.getService(serviceNumber);
@@ -131,13 +132,7 @@ class ServiceGenerator {
     private String extractSwiftPackageName(DescriptorProtos.FileDescriptorProto proto) {
         String packageName = proto.getPackage();
         String[] splittedPackageName = packageName.split("\\.");
-        StringBuilder swiftPackageName = new StringBuilder();
-
-        for (String substring : splittedPackageName) {
-            swiftPackageName.append(upperCaseFirstLetter(substring)).append("_");
-        }
-
-        return swiftPackageName.toString();
+        return Arrays.stream(splittedPackageName).map(key -> this.upperCaseFirstLetter(key) + "_").collect(Collectors.joining());
     }
 
     private String lowerCaseFirstLetter(String string) {

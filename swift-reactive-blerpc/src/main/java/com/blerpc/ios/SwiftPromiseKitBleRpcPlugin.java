@@ -1,32 +1,26 @@
 package com.blerpc.ios;
 
 import com.blerpc.proto.Blerpc;
-import com.google.protobuf.GeneratedMessage;
+import com.google.common.collect.ImmutableList;
 import com.google.protobuf.compiler.PluginProtos;
 import com.salesforce.jprotoc.Generator;
 import com.salesforce.jprotoc.GeneratorException;
 import com.salesforce.jprotoc.ProtocPlugin;
 import java.io.File;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.stream.Stream;
 
 /** Protoc generator plugin that generate Swift PromiseKit wrappers for BleRpc services. */
 public class SwiftPromiseKitBleRpcPlugin extends Generator {
 
   private static final String TEMPLATE_FILE_MESSAGE_PARSER = "MessageGeneratorTemplate.mustache";
-  private static final String TEMPLATE_FILE_PROMISEKIT_SERVICE = "ServiceGeneratorTemplate.mustache";
+  private static final String TEMPLATE_FILE_SERVICE = "ServiceGeneratorTemplate.mustache";
 
   public static void main(String[] args) {
-    ArrayList<Generator> generators = new ArrayList<>();
-    generators.add(new SwiftPromiseKitBleRpcPlugin());
-    ArrayList<GeneratedMessage.GeneratedExtension> generatorsExtensions = new ArrayList<>();
-
-    generatorsExtensions.add(Blerpc.message);
-    generatorsExtensions.add(Blerpc.field);
-    generatorsExtensions.add(Blerpc.characteristic);
-
-    ProtocPlugin.generate(generators, generatorsExtensions);
+    ProtocPlugin.generate(ImmutableList.of(new SwiftPromiseKitBleRpcPlugin()),
+            ImmutableList.of(Blerpc.message,
+                    Blerpc.field,
+                    Blerpc.characteristic));
   }
 
   // TODO(#36): add validation for requests and responses.
@@ -48,7 +42,7 @@ public class SwiftPromiseKitBleRpcPlugin extends Generator {
   private PluginProtos.CodeGeneratorResponse.File buildServiceOutputFile(ServiceGenerator.ServiceContext context) {
     return PluginProtos.CodeGeneratorResponse.File.newBuilder()
         .setName(fullFileName(context))
-        .setContent(applyTemplate(TEMPLATE_FILE_PROMISEKIT_SERVICE, context))
+        .setContent(applyTemplate(TEMPLATE_FILE_SERVICE, context))
         .build();
   }
 
