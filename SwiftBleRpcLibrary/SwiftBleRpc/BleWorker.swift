@@ -4,6 +4,15 @@ import RxBluetoothKit
 import RxSwift
 import RxSwiftExt
 
+/// Enum that describes BleWorker errors.
+public enum BleWrokerErrors: Error {
+    /// Called when device returned empty response so we can not parse it as Proto object.
+    case emptyResponse
+    
+    /// Called when device was disconnected without reason.
+    case disconnectedWithoutReason
+}
+
 /// Class which holds all operation with data transfer between iOS and Ble Device.
 public class BleWorker {
     // MARK: - Variables
@@ -173,13 +182,7 @@ public class BleWorker {
             observer.onError(error)
         case let .next(characteristic):
             guard let data = characteristic.value else {
-                let wrongDataError = NSError(
-                    domain: "blerpc.errors",
-                    code: 0,
-                    userInfo:
-                        [NSLocalizedDescriptionKey: "Device returned empty response"]
-                )
-                observer.onError(wrongDataError)
+                observer.onError(BleWrokerErrors.emptyResponse)
                 return
             }
 
@@ -196,13 +199,7 @@ public class BleWorker {
             observer(.error(error))
         case let .next(characteristic):
             guard let data = characteristic.value else {
-                let wrongDataError = NSError(
-                    domain: "blerpc.errors",
-                    code: 0,
-                    userInfo:
-                        [NSLocalizedDescriptionKey: "Device returned empty response"]
-                )
-                observer(.error(wrongDataError))
+                observer(.error(BleWrokerErrors.emptyResponse))
                 return
             }
 
@@ -216,9 +213,8 @@ public class BleWorker {
     private func startObservingDisconnection(handlerSubject: PublishSubject<Void>) {
         diconnectionDisposable = manager.observeDisconnect()
             .subscribe(onNext: { [weak self] _, disconnectReason in
-                if let reason = disconnectReason {
-                    handlerSubject.onError(reason)
-                }
+                handlerSubject.onError(disconnectReason
+                    ?? BleWrokerErrors.disconnectedWithoutReason)
                 self?.disconnect()
             }, onError: { [weak self] error in
                 handlerSubject.onError(error)
