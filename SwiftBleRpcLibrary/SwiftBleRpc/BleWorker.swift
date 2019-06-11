@@ -146,13 +146,29 @@ public class BleWorker {
                     
                     let subject = PublishSubject<Void>()
 
+                    // 1. Trying to establish connection
                     self?.sharedObserverForDeviceConnection = self?.manager.establishConnection(peripheral).share()
                     
-                    self?.deviceConnection = self?.sharedObserverForDeviceConnection?.flatMap { [weak self] _ in
-                        self?.startObservingDisconnection(handlerSubject: subject) ?? Observable.just(())
+                    self?.deviceConnection = self?.sharedObserverForDeviceConnection?
+                        // 2. If success - observing disconnection and storing to diconnectionDisposable
+                        .flatMap { [weak self] _ -> Observable<()> in
+                        self?.diconnectionDisposable = self?.manager.observeDisconnect()
+                            .subscribe(onNext: { [weak self] _, disconnectReason in
+                                subject.onError(disconnectReason
+                                    ?? BleWrokerErrors.disconnectedWithoutReason)
+                                self?.disconnect()
+                                }, onError: { [weak self] error in
+                                    subject.onError(error)
+                                    self?.disconnect()
+                                }, onCompleted: { [weak self] in
+                                    self?.disconnect()
+                            })
+                        return Observable.just(())
+                        // 3. Then returning success to observer
                         }.subscribe(onNext: { _ in
                             observer(.success(()))
                         }, onError: { error in
+                            // 4. If error appeared - flatMap will not called and we receive error in onError closure
                             observer(.error(error))
                         })
                     
