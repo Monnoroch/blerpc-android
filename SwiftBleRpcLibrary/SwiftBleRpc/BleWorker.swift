@@ -5,6 +5,9 @@ import RxSwift
 
 /// Enum that describes BleWorker errors.
 public enum BleWrokerErrors: Error {
+    /// Called when no peripheral provided or peripheral is nil (for example if self is nil).
+    case noPeripheral
+    
     /// Called when device returned empty response so we can not parse it as Proto object.
     case emptyResponse
     
@@ -33,7 +36,7 @@ public class BleWorker {
     /// Disposable which holds current device disconnection observing.
     private var diconnectionDisposable: Disposable?
 
-    /// Shared observer which holds establish device connection
+    /// Shared observer which holds establish device connection.
     private var sharedObserverForDeviceConnection: Observable<Peripheral>?
     
     // MARK: - Initializers
@@ -119,44 +122,41 @@ public class BleWorker {
 
     // MARK: - Private methods
 
-    /// Connecting to peripheral and automatically starting observing disconnection state.
-    /// - warning: If Ble device disconnected during ble operation - BleWorker will automatically call *disconnect* method and send error in current operation
-    private func connectToPeripheral() -> PublishSubject<Void> {
-        let subject = PublishSubject<Void>()
-
-        sharedObserverForDeviceConnection = manager.establishConnection(connectedPeripheral).share()
-        
-        deviceConnection = sharedObserverForDeviceConnection?.flatMap { [weak self] _ in
-                self?.startObservingDisconnection(handlerSubject: subject) ?? Observable.just(())
-            }.subscribe(onNext: { _ in
-                subject.onNext(())
-                subject.onCompleted()
-            }, onError: { error in
-                subject.onError(error)
-            })
-
-        return subject
-    }
-
     /// Check current conenction state and if not connected - trying to connect to device.
     private func connectIfNeeded() -> Single<Void> {
         return Single.create { [weak self] observer in
             self?.accessQueue.sync {
+                // Already has connected device
                 if let isConnected = self?.connectedPeripheral.isConnected, isConnected == true {
                     observer(.success(()))
                     return Disposables.create()
+                // Already in connection state (from previous request)
                 } else if let deviceConnectionObserver = self?.sharedObserverForDeviceConnection {
                     return deviceConnectionObserver.subscribe(onNext: { _ in
                         observer(.success(()))
                     }, onError: { error in
                         observer(.error(error))
                     })
+                // new connection request
                 } else {
-                    return self?.connectToPeripheral().subscribe(onNext: { _ in
-                        observer(.success(()))
-                    }, onError: { error in
-                        observer(.error(error))
-                    }) ?? Disposables.create()
+                    guard let peripheral = self?.connectedPeripheral else {
+                        observer(.error(BleWrokerErrors.noPeripheral))
+                        return Disposables.create()
+                    }
+                    
+                    let subject = PublishSubject<Void>()
+
+                    self?.sharedObserverForDeviceConnection = self?.manager.establishConnection(peripheral).share()
+                    
+                    self?.deviceConnection = self?.sharedObserverForDeviceConnection?.flatMap { [weak self] _ in
+                        self?.startObservingDisconnection(handlerSubject: subject) ?? Observable.just(())
+                        }.subscribe(onNext: { _ in
+                            observer(.success(()))
+                        }, onError: { error in
+                            observer(.error(error))
+                        })
+                    
+                    return subject
                 }
             } ?? Disposables.create()
         }
