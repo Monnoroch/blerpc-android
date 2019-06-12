@@ -60,17 +60,18 @@ public class BleWorker {
 
     /// Disconnecting from peripheral synchronically.
     public func disconnect() {
-        if BleWorker.getCurrentQueueName() == accessQueue.label {
-            diconnectionDisposable?.dispose()
-            deviceConnection?.dispose()
-        } else {
-            accessQueue.sync {
-                diconnectionDisposable?.dispose()
-                deviceConnection?.dispose()
-            }
+        accessQueue.sync {
+            doDisconnect()
         }
     }
 
+    /// Disconnecting from device and cleanup.
+    private func doDisconnect() {
+        diconnectionDisposable?.dispose()
+        deviceConnection?.dispose()
+        sharedObserverForDeviceConnection = nil
+    }
+    
     // MARK: - Internal methods
 
     /// Call subscribe request over Ble.
@@ -132,7 +133,7 @@ public class BleWorker {
         return Single.create { [weak self] observer in
             self?.accessQueue.sync {
                 // Already has connected device
-                if let isConnected = self?.connectedPeripheral.isConnected, isConnected == true,
+                if let isConnected = self?.connectedPeripheral.isConnected, isConnected,
                     let peripheral = self?.connectedPeripheral {
                     observer(.success(peripheral))
                     return Disposables.create()
@@ -160,12 +161,12 @@ public class BleWorker {
                         .subscribe(onNext: { [weak self] _, disconnectReason in
                             subject.onError(disconnectReason
                                 ?? BleWrokerErrors.disconnectedWithoutReason)
-                            self?.disconnect()
+                            self?.doDisconnect()
                             }, onError: { [weak self] error in
                                 subject.onError(error)
-                                self?.disconnect()
+                                self?.doDisconnect()
                             }, onCompleted: { [weak self] in
-                                self?.disconnect()
+                                self?.doDisconnect()
                         })
                     
                     // 3. Subscribe to connection response
@@ -233,25 +234,6 @@ public class BleWorker {
             break
         }
     }
-
-    /// Start observing device diconnection. If iOS sends disconnect event - automatically calling *disconnect* method to cleanup current connection states.
-    /// - parameter handlerSubject: handler in shich need to return disconnection error
-    /// - returns: just void.
-    private func startObservingDisconnection(handlerSubject: PublishSubject<Void>) -> Observable<()>{
-        diconnectionDisposable = manager.observeDisconnect()
-            .subscribe(onNext: { [weak self] _, disconnectReason in
-                handlerSubject.onError(disconnectReason
-                    ?? BleWrokerErrors.disconnectedWithoutReason)
-                self?.disconnect()
-            }, onError: { [weak self] error in
-                handlerSubject.onError(error)
-                self?.disconnect()
-            }, onCompleted: { [weak self] in
-                self?.disconnect()
-            })
-        
-        return Observable.just(())
-    }
     
     /// Helper method which request device (if needed) and discover correct characteristic.
     /// - parameter serviceUUID: UUID of requested service.
@@ -264,12 +246,5 @@ public class BleWorker {
                                              serviceUUID: serviceUUID,
                                              characteristicUUID: characteristicUUID)
         }
-    }
-    
-    /// Returns current queue name if presented
-    /// - returns: queue name.
-    private static func getCurrentQueueName() -> String? {
-        let name = __dispatch_queue_get_label(nil) // if nil - returns name of current queue
-        return String(cString: name, encoding: .utf8)
     }
 }
