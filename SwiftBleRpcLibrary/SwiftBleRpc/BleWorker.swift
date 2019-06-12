@@ -65,7 +65,7 @@ public class BleWorker {
         }
     }
 
-    /// Disconnecting from device and cleanup.
+    /// Actual disconnect from device and cleanup.
     private func doDisconnect() {
         diconnectionDisposable?.dispose()
         deviceConnection?.dispose()
