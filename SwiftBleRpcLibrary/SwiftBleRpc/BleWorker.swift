@@ -58,10 +58,17 @@ public class BleWorker {
 
     // MARK: - Public methods
 
-    /// Disconnecting from peripheral.
+    /// Disconnecting from peripheral synchronically.
     public func disconnect() {
-        diconnectionDisposable?.dispose()
-        deviceConnection?.dispose()
+        if BleWorker.getCurrentQueueName() == accessQueue.label {
+            diconnectionDisposable?.dispose()
+            deviceConnection?.dispose()
+        } else {
+            accessQueue.sync {
+                diconnectionDisposable?.dispose()
+                deviceConnection?.dispose()
+            }
+        }
     }
 
     // MARK: - Internal methods
@@ -70,13 +77,12 @@ public class BleWorker {
     /// - parameter request: proto request encoded to Data.
     /// - parameter serviceUUID: *UUID* of a service.
     /// - parameter characteristicUUID: *UUID* of a characteristic.
-    /// - returns: *Observable* Data.
+    /// - returns: Data as observable value.
     internal func subscribe(request _: Data, serviceUUID: String, characteristicUUID: String) -> Observable<Data> {
         return Observable.create { [weak self] observer in
-            self?.connectIfNeeded().asObservable().flatMap {
-                self?.discoverCharacteristic(serviceUUID: serviceUUID, characteristicUUID: characteristicUUID)
-                    ?? Observable.empty()
-            }.flatMap { characteristic in
+            self?.connectToDeviceAndDiscoverCharacteristic(serviceUUID: serviceUUID,
+                                                           characteristicUUID: characteristicUUID)
+                .flatMap { characteristic in
                 characteristic.observeValueUpdateAndSetNotification()
             }.subscribe { event in
                 BleWorker.completeSubscription(event: event, observer: observer)
@@ -88,13 +94,12 @@ public class BleWorker {
     /// - parameter request: proto request encoded to Data.
     /// - parameter serviceUUID: *UUID* of a service.
     /// - parameter characteristicUUID: *UUID* of a characteristic.
-    /// - returns: *Observable* Data.
+    /// - returns: Data as observable value.
     internal func read(request _: Data, serviceUUID: String, characteristicUUID: String) -> Single<Data> {
         return Single.create { [weak self] observer in
-            self?.connectIfNeeded().asObservable().flatMap {
-                self?.discoverCharacteristic(serviceUUID: serviceUUID, characteristicUUID: characteristicUUID)
-                    ?? Observable.empty()
-            }.flatMap { characteristic in
+            self?.connectToDeviceAndDiscoverCharacteristic(serviceUUID: serviceUUID,
+                                                           characteristicUUID: characteristicUUID)
+                .flatMap { characteristic in
                 characteristic.readValue()
             }.subscribe { event in
                 BleWorker.completeReadWrite(event: event, observer: observer)
@@ -106,13 +111,12 @@ public class BleWorker {
     /// - parameter request: proto request encoded to Data.
     /// - parameter serviceUUID: *UUID* of a service.
     /// - parameter characteristicUUID: *UUID* of a characteristic.
-    /// - returns: *Observable* Data.
+    /// - returns: Data as observable value.
     internal func write(request: Data, serviceUUID: String, characteristicUUID: String) -> Single<Data> {
         return Single.create { [weak self] observer in
-            self?.connectIfNeeded().asObservable().flatMap {
-                self?.discoverCharacteristic(serviceUUID: serviceUUID, characteristicUUID: characteristicUUID)
-                    ?? Observable.empty()
-            }.flatMap { characteristic in
+            self?.connectToDeviceAndDiscoverCharacteristic(serviceUUID: serviceUUID,
+                                                           characteristicUUID: characteristicUUID)
+                .flatMap { characteristic in
                 characteristic.writeValue(request, type: .withResponse)
             }.subscribe { event in
                 BleWorker.completeReadWrite(event: event, observer: observer)
@@ -123,17 +127,19 @@ public class BleWorker {
     // MARK: - Private methods
 
     /// Check current conenction state and if not connected - trying to connect to device.
-    private func connectIfNeeded() -> Single<Void> {
+    /// - returns: Peripheral as observable value.
+    private func getConnectedPeripheral() -> Single<Peripheral> {
         return Single.create { [weak self] observer in
             self?.accessQueue.sync {
                 // Already has connected device
-                if let isConnected = self?.connectedPeripheral.isConnected, isConnected == true {
-                    observer(.success(()))
+                if let isConnected = self?.connectedPeripheral.isConnected, isConnected == true,
+                    let peripheral = self?.connectedPeripheral {
+                    observer(.success(peripheral))
                     return Disposables.create()
                 // Already in connection state (from previous request)
                 } else if let deviceConnectionObserver = self?.sharedObserverForDeviceConnection {
-                    return deviceConnectionObserver.subscribe(onNext: { _ in
-                        observer(.success(()))
+                    return deviceConnectionObserver.subscribe(onNext: { peripheral in
+                        observer(.success(peripheral))
                     }, onError: { error in
                         observer(.error(error))
                     })
@@ -149,26 +155,23 @@ public class BleWorker {
                     // 1. Trying to establish connection
                     self?.sharedObserverForDeviceConnection = self?.manager.establishConnection(peripheral).share()
                     
-                    self?.deviceConnection = self?.sharedObserverForDeviceConnection?
-                        // 2. If success - observing disconnection and storing to diconnectionDisposable
-                        .flatMap { [weak self] _ -> Observable<()> in
-                        self?.diconnectionDisposable = self?.manager.observeDisconnect()
-                            .subscribe(onNext: { [weak self] _, disconnectReason in
-                                subject.onError(disconnectReason
-                                    ?? BleWrokerErrors.disconnectedWithoutReason)
+                    // 2. Subscribe to diconnection events
+                    self?.diconnectionDisposable = self?.manager.observeDisconnect()
+                        .subscribe(onNext: { [weak self] _, disconnectReason in
+                            subject.onError(disconnectReason
+                                ?? BleWrokerErrors.disconnectedWithoutReason)
+                            self?.disconnect()
+                            }, onError: { [weak self] error in
+                                subject.onError(error)
                                 self?.disconnect()
-                                }, onError: { [weak self] error in
-                                    subject.onError(error)
-                                    self?.disconnect()
-                                }, onCompleted: { [weak self] in
-                                    self?.disconnect()
-                            })
-                        return Observable.just(())
-                        // 3. Then returning success to observer
-                        }.subscribe(onNext: { _ in
-                            observer(.success(()))
+                            }, onCompleted: { [weak self] in
+                                self?.disconnect()
+                        })
+                    
+                    // 3. Subscribe to connection response
+                    self?.deviceConnection = self?.sharedObserverForDeviceConnection?.subscribe(onNext: { peripheral in
+                            observer(.success(peripheral))
                         }, onError: { error in
-                            // 4. If error appeared - flatMap will not called and we receive error in onError closure
                             observer(.error(error))
                         })
                     
@@ -181,9 +184,10 @@ public class BleWorker {
     /// Discovers characteristic for selected service UUID and characteristic UUID.
     /// - parameter serviceUUID: *UUID* of a service.
     /// - parameter characteristicUUID: *UUID* of a characteristic.
-    /// - returns: characteristic.
-    private func discoverCharacteristic(serviceUUID: String, characteristicUUID: String) -> Observable<Characteristic> {
-        return connectedPeripheral.discoverServices([CBUUID(string: serviceUUID)]).asObservable().flatMap { services in
+    /// - returns: characteristic as observable value.
+    private static func discoverCharacteristic(peripheral: Peripheral, serviceUUID: String, characteristicUUID: String)
+        -> Observable<Characteristic> {
+        return peripheral.discoverServices([CBUUID(string: serviceUUID)]).asObservable().flatMap { services in
             Observable.from(services)
         }.flatMap { service in
             service.discoverCharacteristics([CBUUID(string: characteristicUUID)])
@@ -231,6 +235,8 @@ public class BleWorker {
     }
 
     /// Start observing device diconnection. If iOS sends disconnect event - automatically calling *disconnect* method to cleanup current connection states.
+    /// - parameter handlerSubject: handler in shich need to return disconnection error
+    /// - returns: just void.
     private func startObservingDisconnection(handlerSubject: PublishSubject<Void>) -> Observable<()>{
         diconnectionDisposable = manager.observeDisconnect()
             .subscribe(onNext: { [weak self] _, disconnectReason in
@@ -245,5 +251,25 @@ public class BleWorker {
             })
         
         return Observable.just(())
+    }
+    
+    /// Helper method which request device (if needed) and discover correct characteristic.
+    /// - parameter serviceUUID: UUID of requested service.
+    /// - parameter characteristicUUID: UUID of requested characteristic.
+    /// - returns: Characteristic as observable value.
+    private func connectToDeviceAndDiscoverCharacteristic(serviceUUID: String, characteristicUUID: String)
+        -> Observable<Characteristic> {
+        return self.getConnectedPeripheral().asObservable().flatMap { peripheral in
+            BleWorker.discoverCharacteristic(peripheral: peripheral,
+                                             serviceUUID: serviceUUID,
+                                             characteristicUUID: characteristicUUID)
+        }
+    }
+    
+    /// Returns current queue name if presented
+    /// - returns: queue name.
+    private static func getCurrentQueueName() -> String? {
+        let name = __dispatch_queue_get_label(nil) // if nil - returns name of current queue
+        return String(cString: name, encoding: .utf8)
     }
 }
