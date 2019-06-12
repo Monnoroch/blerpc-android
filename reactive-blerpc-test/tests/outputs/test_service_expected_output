@@ -41,6 +41,30 @@ public class RxTestService {
 
   /**
    * <pre>
+   *  Write value test method.
+   * <pre>
+   */
+  public io.reactivex.Single<com.device.proto.SetValueResponse> writeValue(com.device.proto.SetValueRequest request) {
+    return io.reactivex.Single.create(
+        subscriber -> {
+          com.blerpc.BleRpcController controller = new com.blerpc.BleRpcController();
+          service.writeValue(
+              controller,
+              request,
+              response -> {
+                if (!controller.failed()) {
+                  subscriber.onSuccess(response);
+                } else {
+                  com.blerpc.RxOnError.loggingUncatchableExceptions(
+                      subscriber, new Exception(controller.errorText()), logger);
+                }
+              });
+          subscriber.setCancellable(controller::startCancel);
+        });
+  }
+
+  /**
+   * <pre>
    *  Subscribe for receiving test value updates.
    * <pre>
    */
