@@ -23,6 +23,14 @@ service TestService {
         };
     }
 
+    // Write value test method.
+    rpc WriteValue (SetValueRequest) returns (SetValueResponse) {
+        option (com.blerpc.characteristic) = {
+            uuid: "A0000001-0000-0000-0000-000000000000"
+            type: WRITE
+        };
+    }
+    
     // Subscribe for receiving test value updates.
     rpc GetValueUpdates (GetValueRequest) returns (stream GetValueResponse) {
         option (com.blerpc.characteristic) = {
@@ -47,4 +55,37 @@ message GetValueResponse {
         from_byte: 0
         to_byte: 4
     }];
+}
+
+// Request message for the WriteValue method.
+message SetValueRequest {
+    option (com.blerpc.message) = {
+        size_bytes: 8
+    };
+    // Integer value.
+    int32 int_value = 1 [(com.blerpc.field) = {
+                            from_byte: 0
+                            to_byte: 4
+                         }];
+    // Nested message type.
+    NestedMessage nested_message_value = 2 [(com.blerpc.field) = {
+                                                from_byte: 4
+                                                to_byte: 8
+                                            }];
+}
+
+// Response message for the WriteValue.
+message SetValueResponse {
+}
+
+// Nested message.
+message NestedMessage {
+    option (com.blerpc.message) = {
+        size_bytes: 4
+    };
+    // Integer value.
+    int32 nested_int_value = 1 [(com.blerpc.field) = {
+                                    from_byte: 0
+                                    to_byte: 4
+                                }];
 }
