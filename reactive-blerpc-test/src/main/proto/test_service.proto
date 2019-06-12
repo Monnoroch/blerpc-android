@@ -60,7 +60,7 @@ message GetValueResponse {
 // Request message for the WriteValue method.
 message SetValueRequest {
     option (com.blerpc.message) = {
-        size_bytes: 5
+        size_bytes: 8
     };
     // Integer value.
     int32 int_value = 1 [(com.blerpc.field) = {
@@ -70,7 +70,7 @@ message SetValueRequest {
     // Nested message type.
     NestedMessage nested_message_value = 2 [(com.blerpc.field) = {
                                                 from_byte: 4
-                                                to_byte: 5
+                                                to_byte: 8
                                             }];
 }
 
