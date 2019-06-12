@@ -18,21 +18,3 @@ if [ $? -ne 0 ]; then
   echo "$difflines"
   exit 1
 fi
-
-generated_object_file=swift-reactive-blerpc-test/tests/com/device/proto/GetValueRequestExtension.swift
-expected_object_file=swift-reactive-blerpc-test/tests/outputs/test_expected_request_output
-difflines=$(diff "${generated_object_file}" "${expected_object_file}")
-if [ $? -ne 0 ]; then
-echo -e "${red_color}Generated proto file with object is not equals to expected file.${default_color}\n"
-echo "$difflines"
-exit 1
-fi
-
-generated_enum_file=swift-reactive-blerpc-test/tests/com/device/proto/GetValueResponseExtension.swift
-expected_enum_file=swift-reactive-blerpc-test/tests/outputs/test_expected_response_output
-difflines=$(diff "${generated_enum_file}" "${expected_enum_file}")
-if [ $? -ne 0 ]; then
-echo -e "${red_color}Generated proto file with enum is not equals to expected file.${default_color}\n"
-echo "$difflines"
-exit 1
-fi

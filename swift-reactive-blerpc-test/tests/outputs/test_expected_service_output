@@ -30,6 +30,28 @@ public class TestService: BleRpcService {
         }
     }
 
+    /// Send write request of method writeValue on device.
+    /// - parameter request: Device_SetValueRequest.
+    /// - returns: *Single* to operation with Device_SetValueResponse.
+    public func writeValue(request: Device_SetValueRequest) -> Single<Device_SetValueResponse> {
+        return Single.create { [weak self] observer in
+            do {
+                let data = try Device_SetValueRequest.bleRpcEncode(proto: request)
+
+                return self?.bleWorker.write(
+                    request: data,
+                    serviceUUID: TestService.TestServiceUUID,
+                    characteristicUUID: "A0000001-0000-0000-0000-000000000000")
+                .map { response in
+                    try Device_SetValueResponse.bleRpcDecode(data: response)
+                }.subscribe(observer) ?? Disposables.create()
+            } catch {
+                observer(.error(error))
+                return Disposables.create()
+            }
+        }
+    }
+
     /// Send subscribe request of method getValueUpdates on device.
     /// - parameter request: Device_GetValueRequest.
     /// - returns: *Observable* to operation.
