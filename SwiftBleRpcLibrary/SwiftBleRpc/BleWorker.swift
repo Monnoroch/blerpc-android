@@ -31,9 +31,6 @@ public enum BleWrokerErrors: Error {
 public class BleWorker {
     // MARK: - Variables
 
-    /// Bluetooth Central Manager.
-    private let manager: CentralManager
-
     /// Connected peripheral.
     private let connectedPeripheral: Peripheral
 
@@ -59,7 +56,6 @@ public class BleWorker {
     /// - returns: created *BleWorker*.
     public init(peripheral: BlePeripheral, accessQueue: DispatchQueue) {
         connectedPeripheral = peripheral.peripheral
-        manager = peripheral.peripheral.manager
         self.accessQueue = accessQueue
     }
 
@@ -68,8 +64,13 @@ public class BleWorker {
     /// Disconnecting from peripheral synchronically.
     public func disconnect() {
         accessQueue.sync {
-            deviceConnection?.dispose()
+            doDisconnect()
         }
+    }
+
+    /// Actual disconnect from device and cleanup.
+    private func doDisconnect() {
+        deviceConnection?.dispose()
     }
     
     // MARK: - Internal methods
@@ -139,31 +140,30 @@ public class BleWorker {
                 return Single.just(self.connectedPeripheral)
             }
             
-            return Single.create { [weak self] observer in
-                guard let self = self else {
-                    observer(.error(BluetoothError.destroyed))
-                    return Disposables.create()
-                }
+            if let deviceConnectionObserver = self.sharedObserverForDeviceConnection {
+                return deviceConnectionObserver.asSingle()
+            } else {
+                let observerForDeviceConnection = self.connectedPeripheral.establishConnection().share()
                 
-                if let deviceConnectionObserver = self.sharedObserverForDeviceConnection {
-                    return deviceConnectionObserver.subscribe(onNext: { peripheral in
-                        observer(.success(peripheral))
-                    }, onError: { error in
-                        observer(.error(error))
-                    })
-                } else {
-                    self.sharedObserverForDeviceConnection = self.connectedPeripheral.establishConnection()
-                        .share()
-
-                    self.deviceConnection = self.sharedObserverForDeviceConnection?.subscribe(onNext: { peripheral in
-                        observer(.success(peripheral))
-                    }, onError: { error in
-                        observer(.error(error))
-                    })
-                    
-                    return Disposables.create()
-                }
+                self.deviceConnection = observerForDeviceConnection.catchError({ [weak self] (error) -> Observable<Peripheral> in
+                    self?.doDisconnect()
+                    return Observable.empty()
+                }).subscribe()
+                
+                self.sharedObserverForDeviceConnection = observerForDeviceConnection
+                return doGetConnectedPeripheral()
             }
+        }
+    }
+    
+    private func doGetConnectedPeripheral() -> Single<Peripheral> {
+        if self.connectedPeripheral.isConnected {
+            return Single.just(self.connectedPeripheral)
+        } else if let deviceConnectionObserver = self.sharedObserverForDeviceConnection {
+            return deviceConnectionObserver.asSingle()
+        } else {
+            print("Must not be called")
+            return Single.error(BleWrokerErrors.unexpectedComplete)
         }
     }
 
