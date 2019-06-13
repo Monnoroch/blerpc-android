@@ -134,17 +134,17 @@ public class BleWorker {
 
     /// Check current conenction state and if not connected - trying to connect to device.
     /// - returns: Peripheral as observable value.
-    private func getConnectedPeripheral() -> Observable<Peripheral> {
+    private func getConnectedPeripheral() -> Single<Peripheral> {
         return self.accessQueue.sync {
             return doGetConnectedPeripheral()
         }
     }
     
-    private func doGetConnectedPeripheral() -> Observable<Peripheral> {
+    private func doGetConnectedPeripheral() -> Single<Peripheral> {
         if let deviceConnectionObserver = self.sharedObserverForDeviceConnection {
-            return deviceConnectionObserver
+            return deviceConnectionObserver.take(1).asSingle()
         } else {
-            let observerForDeviceConnection = self.connectedPeripheral.establishConnection().share()
+            let observerForDeviceConnection = self.connectedPeripheral.establishConnection().share(replay: 2)
             
             self.deviceConnection = observerForDeviceConnection
                 .catchError({ [weak self] (error) -> Observable<Peripheral> in
@@ -197,7 +197,7 @@ public class BleWorker {
     /// - returns: Characteristic as observable value.
     private func connectToDeviceAndDiscoverCharacteristic(serviceUUID: String, characteristicUUID: String)
         -> Observable<Characteristic> {
-        return self.getConnectedPeripheral().flatMap { peripheral -> Observable<Characteristic> in
+        return self.getConnectedPeripheral().asObservable().flatMap { peripheral -> Observable<Characteristic> in
             peripheral.discoverServices([CBUUID(string: serviceUUID)]).asObservable().flatMap { services in
                 Observable.from(services)
             }.flatMap { service in
