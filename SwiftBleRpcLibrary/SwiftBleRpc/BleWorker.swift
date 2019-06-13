@@ -8,9 +8,6 @@ public enum BleWrokerErrors: Error {
     /// Called when device returned empty response so we can not parse it as Proto object.
     case emptyResponse
     
-    /// Called when device returned non empty response. We do not support parsing data in write response for now.
-    case nonEmptyResponse
-    
     /// Called when client sends non empty request for read or subscribe methods.
     case nonEmptyRequest
     
@@ -135,13 +132,8 @@ public class BleWorker {
                                                        characteristicUUID: characteristicUUID)
             .flatMap { characteristic in
             characteristic.writeValue(request, type: .withResponse)
-        }.asSingle().map { characteristic in
-            if let data = characteristic.value, data.count > 0  {
-                throw BleWrokerErrors.characteristicWriteFailed(characteristic: characteristic,
-                                                                              BleWrokerErrors.nonEmptyResponse)
-            } else {
-                return Data()
-            }
+        }.asSingle().map { _ in
+            return Data()
         }
     }
 
