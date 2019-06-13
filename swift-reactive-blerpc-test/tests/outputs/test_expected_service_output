@@ -12,21 +12,18 @@ public class TestService: BleRpcService {
     /// - parameter request: Device_GetValueRequest.
     /// - returns: *Single* to operation with Device_GetValueResponse.
     public func readValue(request: Device_GetValueRequest) -> Single<Device_GetValueResponse> {
-        return Single.create { [weak self] observer in
-            do {
-                let data = try Device_GetValueRequest.bleRpcEncode(proto: request)
+        do {
+            let data = try Device_GetValueRequest.bleRpcEncode(proto: request)
 
-                return self?.bleWorker.read(
-                    request: data,
-                    serviceUUID: TestService.TestServiceUUID,
-                    characteristicUUID: "A0000001-0000-0000-0000-000000000000")
-                .map { response in
-                    try Device_GetValueResponse.bleRpcDecode(data: response)
-                }.subscribe(observer) ?? Disposables.create()
-            } catch {
-                observer(.error(error))
-                return Disposables.create()
+            return bleWorker.read(
+                request: data,
+                serviceUUID: TestService.TestServiceUUID,
+                characteristicUUID: "A0000001-0000-0000-0000-000000000000")
+            .map { response in
+                try Device_GetValueResponse.bleRpcDecode(data: response)
             }
+        } catch {
+            return Single.error(BluetoothError.destroyed)
         }
     }
 
@@ -34,21 +31,18 @@ public class TestService: BleRpcService {
     /// - parameter request: Device_SetValueRequest.
     /// - returns: *Single* to operation with Device_SetValueResponse.
     public func writeValue(request: Device_SetValueRequest) -> Single<Device_SetValueResponse> {
-        return Single.create { [weak self] observer in
-            do {
-                let data = try Device_SetValueRequest.bleRpcEncode(proto: request)
+        do {
+            let data = try Device_SetValueRequest.bleRpcEncode(proto: request)
 
-                return self?.bleWorker.write(
-                    request: data,
-                    serviceUUID: TestService.TestServiceUUID,
-                    characteristicUUID: "A0000001-0000-0000-0000-000000000000")
-                .map { response in
-                    try Device_SetValueResponse.bleRpcDecode(data: response)
-                }.subscribe(observer) ?? Disposables.create()
-            } catch {
-                observer(.error(error))
-                return Disposables.create()
+            return bleWorker.write(
+                request: data,
+                serviceUUID: TestService.TestServiceUUID,
+                characteristicUUID: "A0000001-0000-0000-0000-000000000000")
+            .map { response in
+                try Device_SetValueResponse.bleRpcDecode(data: response)
             }
+        } catch {
+            return Single.error(BluetoothError.destroyed)
         }
     }
 
@@ -56,21 +50,18 @@ public class TestService: BleRpcService {
     /// - parameter request: Device_GetValueRequest.
     /// - returns: *Observable* to operation.
     public func getValueUpdates(request: Device_GetValueRequest) -> Observable<Device_GetValueResponse> {
-        return Observable.create { [weak self] observer in
-            do {
-                let data = try Device_GetValueRequest.bleRpcEncode(proto: request)
+        do {
+            let data = try Device_GetValueRequest.bleRpcEncode(proto: request)
 
-                return self?.bleWorker.subscribe(
-                    request: data,
-                    serviceUUID: TestService.TestServiceUUID,
-                    characteristicUUID: "A0000001-0000-0000-0000-000000000000")
-                .map { response in
-                    try Device_GetValueResponse.bleRpcDecode(data: response)
-                }.subscribe(observer) ?? Disposables.create()
-            } catch {
-                observer.onError(error)
-                return Disposables.create()
+            return bleWorker.subscribe(
+                request: data,
+                serviceUUID: TestService.TestServiceUUID,
+                characteristicUUID: "A0000001-0000-0000-0000-000000000000")
+            .map { response in
+                try Device_GetValueResponse.bleRpcDecode(data: response)
             }
+        } catch {
+            return Observable.error(error)
         }
     }
 }
