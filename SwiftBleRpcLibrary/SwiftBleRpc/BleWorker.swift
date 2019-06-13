@@ -81,7 +81,7 @@ public class BleWorker {
     /// - parameter characteristicUUID: *UUID* of a characteristic.
     /// - returns: Data as observable value.
     /// - warning: request must be empty for Read requests.
-    internal func subscribe(request data: Data, serviceUUID: String, characteristicUUID: String) -> Observable<Data> {
+    internal func subscribe(request data: Data, serviceUUID: String, characteristicUUID: String) throws -> Observable<Data> {
         if data.count > 0 {
             return Observable.error(BleWrokerErrors.nonEmptyRequest)
         }
@@ -90,8 +90,13 @@ public class BleWorker {
                                                        characteristicUUID: characteristicUUID)
             .flatMap { characteristic in
             characteristic.observeValueUpdateAndSetNotification()
-        }.asObservable().flatMap { characteristic in
-            BleWorker.completeSubscription(characteristic: characteristic)
+        }.asObservable().map { characteristic in
+            guard let data = characteristic.value else {
+                throw BleWrokerErrors.characteristicReadFailed(characteristic: characteristic,
+                                                               BleWrokerErrors.emptyResponse)
+            }
+            
+            return data
         }
     }
 
@@ -101,7 +106,7 @@ public class BleWorker {
     /// - parameter characteristicUUID: *UUID* of a characteristic.
     /// - returns: Data as observable value.
     /// - warning: request must be empty for Read requests.
-    internal func read(request data: Data, serviceUUID: String, characteristicUUID: String) -> Single<Data> {
+    internal func read(request data: Data, serviceUUID: String, characteristicUUID: String) throws -> Single<Data> {
         if data.count > 0 {
             return Single.error(BleWrokerErrors.nonEmptyRequest)
         }
@@ -110,8 +115,13 @@ public class BleWorker {
                                                        characteristicUUID: characteristicUUID)
             .flatMap { characteristic in
             characteristic.readValue()
-        }.asSingle().flatMap { characteristic in
-            BleWorker.completeRead(characteristic: characteristic)
+        }.asSingle().map { characteristic in
+            guard let data = characteristic.value else {
+                throw BleWrokerErrors.characteristicReadFailed(characteristic: characteristic,
+                                                                             BleWrokerErrors.emptyResponse)
+            }
+            
+            return data
         }
     }
 
@@ -125,8 +135,13 @@ public class BleWorker {
                                                        characteristicUUID: characteristicUUID)
             .flatMap { characteristic in
             characteristic.writeValue(request, type: .withResponse)
-        }.asSingle().flatMap { characteristic in
-            BleWorker.completeWrite(characteristic: characteristic)
+        }.asSingle().map { characteristic in
+            if let data = characteristic.value, data.count > 0  {
+                throw BleWrokerErrors.characteristicWriteFailed(characteristic: characteristic,
+                                                                              BleWrokerErrors.nonEmptyResponse)
+            } else {
+                return Data()
+            }
         }
     }
 
@@ -155,39 +170,6 @@ public class BleWorker {
             self.sharedObserverForDeviceConnection = observerForDeviceConnection
             
             return doGetConnectedPeripheral()
-        }
-    }
-
-    /// Method called after iOS device received response from Ble device for subscribing events.
-    /// - parameter characteristic: characteristic that comes from request.
-    private static func completeSubscription(characteristic: Characteristic) -> Observable<Data> {
-        guard let data = characteristic.value else {
-            return Observable.error(BleWrokerErrors.characteristicReadFailed(characteristic: characteristic,
-                                                                                     BleWrokerErrors.emptyResponse))
-        }
-        
-        return Observable.just(data)
-    }
-
-    /// Method called after iOS device received response from Ble device for read events.
-    /// - parameter characteristic: characteristic that comes from request.
-    private static func completeRead(characteristic: Characteristic) -> Single<Data>{
-        guard let data = characteristic.value else {
-            return Single.error(BleWrokerErrors.characteristicReadFailed(characteristic: characteristic,
-                                                                          BleWrokerErrors.emptyResponse))
-        }
-        
-        return Single.just(data)
-    }
-    
-    /// Method called after iOS device received response from Ble device for write events.
-    /// - parameter characteristic: characteristic that comes from request.
-    private static func completeWrite(characteristic: Characteristic) -> Single<Data> {
-        if let data = characteristic.value, data.count > 0  {
-            return Single.error(BleWrokerErrors.characteristicWriteFailed(characteristic: characteristic,
-                                                                                 BleWrokerErrors.nonEmptyResponse))
-        } else {
-            return Single.just(Data())
         }
     }
     
