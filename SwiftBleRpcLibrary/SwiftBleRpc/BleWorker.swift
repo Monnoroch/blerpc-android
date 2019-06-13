@@ -136,34 +136,24 @@ public class BleWorker {
     /// - returns: Peripheral as observable value.
     private func getConnectedPeripheral() -> Single<Peripheral> {
         return self.accessQueue.sync {
-            if self.connectedPeripheral.isConnected {
-                return Single.just(self.connectedPeripheral)
-            }
-            
-            if let deviceConnectionObserver = self.sharedObserverForDeviceConnection {
-                return deviceConnectionObserver.asSingle()
-            } else {
-                let observerForDeviceConnection = self.connectedPeripheral.establishConnection().share()
-                
-                self.deviceConnection = observerForDeviceConnection.catchError({ [weak self] (error) -> Observable<Peripheral> in
-                    self?.doDisconnect()
-                    return Observable.empty()
-                }).subscribe()
-                
-                self.sharedObserverForDeviceConnection = observerForDeviceConnection
-                return doGetConnectedPeripheral()
-            }
+            return doGetConnectedPeripheral()
         }
     }
     
     private func doGetConnectedPeripheral() -> Single<Peripheral> {
-        if self.connectedPeripheral.isConnected {
-            return Single.just(self.connectedPeripheral)
-        } else if let deviceConnectionObserver = self.sharedObserverForDeviceConnection {
+        if let deviceConnectionObserver = self.sharedObserverForDeviceConnection {
             return deviceConnectionObserver.asSingle()
         } else {
-            print("Must not be called")
-            return Single.error(BleWrokerErrors.unexpectedComplete)
+            let observerForDeviceConnection = self.connectedPeripheral.establishConnection().share()
+            
+            self.deviceConnection = observerForDeviceConnection.catchError({ [weak self] (error) -> Observable<Peripheral> in
+                self?.doDisconnect()
+                return Observable.empty()
+            }).subscribe()
+            
+            self.sharedObserverForDeviceConnection = observerForDeviceConnection
+            
+            return doGetConnectedPeripheral()
         }
     }
 
