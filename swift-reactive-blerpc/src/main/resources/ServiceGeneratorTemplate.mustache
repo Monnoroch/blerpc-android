@@ -7,76 +7,67 @@ import RxSwift
 public class {{serviceName}}: BleRpcService {
     /// UUID of service.
     public static let {{serviceName}}UUID: String = "{{serviceUUID}}"
-
 {{#methods}}
     {{#typeRead}}
+
     /// Send read request of method {{methodName}} on device.
     /// - parameter request: {{inputType}}.
     /// - returns: *Single* to operation with {{outputType}}.
     public func {{methodName}}(request: {{inputType}}) -> Single<{{outputType}}> {
-        return Single.create { [weak self] observer in
-            do {
-                let data = try {{inputType}}.bleRpcEncode(proto: request)
+        do {
+            let data = try {{inputType}}.bleRpcEncode(proto: request)
 
-                return self?.bleWorker.read(
-                    request: data,
-                    serviceUUID: {{serviceName}}.{{serviceName}}UUID,
-                    characteristicUUID: "{{characteristicUUID}}")
-                .map { response in
-                    try {{outputType}}.bleRpcDecode(data: response)
-                }.subscribe(observer) ?? Disposables.create()
-            } catch {
-                observer(.error(error))
-                return Disposables.create()
+            return bleWorker.read(
+                request: data,
+                serviceUUID: {{serviceName}}.{{serviceName}}UUID,
+                characteristicUUID: "{{characteristicUUID}}")
+            .map { response in
+                try {{outputType}}.bleRpcDecode(data: response)
             }
+        } catch {
+            return Single.error(BluetoothError.destroyed)
         }
     }
-
     {{/typeRead}}
     {{#typeWrite}}
+
     /// Send write request of method {{methodName}} on device.
     /// - parameter request: {{inputType}}.
     /// - returns: *Single* to operation with {{outputType}}.
     public func {{methodName}}(request: {{inputType}}) -> Single<{{outputType}}> {
-        return Single.create { [weak self] observer in
-            do {
-                let data = try {{inputType}}.bleRpcEncode(proto: request)
+        do {
+            let data = try {{inputType}}.bleRpcEncode(proto: request)
 
-                return self?.bleWorker.write(
-                    request: data,
-                    serviceUUID: {{serviceName}}.{{serviceName}}UUID,
-                    characteristicUUID: "{{characteristicUUID}}")
-                .map { response in
-                    try {{outputType}}.bleRpcDecode(data: response)
-                }.subscribe(observer) ?? Disposables.create()
-            } catch {
-                observer(.error(error))
-                return Disposables.create()
+            return bleWorker.write(
+                request: data,
+                serviceUUID: {{serviceName}}.{{serviceName}}UUID,
+                characteristicUUID: "{{characteristicUUID}}")
+            .map { response in
+                try {{outputType}}.bleRpcDecode(data: response)
             }
+        } catch {
+            return Single.error(BluetoothError.destroyed)
         }
     }
-
     {{/typeWrite}}
     {{#typeSubscribe}}
+
     /// Send subscribe request of method {{methodName}} on device.
     /// - parameter request: {{inputType}}.
     /// - returns: *Observable* to operation.
     public func {{methodName}}(request: {{inputType}}) -> Observable<{{outputType}}> {
-        return Observable.create { [weak self] observer in
-            do {
-                let data = try {{inputType}}.bleRpcEncode(proto: request)
+        do {
+            let data = try {{inputType}}.bleRpcEncode(proto: request)
 
-                return self?.bleWorker.subscribe(
-                    request: data,
-                    serviceUUID: {{serviceName}}.{{serviceName}}UUID,
-                    characteristicUUID: "{{characteristicUUID}}")
-                .map { response in
-                    try {{outputType}}.bleRpcDecode(data: response)
-                }.subscribe(observer) ?? Disposables.create()
-            } catch {
-                observer.onError(error)
-                return Disposables.create()
+            return bleWorker.subscribe(
+                request: data,
+                serviceUUID: {{serviceName}}.{{serviceName}}UUID,
+                characteristicUUID: "{{characteristicUUID}}")
+            .map { response in
+                try {{outputType}}.bleRpcDecode(data: response)
             }
+        } catch {
+            return Observable.error(error)
         }
     }
     {{/typeSubscribe}}
