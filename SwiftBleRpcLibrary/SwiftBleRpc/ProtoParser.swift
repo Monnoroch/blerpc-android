@@ -38,29 +38,15 @@ public class ProtoDecoder {
         return result
     }
 
-    /// Decode data to Int.
-    /// - parameter fromByte: starting byte.
-    /// - parameter data: data from which need to convert.
-    /// - returns: converted value Int.
-    private class func decodeInt(fromByte _: Int, data: Data) -> Int {
-        return data.bytes.withUnsafeBufferPointer { ptr in
-            (
-                ptr.baseAddress!.withMemoryRebound(to: Int.self, capacity: 1) { ptr in
-                    ptr
-                }
-            )
-        }.pointee
-    }
-
     /// Decode data to UInt16.
     /// - parameter fromByte: starting byte.
     /// - parameter data: data from which need to convert.
     /// - returns: converted value IntUInt1632.
     private class func decodeUInt16(fromByte _: Int, data: Data) -> UInt16 {
-        return data.bytes.withUnsafeBufferPointer { ptr in
+        return data.bytes.withUnsafeBufferPointer { pointer in
             (
-                ptr.baseAddress!.withMemoryRebound(to: UInt16.self, capacity: 1) { ptr in
-                    ptr
+                pointer.baseAddress!.withMemoryRebound(to: UInt16.self, capacity: 1) { pointer in
+                    pointer
                 }
             )
         }.pointee
@@ -72,10 +58,10 @@ public class ProtoDecoder {
     /// - returns: converted value Int16.
     private class func decodeInt16(fromByte: Int, data: Data) -> Int16 {
         let subData = data.subdata(in: fromByte ..< fromByte + 2)
-        return subData.bytes.withUnsafeBufferPointer { ptr in
+        return subData.bytes.withUnsafeBufferPointer { pointer in
             (
-                ptr.baseAddress!.withMemoryRebound(to: Int16.self, capacity: 1) { ptr in
-                    ptr
+                pointer.baseAddress!.withMemoryRebound(to: Int16.self, capacity: 1) { pointer in
+                    pointer
                 }
             )
         }.pointee
@@ -86,10 +72,10 @@ public class ProtoDecoder {
     /// - parameter data: data from which need to convert.
     /// - returns: converted value UInt32.
     private class func decodeUInt32(fromByte _: Int, data: Data) -> UInt32 {
-        return data.bytes.withUnsafeBufferPointer { ptr in
+        return data.bytes.withUnsafeBufferPointer { pointer in
             (
-                ptr.baseAddress!.withMemoryRebound(to: UInt32.self, capacity: 1) { ptr in
-                    ptr
+                pointer.baseAddress!.withMemoryRebound(to: UInt32.self, capacity: 1) { pointer in
+                    pointer
                 }
             )
         }.pointee
@@ -100,10 +86,10 @@ public class ProtoDecoder {
     /// - parameter data: data from which need to convert.
     /// - returns: converted value Int32.
     private class func decodeInt32(fromByte: Int, data: Data) -> Int32 {
-        return data.subdata(in: fromByte ..< 4).bytes.withUnsafeBufferPointer { ptr in
+        return data.subdata(in: fromByte ..< 4).bytes.withUnsafeBufferPointer { pointer in
             (
-                ptr.baseAddress!.withMemoryRebound(to: Int32.self, capacity: 1) { ptr in
-                    ptr
+                pointer.baseAddress!.withMemoryRebound(to: Int32.self, capacity: 1) { pointer in
+                    pointer
                 }
             )
         }.pointee
@@ -137,7 +123,6 @@ public class ProtoDecoder {
         guard let type = type else {
             throw ProtoParserErrors.notSupportedType
         }
-
         switch type {
         case .int32:
             if to > data.count {
@@ -175,8 +160,8 @@ public class ProtoEncoder {
     /// - parameter value: value to convert (Int32).
     /// - returns: converted Data.
     private class func encodeInt(value: Int32) -> Data? {
-        var valueP = value
-        let data = NSData(bytes: &valueP, length: 1)
+        var valuePointer = value
+        let data = NSData(bytes: &valuePointer, length: 1)
         return data as Data
     }
 
@@ -184,8 +169,8 @@ public class ProtoEncoder {
     /// - parameter value: value to convert (Int16).
     /// - returns: converted Data.
     private class func encodeInt(value: Int16) -> Data? {
-        var valueP = value
-        let data = NSData(bytes: &valueP, length: 2)
+        var valuePointer = value
+        let data = NSData(bytes: &valuePointer, length: 2)
         return data as Data
     }
 
@@ -194,8 +179,8 @@ public class ProtoEncoder {
     /// - parameter lenth: in how much bytes to encode.
     /// - returns: converted Data.
     private class func encodeInt(value: Int32, lenth: Int) -> Data? {
-        var valueP = value
-        let data = NSData(bytes: &valueP, length: lenth)
+        var valuePointer = value
+        let data = NSData(bytes: &valuePointer, length: lenth)
         return data as Data
     }
 
@@ -209,17 +194,16 @@ public class ProtoEncoder {
         guard let type = type else {
             throw ProtoParserErrors.notSupportedType
         }
-
         switch type {
         case .int32:
-            var valueP = object
-            let data = NSData(bytes: &valueP, length: to - from)
+            var valuePointer = object
+            let data = NSData(bytes: &valuePointer, length: to - from)
             return data as Data
         case .byte:
             return object as! Data
         case .bool:
-            var valueP = object
-            let data = NSData(bytes: &valueP, length: 1)
+            var valuePointer = object
+            let data = NSData(bytes: &valuePointer, length: 1)
             return data as Data
         default:
             throw ProtoParserErrors.notSupportedType

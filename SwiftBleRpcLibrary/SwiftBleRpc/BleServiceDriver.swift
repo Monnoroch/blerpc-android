@@ -3,71 +3,59 @@ import Foundation
 import RxBluetoothKit
 import RxSwift
 
-/// Enum that describes BleWorker errors.
-public enum BleWrokerErrors: Error {
+/// Enum that describes Ble Service Driver errors.
+public enum BleServiceDriverErrors: Error {
     /// Called when device returned empty response so we can not parse it as Proto object.
     case emptyResponse
     
     /// Called when client sends non empty request for read or subscribe methods.
     case nonEmptyRequest
-    
-    /// Called when device was disconnected without reason.
-    case disconnectedWithoutReason
-    
-    /// Called when Ble finished request without response in *onNext* and we don't expect this behavior.
-    case unexpectedComplete
-    
-    /// Called when characteristic failed read value.
-    case characteristicReadFailed(characteristic: Characteristic?, Error)
-    
-    /// Called when characteristic failed write value.
-    case characteristicWriteFailed(characteristic: Characteristic?, Error)
 }
 
 /// Class which holds all operation with data transfer between iOS and Ble Device.
-public class BleWorker {
+public class BleServiceDriver {
     // MARK: - Variables
 
     /// Connected peripheral.
-    private let connectedPeripheral: Peripheral
+    private let peripheral: Peripheral
 
-    /// BleWorker queue which used to make thread safe read/write
-    private let accessQueue: DispatchQueue
+    /// BleServiceDriver queue which used to make thread safe read/write
+    private let queue: DispatchQueue
 
     /// Disposable which holds current device connection.
-    private var deviceConnection: Disposable?
+    private var disconnectionDisposable: Disposable?
 
     /// Shared observer which holds establish device connection.
-    private var sharedObserverForDeviceConnection: Observable<Peripheral>?
+    private var sharedConnectedPeripheral: Observable<Peripheral>?
     
     // MARK: - Initializers
 
     /// Block default init.
     private init() {
-        fatalError("Please use init(peripheral:, accessQueue:) instead.")
+        fatalError("Please use init(peripheral:, queue:) instead.")
     }
 
     /// Initialize with connected peripheral.
     /// - parameter device: peripheral to operate with.
-    /// - parameter accessQueue: dispatch queue used to make thread safe reqad/write.
-    /// - returns: created *BleWorker*.
-    public init(peripheral: BlePeripheral, accessQueue: DispatchQueue) {
-        connectedPeripheral = peripheral.peripheral
-        self.accessQueue = accessQueue
+    /// - parameter queue: dispatch queue used to make thread safe reqad/write.
+    /// - returns: created *BleServiceDriver*.
+    public init(peripheral: Peripheral, queue: DispatchQueue) {
+        self.peripheral = peripheral
+        self.queue = queue
     }
 
     // MARK: - Public methods
 
     /// Disconnecting from peripheral synchronically.
     public func disconnect() {
-        accessQueue.sync {
+        queue.sync {
             doDisconnect()
         }
     }
 
     /// Actual disconnect from device and cleanup.
     private func doDisconnect() {
-        deviceConnection?.dispose()
+        disconnectionDisposable?.dispose()
     }
     
     // MARK: - Internal methods
@@ -78,21 +66,21 @@ public class BleWorker {
     /// - parameter characteristicUUID: *UUID* of a characteristic.
     /// - returns: Data as observable value.
     /// - warning: request must be empty for Read requests.
-    internal func subscribe(request data: Data, serviceUUID: String, characteristicUUID: String) throws -> Observable<Data> {
+    internal func subscribe(request data: Data,
+                            serviceUUID: String,
+                            characteristicUUID: String) throws -> Observable<Data> {
         if data.count > 0 {
-            return Observable.error(BleWrokerErrors.nonEmptyRequest)
+            return Observable.error(BleServiceDriverErrors.nonEmptyRequest)
         }
-        
         return self.connectToDeviceAndDiscoverCharacteristic(serviceUUID: serviceUUID,
                                                        characteristicUUID: characteristicUUID)
             .flatMap { characteristic in
             characteristic.observeValueUpdateAndSetNotification()
         }.asObservable().map { characteristic in
             guard let data = characteristic.value else {
-                throw BleWrokerErrors.characteristicReadFailed(characteristic: characteristic,
-                                                               BleWrokerErrors.emptyResponse)
+                throw BluetoothError.characteristicReadFailed(characteristic,
+                                                               BleServiceDriverErrors.emptyResponse)
             }
-            
             return data
         }
     }
@@ -105,19 +93,17 @@ public class BleWorker {
     /// - warning: request must be empty for Read requests.
     internal func read(request data: Data, serviceUUID: String, characteristicUUID: String) throws -> Single<Data> {
         if data.count > 0 {
-            return Single.error(BleWrokerErrors.nonEmptyRequest)
+            return Single.error(BleServiceDriverErrors.nonEmptyRequest)
         }
-        
         return self.connectToDeviceAndDiscoverCharacteristic(serviceUUID: serviceUUID,
                                                        characteristicUUID: characteristicUUID)
             .flatMap { characteristic in
             characteristic.readValue()
         }.asSingle().map { characteristic in
             guard let data = characteristic.value else {
-                throw BleWrokerErrors.characteristicReadFailed(characteristic: characteristic,
-                                                                             BleWrokerErrors.emptyResponse)
+                throw BluetoothError.characteristicReadFailed(characteristic,
+                                                                             BleServiceDriverErrors.emptyResponse)
             }
-            
             return data
         }
     }
@@ -142,27 +128,25 @@ public class BleWorker {
     /// Check current conenction state and if not connected - trying to connect to device.
     /// - returns: Peripheral as observable value.
     private func getConnectedPeripheral() -> Single<Peripheral> {
-        return self.accessQueue.sync {
+        return self.queue.sync {
             return doGetConnectedPeripheral()
         }
     }
     
+    /// Actual device connection. *share(replay: 2)* returns two last observers from buffer (including error) if presented.
+    /// - returns: Peripheral as observable value.
     private func doGetConnectedPeripheral() -> Single<Peripheral> {
-        if let deviceConnectionObserver = self.sharedObserverForDeviceConnection {
+        if let deviceConnectionObserver = self.sharedConnectedPeripheral {
             return deviceConnectionObserver.take(1).asSingle()
-        } else {
-            let observerForDeviceConnection = self.connectedPeripheral.establishConnection().share(replay: 2)
-            
-            self.deviceConnection = observerForDeviceConnection
-                .catchError({ [weak self] (error) -> Observable<Peripheral> in
+        }
+        let observerForDeviceConnection = self.peripheral.establishConnection().share(replay: 2)
+        self.disconnectionDisposable = observerForDeviceConnection
+            .catchError({ [weak self] (error) -> Observable<Peripheral> in
                 self?.doDisconnect()
                 return Observable.empty()
             }).subscribe()
-            
-            self.sharedObserverForDeviceConnection = observerForDeviceConnection
-            
-            return doGetConnectedPeripheral()
-        }
+        self.sharedConnectedPeripheral = observerForDeviceConnection
+        return doGetConnectedPeripheral()
     }
     
     /// Method which connects to device (if needed) and discover requested characteristic.
