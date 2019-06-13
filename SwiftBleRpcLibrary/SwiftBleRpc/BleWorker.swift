@@ -68,13 +68,8 @@ public class BleWorker {
     /// Disconnecting from peripheral synchronically.
     public func disconnect() {
         accessQueue.sync {
-            doDisconnect()
+            deviceConnection?.dispose()
         }
-    }
-
-    /// Actual disconnect from device and cleanup.
-    private func doDisconnect() {
-        deviceConnection?.dispose()
     }
     
     // MARK: - Internal methods
@@ -139,25 +134,27 @@ public class BleWorker {
     /// Check current conenction state and if not connected - trying to connect to device.
     /// - returns: Peripheral as observable value.
     private func getConnectedPeripheral() -> Single<Peripheral> {
-        return Single.create { [weak self] observer in
-            self?.accessQueue.sync {
+        return self.accessQueue.sync {
+            if self.connectedPeripheral.isConnected {
+                return Single.just(self.connectedPeripheral)
+            }
+            
+            return Single.create { [weak self] observer in
                 guard let self = self else {
                     observer(.error(BluetoothError.destroyed))
                     return Disposables.create()
                 }
                 
-                if self.connectedPeripheral.isConnected {
-                    observer(.success(self.connectedPeripheral))
-                    return Disposables.create()
-                } else if let deviceConnectionObserver = self.sharedObserverForDeviceConnection {
+                if let deviceConnectionObserver = self.sharedObserverForDeviceConnection {
                     return deviceConnectionObserver.subscribe(onNext: { peripheral in
                         observer(.success(peripheral))
                     }, onError: { error in
                         observer(.error(error))
                     })
                 } else {
-                    self.sharedObserverForDeviceConnection = self.manager.establishConnection(self.connectedPeripheral)
+                    self.sharedObserverForDeviceConnection = self.connectedPeripheral.establishConnection()
                         .share()
+
                     self.deviceConnection = self.sharedObserverForDeviceConnection?.subscribe(onNext: { peripheral in
                         observer(.success(peripheral))
                     }, onError: { error in
@@ -166,7 +163,7 @@ public class BleWorker {
                     
                     return Disposables.create()
                 }
-            } ?? Disposables.create()
+            }
         }
     }
 
