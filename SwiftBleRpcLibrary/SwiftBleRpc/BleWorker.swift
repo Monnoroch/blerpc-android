@@ -5,9 +5,6 @@ import RxSwift
 
 /// Enum that describes BleWorker errors.
 public enum BleWrokerErrors: Error {
-    /// Called when self is nil (destroyed).
-    case destroyed
-    
     /// Called when device returned empty response so we can not parse it as Proto object.
     case emptyResponse
     
@@ -22,12 +19,12 @@ public enum BleWrokerErrors: Error {
     
     /// Called when Ble finished request without response in *onNext* and we don't expect this behavior.
     case unexpectedComplete
-}
-
-/// Enum that describes Characteristic errors.
-public enum BleCharacteristicErrors: Error {
+    
     /// Called when characteristic failed read value.
-    case characteristicReadFailed(characteristic: Characteristic?, BleWrokerErrors)
+    case characteristicReadFailed(characteristic: Characteristic?, Error)
+    
+    /// Called when characteristic failed write value.
+    case characteristicWriteFailed(characteristic: Characteristic?, Error)
 }
 
 /// Class which holds all operation with data transfer between iOS and Ble Device.
@@ -145,7 +142,7 @@ public class BleWorker {
         return Single.create { [weak self] observer in
             self?.accessQueue.sync {
                 guard let self = self else {
-                    observer(.error(BleWrokerErrors.destroyed))
+                    observer(.error(BluetoothError.destroyed))
                     return Disposables.create()
                 }
                 
@@ -177,8 +174,8 @@ public class BleWorker {
     /// - parameter characteristic: characteristic that comes from request.
     private static func completeSubscription(characteristic: Characteristic) -> Observable<Data> {
         guard let data = characteristic.value else {
-            return Observable.error(BleCharacteristicErrors.characteristicReadFailed(characteristic: characteristic,
-                                                                                     BleWrokerErrors.nonEmptyResponse))
+            return Observable.error(BleWrokerErrors.characteristicReadFailed(characteristic: characteristic,
+                                                                                     BleWrokerErrors.emptyResponse))
         }
         
         return Observable.just(data)
@@ -188,7 +185,8 @@ public class BleWorker {
     /// - parameter characteristic: characteristic that comes from request.
     private static func completeRead(characteristic: Characteristic) -> Single<Data>{
         guard let data = characteristic.value else {
-            return Single.error(BleWrokerErrors.emptyResponse)
+            return Single.error(BleWrokerErrors.characteristicReadFailed(characteristic: characteristic,
+                                                                          BleWrokerErrors.emptyResponse))
         }
         
         return Single.just(data)
@@ -197,11 +195,11 @@ public class BleWorker {
     /// Method called after iOS device received response from Ble device for write events.
     /// - parameter characteristic: characteristic that comes from request.
     private static func completeWrite(characteristic: Characteristic) -> Single<Data> {
-        if characteristic.value == nil {
-            return Single.just(Data())
-        } else {
-            return Single.error(BleCharacteristicErrors.characteristicReadFailed(characteristic: characteristic,
+        if let data = characteristic.value, data.count > 0  {
+            return Single.error(BleWrokerErrors.characteristicWriteFailed(characteristic: characteristic,
                                                                                  BleWrokerErrors.nonEmptyResponse))
+        } else {
+            return Single.just(Data())
         }
     }
     
