@@ -3,16 +3,15 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 50;
+	objectVersion = 51;
 	objects = {
 
 /* Begin PBXBuildFile section */
 		295A24A322833F0B002A40A1 /* SwiftBleRpc.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 295A249922833F0B002A40A1 /* SwiftBleRpc.framework */; };
 		295A24AA22833F0B002A40A1 /* SwiftBleRpc.h in Headers */ = {isa = PBXBuildFile; fileRef = 295A249C22833F0B002A40A1 /* SwiftBleRpc.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		295A24B722833F9C002A40A1 /* BleWorker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 295A24B322833F9C002A40A1 /* BleWorker.swift */; };
-		295A24B822833F9D002A40A1 /* BlePeripheral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 295A24B422833F9C002A40A1 /* BlePeripheral.swift */; };
 		295A24B922833F9D002A40A1 /* ProtoParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 295A24B522833F9C002A40A1 /* ProtoParser.swift */; };
 		295A24BA22833F9D002A40A1 /* BleRpcService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 295A24B622833F9C002A40A1 /* BleRpcService.swift */; };
+		299579EF22B2CCA600B22B2A /* BleServiceDriver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 299579EE22B2CCA600B22B2A /* BleServiceDriver.swift */; };
 		5D21277509341BB655E7215C /* Pods_SwiftBleRpcTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CFB355EE6D443950FDF2D78A /* Pods_SwiftBleRpcTests.framework */; };
 		B62A26EF86216392FB7D5192 /* Pods_SwiftBleRpc.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0F676AF989D74736A2ABE22F /* Pods_SwiftBleRpc.framework */; };
 /* End PBXBuildFile section */
@@ -34,10 +33,9 @@
 		295A249D22833F0B002A40A1 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		295A24A222833F0B002A40A1 /* SwiftBleRpcTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SwiftBleRpcTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		295A24A922833F0B002A40A1 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		295A24B322833F9C002A40A1 /* BleWorker.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BleWorker.swift; sourceTree = "<group>"; };
-		295A24B422833F9C002A40A1 /* BlePeripheral.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BlePeripheral.swift; sourceTree = "<group>"; };
 		295A24B522833F9C002A40A1 /* ProtoParser.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ProtoParser.swift; sourceTree = "<group>"; };
 		295A24B622833F9C002A40A1 /* BleRpcService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BleRpcService.swift; sourceTree = "<group>"; };
+		299579EE22B2CCA600B22B2A /* BleServiceDriver.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BleServiceDriver.swift; sourceTree = "<group>"; };
 		5A6E3791A11905ABB701C111 /* Pods-SwiftBleRpc.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SwiftBleRpc.release.xcconfig"; path = "Target Support Files/Pods-SwiftBleRpc/Pods-SwiftBleRpc.release.xcconfig"; sourceTree = "<group>"; };
 		BB4F51906A54BA295BB10B82 /* Pods-SwiftBleRpcTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SwiftBleRpcTests.debug.xcconfig"; path = "Target Support Files/Pods-SwiftBleRpcTests/Pods-SwiftBleRpcTests.debug.xcconfig"; sourceTree = "<group>"; };
 		CFB355EE6D443950FDF2D78A /* Pods_SwiftBleRpcTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_SwiftBleRpcTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -89,9 +87,8 @@
 		295A249B22833F0B002A40A1 /* SwiftBleRpc */ = {
 			isa = PBXGroup;
 			children = (
-				295A24B422833F9C002A40A1 /* BlePeripheral.swift */,
 				295A24B622833F9C002A40A1 /* BleRpcService.swift */,
-				295A24B322833F9C002A40A1 /* BleWorker.swift */,
+				299579EE22B2CCA600B22B2A /* BleServiceDriver.swift */,
 				295A24B522833F9C002A40A1 /* ProtoParser.swift */,
 				295A249C22833F0B002A40A1 /* SwiftBleRpc.h */,
 				295A249D22833F0B002A40A1 /* Info.plist */,
@@ -304,9 +301,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				295A24B922833F9D002A40A1 /* ProtoParser.swift in Sources */,
-				295A24B722833F9C002A40A1 /* BleWorker.swift in Sources */,
-				295A24B822833F9D002A40A1 /* BlePeripheral.swift in Sources */,
 				295A24BA22833F9D002A40A1 /* BleRpcService.swift in Sources */,
+				299579EF22B2CCA600B22B2A /* BleServiceDriver.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
