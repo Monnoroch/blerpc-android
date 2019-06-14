@@ -132,7 +132,7 @@ public class ServiceGenerator {
         String packageName = proto.getPackage();
         String[] splittedPackageName = packageName.split("\\.");
         return Arrays.stream(splittedPackageName)
-                .map(key -> this.upperCaseFirstLetter(key) + SWIFT_PACKAGE_TO_CLASS_SAPARATOR)
+                .map(key -> upperCaseFirstLetter(key) + SWIFT_PACKAGE_TO_CLASS_SAPARATOR)
                 .collect(Collectors.joining());
     }
 
