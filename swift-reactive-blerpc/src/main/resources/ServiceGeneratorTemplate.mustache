@@ -12,12 +12,12 @@ public class {{serviceName}}: BleRpcService {
 
     /// Send read request of method {{methodName}} on device.
     /// - parameter request: {{inputType}}.
-    /// - returns: *Single* to operation with {{outputType}}.
+    /// - returns: *Single* that emit either a single element of {{outputType}} or an error.
     public func {{methodName}}(request: {{inputType}}) -> Single<{{outputType}}> {
         do {
             let data = try {{inputType}}.bleRpcEncode(proto: request)
 
-            return bleWorker.read(
+            return try bleWorker.read(
                 request: data,
                 serviceUUID: {{serviceName}}.{{serviceName}}UUID,
                 characteristicUUID: "{{characteristicUUID}}")
@@ -33,7 +33,7 @@ public class {{serviceName}}: BleRpcService {
 
     /// Send write request of method {{methodName}} on device.
     /// - parameter request: {{inputType}}.
-    /// - returns: *Single* to operation with {{outputType}}.
+    /// - returns: *Single* that emit either a single element of {{outputType}} or an error.
     public func {{methodName}}(request: {{inputType}}) -> Single<{{outputType}}> {
         do {
             let data = try {{inputType}}.bleRpcEncode(proto: request)
@@ -54,12 +54,12 @@ public class {{serviceName}}: BleRpcService {
 
     /// Send subscribe request of method {{methodName}} on device.
     /// - parameter request: {{inputType}}.
-    /// - returns: *Observable* to operation.
+    /// - returns: *Observable* with an infinite sequence of {{outputType}}-s.
     public func {{methodName}}(request: {{inputType}}) -> Observable<{{outputType}}> {
         do {
             let data = try {{inputType}}.bleRpcEncode(proto: request)
 
-            return bleWorker.subscribe(
+            return try bleWorker.subscribe(
                 request: data,
                 serviceUUID: {{serviceName}}.{{serviceName}}UUID,
                 characteristicUUID: "{{characteristicUUID}}")

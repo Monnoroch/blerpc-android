@@ -3,7 +3,9 @@ package com.blerpc.ios;
 import com.blerpc.proto.Blerpc;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
-import com.google.protobuf.DescriptorProtos;
+import com.google.protobuf.DescriptorProtos.DescriptorProto;
+import com.google.protobuf.DescriptorProtos.FieldDescriptorProto;
+import com.google.protobuf.DescriptorProtos.FileDescriptorProto;
 import com.google.protobuf.compiler.PluginProtos;
 import edu.umd.cs.findbugs.annotations.SuppressWarnings;
 import java.util.Arrays;
@@ -14,6 +16,18 @@ public class MessageGenerator {
 
     private static final String OUTPUT_CLASS_POSTFIX = "Extension";
     private static final String OUTPUT_FILE_EXTENSION = ".swift";
+    private static final String PROTO_ID_NAME = "Id";
+    private static final String SWIFT_ID_NAME = "ID";
+    private static final String TYPE_ENUM = "TYPE_ENUM";
+    private static final String TYPE_MESSAGE = "TYPE_MESSAGE";
+    private static final String PROTO_TYPE_INT32 = "TYPE_INT32";
+    private static final String PROTO_TYPE_BYTES = "TYPE_BYTES";
+    private static final String PROTO_TYPE_BOOL = "TYPE_BOOL";
+    private static final String SWIFT_TYPE_INT32 = "ProtoType.int32";
+    private static final String SWIFT_TYPE_BYTES = "ProtoType.byte";
+    private static final String SWIFT_TYPE_BOOL = "ProtoType.bool";
+    private static final String SWIFT_TYPE_UNKNOWN = "ProtoType.unknown";
+    private static final String SWIFT_PACKAGE_TO_CLASS_SAPARATOR = "_";
 
     public Stream<MessageContext> buildMessageContexts(PluginProtos.CodeGeneratorRequest request) {
         return request
@@ -24,14 +38,14 @@ public class MessageGenerator {
                 .flatMap(this::buildMessageContext);
     }
 
-    private Stream<MessageContext> buildMessageContext(DescriptorProtos.FileDescriptorProto protoFile) {
+    private Stream<MessageContext> buildMessageContext(FileDescriptorProto protoFile) {
         return protoFile.getMessageTypeList().stream().flatMap(messageType ->
                 generateMessageInformation(messageType, protoFile)
         );
     }
 
-    private Stream<MessageContext> generateMessageInformation(DescriptorProtos.DescriptorProto messageType,
-                                                              DescriptorProtos.FileDescriptorProto protoFile) {
+    private Stream<MessageContext> generateMessageInformation(DescriptorProto messageType,
+                                                              FileDescriptorProto protoFile) {
         MessageContext messageContext = new MessageContext();
         messageContext.swiftPackageName = extractSwiftPackageName(protoFile);
         messageContext.packageName = extractPackageName(protoFile);
@@ -44,40 +58,30 @@ public class MessageGenerator {
         return Stream.of(messageContext);
     }
 
-    private Stream<FieldContext> generateFieldsInformation(DescriptorProtos.FieldDescriptorProto field,
-                                                      DescriptorProtos.FileDescriptorProto protoFile) {
+    private Stream<FieldContext> generateFieldsInformation(FieldDescriptorProto field,
+                                                      FileDescriptorProto protoFile) {
         FieldContext fieldContext = new FieldContext();
-        fieldContext.name = field.getJsonName().replace("Id", "ID"); // to conform output swift rules
+        fieldContext.name = field.getJsonName().replace(PROTO_ID_NAME, SWIFT_ID_NAME); // to conform output swift rules
         fieldContext.type = field.getType().toString();
         fieldContext.protoType = field.getTypeName().replace(protoFile.getPackage(), "")
                 .replace(".", "");
 
-        if (fieldContext.type.equals("TYPE_ENUM")) {
-            fieldContext.isEnum = true;
-            fieldContext.isProtoObject = false;
-            fieldContext.isPrimitiveType = false;
-        } else if (fieldContext.type.equals("TYPE_MESSAGE")) {
-            fieldContext.isEnum = false;
-            fieldContext.isProtoObject = true;
-            fieldContext.isPrimitiveType = false;
-        } else {
-            fieldContext.isEnum = false;
-            fieldContext.isProtoObject = false;
-            fieldContext.isPrimitiveType = true;
-        }
+        fieldContext.isEnum = fieldContext.type.equals(TYPE_ENUM);
+        fieldContext.isProtoObject = fieldContext.type.equals(TYPE_MESSAGE);
+        fieldContext.isPrimitiveType = !fieldContext.isEnum && !fieldContext.isProtoObject;
 
         switch (fieldContext.type) {
-            case "TYPE_INT32":
-                fieldContext.swiftType = "ProtoType.int32";
+            case PROTO_TYPE_INT32:
+                fieldContext.swiftType = SWIFT_TYPE_INT32;
                 break;
-            case  "TYPE_BYTES":
-                fieldContext.swiftType = "ProtoType.byte";
+            case  PROTO_TYPE_BYTES:
+                fieldContext.swiftType = SWIFT_TYPE_BYTES;
                 break;
-            case  "TYPE_BOOL":
-                fieldContext.swiftType = "ProtoType.bool";
+            case  PROTO_TYPE_BOOL:
+                fieldContext.swiftType = SWIFT_TYPE_BOOL;
                 break;
             default:
-                fieldContext.swiftType = "ProtoType.unknown";
+                fieldContext.swiftType = SWIFT_TYPE_UNKNOWN;
                 break;
         }
 
@@ -86,23 +90,25 @@ public class MessageGenerator {
         return Stream.of(fieldContext);
     }
 
-    private boolean hasPackage(DescriptorProtos.FileDescriptorProto file) {
+    private boolean hasPackage(FileDescriptorProto file) {
         return !file.getPackage().isEmpty();
     }
 
-    private String extractPackageName(DescriptorProtos.FileDescriptorProto proto) {
+    private String extractPackageName(FileDescriptorProto proto) {
         String javaPackage = proto.getOptions().getJavaPackage();
-        return !javaPackage.isEmpty() ? javaPackage : proto.getPackage();
+        return javaPackage.isEmpty() ? proto.getPackage() : javaPackage;
     }
 
-    private String extractSwiftPackageName(DescriptorProtos.FileDescriptorProto proto) {
+    private String extractSwiftPackageName(FileDescriptorProto proto) {
         String packageName = proto.getPackage();
         String[] splittedPackageName = packageName.split("\\.");
-        return Arrays.stream(splittedPackageName).map(key -> this.upperCaseFirstLetter(key) + "_").collect(Collectors.joining());
+        return Arrays.stream(splittedPackageName)
+                .map(key -> this.upperCaseFirstLetter(key) + SWIFT_PACKAGE_TO_CLASS_SAPARATOR)
+                .collect(Collectors.joining());
     }
 
     private String upperCaseFirstLetter(String string) {
-        return Character.toUpperCase(string.charAt(0)) + string.substring(1);
+        return Character.toUpperCase(string.charAt(0)) + (string.length() > 1 ? string.substring(1) : "");
     }
 
     /** Template class that describe protobuf message. */

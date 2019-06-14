@@ -3,8 +3,8 @@ import Foundation
 extension {{swiftPackageName}}{{serviceName}} {
     /// Convert data to {{swiftPackageName}}{{serviceName}} proto object.
     /// - parameter data: data which needs to be converted.
-    /// - returns: decoded proto object.
-    static func bleRpcDecode(data _: Data) throws -> {{swiftPackageName}}{{serviceName}} {
+    /// - returns: decoded {{swiftPackageName}}{{serviceName}} proto.
+    static func bleRpcDecode(data: Data) throws -> {{swiftPackageName}}{{serviceName}} {
         var proto = {{swiftPackageName}}{{serviceName}}()
 {{#fields}}
     {{#isEnum}}
@@ -22,8 +22,8 @@ extension {{swiftPackageName}}{{serviceName}} {
 
     /// Convert {{swiftPackageName}}{{serviceName}} proto object to raw data.
     /// - parameter proto: proto object which needs to be converted.
-    /// - returns: encoded data.
-    static func bleRpcEncode(proto _: {{swiftPackageName}}{{serviceName}}) throws -> Data {
+    /// - returns: encoded {{swiftPackageName}}{{serviceName}}.
+    static func bleRpcEncode(proto: {{swiftPackageName}}{{serviceName}}) throws -> Data {
         var data = Data()
 {{#fields}}
     {{#isEnum}}

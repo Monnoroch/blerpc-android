@@ -10,12 +10,12 @@ public class TestService: BleRpcService {
 
     /// Send read request of method readValue on device.
     /// - parameter request: Device_GetValueRequest.
-    /// - returns: *Single* to operation with Device_GetValueResponse.
+    /// - returns: *Single* that emit either a single element of Device_GetValueResponse or an error.
     public func readValue(request: Device_GetValueRequest) -> Single<Device_GetValueResponse> {
         do {
             let data = try Device_GetValueRequest.bleRpcEncode(proto: request)
 
-            return bleWorker.read(
+            return try bleWorker.read(
                 request: data,
                 serviceUUID: TestService.TestServiceUUID,
                 characteristicUUID: "A0000001-0000-0000-0000-000000000000")
@@ -29,7 +29,7 @@ public class TestService: BleRpcService {
 
     /// Send write request of method writeValue on device.
     /// - parameter request: Device_SetValueRequest.
-    /// - returns: *Single* to operation with Device_SetValueResponse.
+    /// - returns: *Single* that emit either a single element of Device_SetValueResponse or an error.
     public func writeValue(request: Device_SetValueRequest) -> Single<Device_SetValueResponse> {
         do {
             let data = try Device_SetValueRequest.bleRpcEncode(proto: request)
@@ -48,12 +48,12 @@ public class TestService: BleRpcService {
 
     /// Send subscribe request of method getValueUpdates on device.
     /// - parameter request: Device_GetValueRequest.
-    /// - returns: *Observable* to operation.
+    /// - returns: *Observable* with an infinite sequence of Device_GetValueResponse-s.
     public func getValueUpdates(request: Device_GetValueRequest) -> Observable<Device_GetValueResponse> {
         do {
             let data = try Device_GetValueRequest.bleRpcEncode(proto: request)
 
-            return bleWorker.subscribe(
+            return try bleWorker.subscribe(
                 request: data,
                 serviceUUID: TestService.TestServiceUUID,
                 characteristicUUID: "A0000001-0000-0000-0000-000000000000")

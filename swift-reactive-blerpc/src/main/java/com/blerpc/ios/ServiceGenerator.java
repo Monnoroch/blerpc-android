@@ -3,9 +3,13 @@ package com.blerpc.ios;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import com.blerpc.proto.Blerpc;
+import com.blerpc.proto.MethodType;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
-import com.google.protobuf.DescriptorProtos;
+import com.google.protobuf.DescriptorProtos.FileDescriptorProto;
+import com.google.protobuf.DescriptorProtos.MethodDescriptorProto;
+import com.google.protobuf.DescriptorProtos.ServiceDescriptorProto;
+import com.google.protobuf.DescriptorProtos.SourceCodeInfo.Location;
 import com.google.protobuf.compiler.PluginProtos;
 import edu.umd.cs.findbugs.annotations.SuppressWarnings;
 import java.util.AbstractMap;
@@ -18,6 +22,11 @@ public class ServiceGenerator {
     private static final int METHOD_NUMBER_OF_PATHS = 4;
     private static final int SERVICE_NUMBER_OF_PATHS = 2;
     private static final String OUTPUT_FILE_EXTENSION = ".swift";
+    private static final String SERVICE_UUID_SEPARATOR = "-";
+    private static final String SWIFT_PACKAGE_TO_CLASS_SAPARATOR = "_";
+    private static final String METHOD_TYPE_READ = "READ";
+    private static final String METHOD_TYPE_WRITE = "WRITE";
+    private static final String METHOD_TYPE_SUBSCRIBE = "SUBSCRIBE";
 
     public Stream<ServiceContext> buildServiceContexts(PluginProtos.CodeGeneratorRequest request) {
         return request
@@ -35,10 +44,9 @@ public class ServiceGenerator {
                 .collect(ImmutableList.toImmutableList()).stream();
     }
 
-    private ServiceContext buildServiceContext(
-            DescriptorProtos.FileDescriptorProto protoFile, DescriptorProtos.SourceCodeInfo.Location fileLocation) {
+    private ServiceContext buildServiceContext(FileDescriptorProto protoFile, Location fileLocation) {
         int serviceNumber = fileLocation.getPath(SERVICE_NUMBER_OF_PATHS - 1);
-        DescriptorProtos.ServiceDescriptorProto serviceProto = protoFile.getService(serviceNumber);
+        ServiceDescriptorProto serviceProto = protoFile.getService(serviceNumber);
         ServiceContext serviceContext = new ServiceContext();
         serviceContext.serviceName = serviceProto.getName();
         serviceContext.className = serviceContext.serviceName;
@@ -62,11 +70,11 @@ public class ServiceGenerator {
         return serviceContext;
     }
 
-    private MethodContext buildMethodContext(DescriptorProtos.ServiceDescriptorProto serviceProto,
-                                             DescriptorProtos.SourceCodeInfo.Location location,
-                                             DescriptorProtos.FileDescriptorProto protoFile) {
+    private MethodContext buildMethodContext(ServiceDescriptorProto serviceProto,
+                                             Location location,
+                                             FileDescriptorProto protoFile) {
         int methodNumber = location.getPath(METHOD_NUMBER_OF_PATHS - 1);
-        DescriptorProtos.MethodDescriptorProto methodProto = serviceProto.getMethod(methodNumber);
+        MethodDescriptorProto methodProto = serviceProto.getMethod(methodNumber);
         checkArgument(
                 !methodProto.getClientStreaming(),
                 "BleRpc doesn't support client streaming to BLE device.");
@@ -74,29 +82,23 @@ public class ServiceGenerator {
         methodContext.methodName = lowerCaseFirstLetter(methodProto.getName());
         methodContext.upperCasedMethodName = upperCaseFirstLetter(methodContext.methodName);
         methodContext.characteristicUUID = methodProto.getOptions().getExtension(Blerpc.characteristic).getUuid();
+        methodContext.serviceUUID = generateServiceUUID(methodProto);
 
-        String characteristicUUID = methodProto.getOptions().getExtension(Blerpc.characteristic).getUuid();
-        String[] splittedCharacteristicUUID = characteristicUUID.split("-");
-        String serviceUUID = splittedCharacteristicUUID[0];
-        splittedCharacteristicUUID[0] = "";
-        serviceUUID = serviceUUID.substring(0,serviceUUID.length() - 1) + '0'
-                + String.join("-", splittedCharacteristicUUID);
+        //protoFile.getMessageTypeList().forEach(System.out::println);
 
-        methodContext.serviceUUID = serviceUUID;
-
-        com.blerpc.proto.MethodType methodType = methodProto.getOptions().getExtension(Blerpc.characteristic).getType();
+        MethodType methodType = methodProto.getOptions().getExtension(Blerpc.characteristic).getType();
 
         switch (methodType) {
             case READ: {
-                methodContext.typeRead = "READ";
+                methodContext.typeRead = METHOD_TYPE_READ;
                 break;
             }
             case WRITE: {
-                methodContext.typeWrite = "WRITE";
+                methodContext.typeWrite = METHOD_TYPE_WRITE;
                 break;
             }
             case SUBSCRIBE: {
-                methodContext.typeSubscribe = "SUBSCRIBE";
+                methodContext.typeSubscribe = METHOD_TYPE_SUBSCRIBE;
                 break;
             }
             default:
@@ -112,45 +114,55 @@ public class ServiceGenerator {
         return methodContext;
     }
 
-    private Stream<AbstractMap.SimpleEntry<DescriptorProtos.FileDescriptorProto, DescriptorProtos.SourceCodeInfo.Location>> getFileLocations(
-            DescriptorProtos.FileDescriptorProto file) {
+    private Stream<AbstractMap.SimpleEntry<FileDescriptorProto, Location>> getFileLocations(FileDescriptorProto file) {
         return file.getSourceCodeInfo()
                 .getLocationList()
                 .stream()
                 .map(location -> new AbstractMap.SimpleEntry<>(file, location));
     }
 
-    private boolean hasPackage(DescriptorProtos.FileDescriptorProto file) {
+    private boolean hasPackage(FileDescriptorProto file) {
         return !file.getPackage().isEmpty();
     }
 
-    private String extractPackageName(DescriptorProtos.FileDescriptorProto proto) {
+    private String extractPackageName(FileDescriptorProto proto) {
         String javaPackage = proto.getOptions().getJavaPackage();
-        return !javaPackage.isEmpty() ? javaPackage : proto.getPackage();
+        return javaPackage.isEmpty() ? proto.getPackage() : javaPackage;
     }
 
-    private String extractSwiftPackageName(DescriptorProtos.FileDescriptorProto proto) {
+    private String extractSwiftPackageName(FileDescriptorProto proto) {
         String packageName = proto.getPackage();
         String[] splittedPackageName = packageName.split("\\.");
-        return Arrays.stream(splittedPackageName).map(key -> this.upperCaseFirstLetter(key) + "_").collect(Collectors.joining());
+        return Arrays.stream(splittedPackageName)
+                .map(key -> this.upperCaseFirstLetter(key) + SWIFT_PACKAGE_TO_CLASS_SAPARATOR)
+                .collect(Collectors.joining());
     }
 
     private String lowerCaseFirstLetter(String string) {
-        return Character.toLowerCase(string.charAt(0)) + string.substring(1);
+        return Character.toLowerCase(string.charAt(0)) + (string.length() > 1 ? string.substring(1) : "");
     }
 
     private String upperCaseFirstLetter(String string) {
-        return Character.toUpperCase(string.charAt(0)) + string.substring(1);
+        return Character.toUpperCase(string.charAt(0)) + (string.length() > 1 ? string.substring(1) : "");
+    }
+
+    private String generateServiceUUID(MethodDescriptorProto methodProto) {
+        String characteristicUUID = methodProto.getOptions().getExtension(Blerpc.characteristic).getUuid();
+        String[] splittedCharacteristicUUID = characteristicUUID.split(SERVICE_UUID_SEPARATOR);
+        String serviceUUID = splittedCharacteristicUUID[0];
+        splittedCharacteristicUUID[0] = "";
+        return serviceUUID.substring(0, serviceUUID.length() - 1) + '0'
+                + String.join(SERVICE_UUID_SEPARATOR, splittedCharacteristicUUID);
     }
 
     private boolean isProtoService(
-            AbstractMap.SimpleEntry<DescriptorProtos.FileDescriptorProto, DescriptorProtos.SourceCodeInfo.Location> fileLocation) {
+            AbstractMap.SimpleEntry<FileDescriptorProto, Location> fileLocation) {
         return fileLocation.getValue().getPathCount() == SERVICE_NUMBER_OF_PATHS
-                && fileLocation.getValue().getPath(0) == DescriptorProtos.FileDescriptorProto.SERVICE_FIELD_NUMBER;
+                && fileLocation.getValue().getPath(0) == FileDescriptorProto.SERVICE_FIELD_NUMBER;
     }
 
     private boolean isBleRpcService(
-            AbstractMap.SimpleEntry<DescriptorProtos.FileDescriptorProto, DescriptorProtos.SourceCodeInfo.Location> fileLocation) {
+            AbstractMap.SimpleEntry<FileDescriptorProto, Location> fileLocation) {
         return fileLocation
                 .getKey()
                 .getService(fileLocation.getValue().getPath(SERVICE_NUMBER_OF_PATHS - 1))
@@ -159,11 +171,11 @@ public class ServiceGenerator {
                 .hasField(Blerpc.SERVICE_FIELD_NUMBER);
     }
 
-    private boolean isProtoMethod(DescriptorProtos.SourceCodeInfo.Location location, int serviceNumber) {
+    private boolean isProtoMethod(Location location, int serviceNumber) {
         return location.getPathCount() == METHOD_NUMBER_OF_PATHS
-                && location.getPath(0) == DescriptorProtos.FileDescriptorProto.SERVICE_FIELD_NUMBER
+                && location.getPath(0) == FileDescriptorProto.SERVICE_FIELD_NUMBER
                 && location.getPath(1) == serviceNumber
-                && location.getPath(2) == DescriptorProtos.ServiceDescriptorProto.METHOD_FIELD_NUMBER;
+                && location.getPath(2) == ServiceDescriptorProto.METHOD_FIELD_NUMBER;
     }
 
     /** Template class that describe protobuf services. */
