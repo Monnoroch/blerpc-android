@@ -6,12 +6,13 @@ import com.google.common.collect.ImmutableList;
 import com.google.protobuf.DescriptorProtos.DescriptorProto;
 import com.google.protobuf.DescriptorProtos.FieldDescriptorProto;
 import com.google.protobuf.DescriptorProtos.FileDescriptorProto;
-import com.google.protobuf.compiler.PluginProtos;
+import com.google.protobuf.compiler.PluginProtos.CodeGeneratorRequest;
 import edu.umd.cs.findbugs.annotations.SuppressWarnings;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/** Generator which generates message encoding/decoding Swift extensions. */
 public class MessageGenerator {
 
     private static final String OUTPUT_CLASS_POSTFIX = "Extension";
@@ -28,8 +29,14 @@ public class MessageGenerator {
     private static final String SWIFT_TYPE_BOOL = "ProtoType.bool";
     private static final String SWIFT_TYPE_UNKNOWN = "ProtoType.unknown";
     private static final String SWIFT_PACKAGE_TO_CLASS_SAPARATOR = "_";
+    private static final String PROTO_PACKAGE_SEPARATOR = "\\.";
 
-    public Stream<MessageContext> buildMessageContexts(PluginProtos.CodeGeneratorRequest request) {
+    /**
+     * Builds message contexts based on input proto file request.
+     * @param request - input request (usually as input proto file).
+     * @return prepared service contexts parsed from input proto request.
+     */
+    public Stream<MessageContext> buildMessageContexts(CodeGeneratorRequest request) {
         return request
                 .getProtoFileList()
                 .stream()
@@ -39,12 +46,12 @@ public class MessageGenerator {
     }
 
     private Stream<MessageContext> buildMessageContext(FileDescriptorProto protoFile) {
-        return protoFile.getMessageTypeList().stream().flatMap(messageType ->
+        return protoFile.getMessageTypeList().stream().map(messageType ->
                 generateMessageInformation(messageType, protoFile)
         );
     }
 
-    private Stream<MessageContext> generateMessageInformation(DescriptorProto messageType,
+    private MessageContext generateMessageInformation(DescriptorProto messageType,
                                                               FileDescriptorProto protoFile) {
         MessageContext messageContext = new MessageContext();
         messageContext.swiftPackageName = extractSwiftPackageName(protoFile);
@@ -52,13 +59,13 @@ public class MessageGenerator {
         messageContext.serviceName = messageType.getName();
         messageContext.className = messageContext.serviceName + OUTPUT_CLASS_POSTFIX;
         messageContext.fileName = messageContext.className + OUTPUT_FILE_EXTENSION;
-        messageContext.fields = messageType.getFieldList().stream().flatMap(fieldType ->
+        messageContext.fields = messageType.getFieldList().stream().map(fieldType ->
                 generateFieldsInformation(fieldType, protoFile)
         ).collect(ImmutableList.toImmutableList());
-        return Stream.of(messageContext);
+        return messageContext;
     }
 
-    private Stream<FieldContext> generateFieldsInformation(FieldDescriptorProto field,
+    private FieldContext generateFieldsInformation(FieldDescriptorProto field,
                                                       FileDescriptorProto protoFile) {
         FieldContext fieldContext = new FieldContext();
         fieldContext.name = field.getJsonName().replace(PROTO_ID_NAME, SWIFT_ID_NAME); // to conform output swift rules
@@ -87,7 +94,7 @@ public class MessageGenerator {
 
         fieldContext.toByte = field.getOptions().getExtension(Blerpc.field).getToByte();
         fieldContext.fromByte = field.getOptions().getExtension(Blerpc.field).getFromByte();
-        return Stream.of(fieldContext);
+        return fieldContext;
     }
 
     private boolean hasPackage(FileDescriptorProto file) {
@@ -101,7 +108,7 @@ public class MessageGenerator {
 
     private String extractSwiftPackageName(FileDescriptorProto proto) {
         String packageName = proto.getPackage();
-        String[] splittedPackageName = packageName.split("\\.");
+        String[] splittedPackageName = packageName.split(PROTO_PACKAGE_SEPARATOR);
         return Arrays.stream(splittedPackageName)
                 .map(key -> upperCaseFirstLetter(key) + SWIFT_PACKAGE_TO_CLASS_SAPARATOR)
                 .collect(Collectors.joining());

@@ -10,13 +10,14 @@ import com.google.protobuf.DescriptorProtos.FileDescriptorProto;
 import com.google.protobuf.DescriptorProtos.MethodDescriptorProto;
 import com.google.protobuf.DescriptorProtos.ServiceDescriptorProto;
 import com.google.protobuf.DescriptorProtos.SourceCodeInfo.Location;
-import com.google.protobuf.compiler.PluginProtos;
+import com.google.protobuf.compiler.PluginProtos.CodeGeneratorRequest;
 import edu.umd.cs.findbugs.annotations.SuppressWarnings;
 import java.util.AbstractMap;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/** Generator which generates services for Rpc methods. */
 public class ServiceGenerator {
 
     private static final int METHOD_NUMBER_OF_PATHS = 4;
@@ -27,8 +28,14 @@ public class ServiceGenerator {
     private static final String METHOD_TYPE_READ = "READ";
     private static final String METHOD_TYPE_WRITE = "WRITE";
     private static final String METHOD_TYPE_SUBSCRIBE = "SUBSCRIBE";
+    private static final String PROTO_PACKAGE_SEPARATOR = "\\.";
 
-    public Stream<ServiceContext> buildServiceContexts(PluginProtos.CodeGeneratorRequest request) {
+    /**
+     * Builds service contexts based on input proto file request.
+     * @param request - input request (usually as input proto file).
+     * @return prepared service contexts parsed from input proto request.
+     */
+    public Stream<ServiceContext> buildServiceContexts(CodeGeneratorRequest request) {
         return request
                 .getProtoFileList()
                 .stream()
@@ -130,22 +137,25 @@ public class ServiceGenerator {
 
     private String extractSwiftPackageName(FileDescriptorProto proto) {
         String packageName = proto.getPackage();
-        String[] splittedPackageName = packageName.split("\\.");
+        String[] splittedPackageName = packageName.split(PROTO_PACKAGE_SEPARATOR);
         return Arrays.stream(splittedPackageName)
                 .map(key -> upperCaseFirstLetter(key) + SWIFT_PACKAGE_TO_CLASS_SAPARATOR)
                 .collect(Collectors.joining());
     }
 
     private String lowerCaseFirstLetter(String string) {
-        return Character.toLowerCase(string.charAt(0)) + (string.length() > 1 ? string.substring(1) : "");
+        return Character.toLowerCase(string.charAt(0))
+                + (string.length() > 1 ? string.substring(1) : "");
     }
 
     private String upperCaseFirstLetter(String string) {
-        return Character.toUpperCase(string.charAt(0)) + (string.length() > 1 ? string.substring(1) : "");
+        return Character.toUpperCase(string.charAt(0))
+                + (string.length() > 1 ? string.substring(1) : "");
     }
 
     private String generateServiceUUID(MethodDescriptorProto methodProto) {
-        String characteristicUUID = methodProto.getOptions().getExtension(Blerpc.characteristic).getUuid();
+        String characteristicUUID = methodProto.getOptions()
+                .getExtension(Blerpc.characteristic).getUuid();
         String[] splittedCharacteristicUUID = characteristicUUID.split(SERVICE_UUID_SEPARATOR);
         String serviceUUID = splittedCharacteristicUUID[0];
         splittedCharacteristicUUID[0] = "";
@@ -188,7 +198,7 @@ public class ServiceGenerator {
 
     private String generateSwiftProtoType(FileDescriptorProto protoFile, String type) {
         return extractSwiftPackageName(protoFile)
-                + type.split("\\.")[type.split("\\.").length - 1];
+                + type.split(PROTO_PACKAGE_SEPARATOR)[type.split(PROTO_PACKAGE_SEPARATOR).length - 1];
     }
 
     /** Template class that describe protobuf services. */
