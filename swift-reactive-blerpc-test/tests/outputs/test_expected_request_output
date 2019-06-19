@@ -1,5 +1,6 @@
 import Foundation
 
+/// Extension for Device_GetValueRequest which adds encode to Data and decode from Data methods.
 extension Device_GetValueRequest {
     /// Convert data to Device_GetValueRequest proto object.
     /// - parameter data: data which needs to be converted.
