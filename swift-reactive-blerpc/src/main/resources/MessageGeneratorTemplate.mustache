@@ -1,11 +1,11 @@
 import Foundation
 
-extension {{swiftPackageName}}{{serviceName}} {
-    /// Convert data to {{swiftPackageName}}{{serviceName}} proto object.
+extension {{swiftPackageName}}{{messageName}} {
+    /// Convert data to {{swiftPackageName}}{{messageName}} proto object.
     /// - parameter data: data which needs to be converted.
-    /// - returns: decoded {{swiftPackageName}}{{serviceName}} proto.
-    static func bleRpcDecode(data: Data) throws -> {{swiftPackageName}}{{serviceName}} {
-        var proto = {{swiftPackageName}}{{serviceName}}()
+    /// - returns: decoded {{swiftPackageName}}{{messageName}} proto.
+    static func bleRpcDecode(data: Data) throws -> {{swiftPackageName}}{{messageName}} {
+        var proto = {{swiftPackageName}}{{messageName}}()
 {{#fields}}
     {{#isEnum}}
         proto.{{name}} = try {{swiftPackageName}}{{protoType}}.init(rawValue: ProtoDecoder.decode(data: data, from: {{fromByte}}, to: {{toByte}}, type: ProtoType.int32) as! Int)!
@@ -20,10 +20,10 @@ extension {{swiftPackageName}}{{serviceName}} {
         return proto
     }
 
-    /// Convert {{swiftPackageName}}{{serviceName}} proto object to raw data.
+    /// Convert {{swiftPackageName}}{{messageName}} proto object to raw data.
     /// - parameter proto: proto object which needs to be converted.
-    /// - returns: encoded {{swiftPackageName}}{{serviceName}}.
-    static func bleRpcEncode(proto: {{swiftPackageName}}{{serviceName}}) throws -> Data {
+    /// - returns: encoded {{swiftPackageName}}{{messageName}}.
+    static func bleRpcEncode(proto: {{swiftPackageName}}{{messageName}}) throws -> Data {
         var data = Data()
 {{#fields}}
     {{#isEnum}}

@@ -6,7 +6,6 @@ def shared_pods
   pod 'RxBluetoothKit' # working with bluetooth
   pod 'SwiftGRPC' # support compiled proto files
   pod 'CryptoSwift' # data parsing helpers
-  pod 'RxSwiftExt' # usefull extensions for rx
 end
 
 target 'SwiftBleRpc' do
@@ -17,7 +16,7 @@ target 'SwiftBleRpc' do
     shared_pods
     
     pod 'Nimble' # helpers for testing
-    pod 'Cuckoo', :git => 'https://github.com/Brightify/Cuckoo.git', :branch => 'internal-issues' # generate mock file
+    pod 'Cuckoo'
   end
 
 end

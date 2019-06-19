@@ -200,7 +200,12 @@ public class ProtoEncoder {
             let data = NSData(bytes: &valuePointer, length: to - from)
             return data as Data
         case .byte:
-            return object as! Data
+            let data = object as! Data
+            if to > data.count {
+                throw ProtoParserErrors.wrongData
+            } else {
+                return data.subdata(in: Range(NSRange(location: from, length: to - from))!)
+            }
         case .bool:
             var valuePointer = object
             let data = NSData(bytes: &valuePointer, length: 1)

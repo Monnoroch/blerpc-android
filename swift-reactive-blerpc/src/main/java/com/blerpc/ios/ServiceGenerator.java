@@ -1,6 +1,7 @@
 package com.blerpc.ios;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.collect.ImmutableList.toImmutableList;
 
 import com.blerpc.proto.Blerpc;
 import com.blerpc.proto.MethodType;
@@ -13,8 +14,6 @@ import com.google.protobuf.DescriptorProtos.SourceCodeInfo.Location;
 import com.google.protobuf.compiler.PluginProtos.CodeGeneratorRequest;
 import edu.umd.cs.findbugs.annotations.SuppressWarnings;
 import java.util.AbstractMap;
-import java.util.Arrays;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /** Generator which generates services for Rpc methods. */
@@ -23,12 +22,9 @@ public class ServiceGenerator {
     private static final int METHOD_NUMBER_OF_PATHS = 4;
     private static final int SERVICE_NUMBER_OF_PATHS = 2;
     private static final String OUTPUT_FILE_EXTENSION = ".swift";
-    private static final String SERVICE_UUID_SEPARATOR = "-";
-    private static final String SWIFT_PACKAGE_TO_CLASS_SAPARATOR = "_";
     private static final String METHOD_TYPE_READ = "READ";
     private static final String METHOD_TYPE_WRITE = "WRITE";
     private static final String METHOD_TYPE_SUBSCRIBE = "SUBSCRIBE";
-    private static final String PROTO_PACKAGE_SEPARATOR = "\\.";
 
     /**
      * Builds service contexts based on input proto file request.
@@ -39,7 +35,7 @@ public class ServiceGenerator {
         return request
                 .getProtoFileList()
                 .stream()
-                .filter(this::hasPackage)
+                .filter(Common::hasPackage)
                 .filter(file -> request.getFileToGenerateList().contains(file.getName()))
                 .flatMap(this::getFileLocations)
                 .filter(this::isProtoService)
@@ -47,8 +43,7 @@ public class ServiceGenerator {
                 .map(fileLocation ->
                                 buildServiceContext(
                                         fileLocation.getKey(),
-                                        fileLocation.getValue()))
-                .collect(ImmutableList.toImmutableList()).stream();
+                                        fileLocation.getValue()));
     }
 
     private ServiceContext buildServiceContext(FileDescriptorProto protoFile, Location fileLocation) {
@@ -59,7 +54,9 @@ public class ServiceGenerator {
         serviceContext.className = serviceContext.serviceName;
         serviceContext.fileName = serviceContext.className + OUTPUT_FILE_EXTENSION;
         serviceContext.deprecated = serviceProto.getOptions().getDeprecated();
-        serviceContext.packageName = extractPackageName(protoFile);
+        serviceContext.packageName = Common.extractPackageName(protoFile);
+        serviceContext.serviceUUID = serviceProto.getOptions()
+                .getExtension(Blerpc.service).getUuid();
         serviceContext.methods =
                 protoFile
                         .getSourceCodeInfo()
@@ -67,13 +64,7 @@ public class ServiceGenerator {
                         .stream()
                         .filter(location -> isProtoMethod(location, serviceNumber))
                         .map(location -> buildMethodContext(serviceProto, location, protoFile))
-                        .collect(ImmutableList.toImmutableList());
-
-        if (serviceContext.methods.size() > 0) {
-            MethodContext methodContext = serviceContext.methods.get(0);
-            serviceContext.serviceUUID = methodContext.serviceUUID;
-        }
-
+                        .collect(toImmutableList());
         return serviceContext;
     }
 
@@ -86,14 +77,16 @@ public class ServiceGenerator {
                 !methodProto.getClientStreaming(),
                 "BleRpc doesn't support client streaming to BLE device.");
         MethodContext methodContext = new MethodContext();
-        methodContext.inputType = generateSwiftProtoType(protoFile, methodProto.getInputType());
-        methodContext.outputType = generateSwiftProtoType(protoFile, methodProto.getOutputType());
-
-        MethodType methodType = methodProto.getOptions().getExtension(Blerpc.characteristic).getType();
+        methodContext.inputType = Common.generateSwiftProtoType(protoFile,
+                methodProto.getInputType());
+        methodContext.outputType = Common.generateSwiftProtoType(protoFile,
+                methodProto.getOutputType());
+        MethodType methodType = methodProto.getOptions()
+                .getExtension(Blerpc.characteristic).getType();
 
         switch (methodType) {
             case READ: {
-                checkIsEmptyRequest(protoFile, methodContext.inputType);
+                Common.checkIsEmptyRequest(protoFile, methodContext.inputType);
                 methodContext.typeRead = METHOD_TYPE_READ;
                 break;
             }
@@ -102,7 +95,7 @@ public class ServiceGenerator {
                 break;
             }
             case SUBSCRIBE: {
-                checkIsEmptyRequest(protoFile, methodContext.inputType);
+                Common.checkIsEmptyRequest(protoFile, methodContext.inputType);
                 methodContext.typeSubscribe = METHOD_TYPE_SUBSCRIBE;
                 break;
             }
@@ -110,57 +103,21 @@ public class ServiceGenerator {
                 break;
         }
 
-        methodContext.methodName = lowerCaseFirstLetter(methodProto.getName());
-        methodContext.upperCasedMethodName = upperCaseFirstLetter(methodContext.methodName);
-        methodContext.characteristicUUID = methodProto.getOptions().getExtension(Blerpc.characteristic).getUuid();
-        methodContext.serviceUUID = generateServiceUUID(methodProto);
+        methodContext.methodName = Common.lowerCaseFirstLetter(methodProto.getName());
+        methodContext.upperCasedMethodName = Common.upperCaseFirstLetter(methodContext.methodName);
+        methodContext.characteristicUUID = methodProto.getOptions()
+                .getExtension(Blerpc.characteristic).getUuid();
         methodContext.deprecated = methodProto.getOptions().getDeprecated();
         methodContext.isManyOutput = methodProto.getServerStreaming();
         return methodContext;
     }
 
-    private Stream<AbstractMap.SimpleEntry<FileDescriptorProto, Location>> getFileLocations(FileDescriptorProto file) {
+    private Stream<AbstractMap.SimpleEntry<FileDescriptorProto, Location>> getFileLocations(
+            FileDescriptorProto file) {
         return file.getSourceCodeInfo()
                 .getLocationList()
                 .stream()
                 .map(location -> new AbstractMap.SimpleEntry<>(file, location));
-    }
-
-    private boolean hasPackage(FileDescriptorProto file) {
-        return !file.getPackage().isEmpty();
-    }
-
-    private String extractPackageName(FileDescriptorProto proto) {
-        String javaPackage = proto.getOptions().getJavaPackage();
-        return javaPackage.isEmpty() ? proto.getPackage() : javaPackage;
-    }
-
-    private String extractSwiftPackageName(FileDescriptorProto proto) {
-        String packageName = proto.getPackage();
-        String[] splittedPackageName = packageName.split(PROTO_PACKAGE_SEPARATOR);
-        return Arrays.stream(splittedPackageName)
-                .map(key -> upperCaseFirstLetter(key) + SWIFT_PACKAGE_TO_CLASS_SAPARATOR)
-                .collect(Collectors.joining());
-    }
-
-    private String lowerCaseFirstLetter(String string) {
-        return Character.toLowerCase(string.charAt(0))
-                + (string.length() > 1 ? string.substring(1) : "");
-    }
-
-    private String upperCaseFirstLetter(String string) {
-        return Character.toUpperCase(string.charAt(0))
-                + (string.length() > 1 ? string.substring(1) : "");
-    }
-
-    private String generateServiceUUID(MethodDescriptorProto methodProto) {
-        String characteristicUUID = methodProto.getOptions()
-                .getExtension(Blerpc.characteristic).getUuid();
-        String[] splittedCharacteristicUUID = characteristicUUID.split(SERVICE_UUID_SEPARATOR);
-        String serviceUUID = splittedCharacteristicUUID[0];
-        splittedCharacteristicUUID[0] = "";
-        return serviceUUID.substring(0, serviceUUID.length() - 1) + '0'
-                + String.join(SERVICE_UUID_SEPARATOR, splittedCharacteristicUUID);
     }
 
     private boolean isProtoService(
@@ -186,21 +143,6 @@ public class ServiceGenerator {
                 && location.getPath(2) == ServiceDescriptorProto.METHOD_FIELD_NUMBER;
     }
 
-    private void checkIsEmptyRequest(FileDescriptorProto protoFile, String inputType) {
-        protoFile.getMessageTypeList().forEach((message) -> {
-            if (generateSwiftProtoType(protoFile, message.getName()).equals(inputType)) {
-                checkArgument(
-                        message.getFieldCount() == 0,
-                        "BleRpc doesn't support non empty requests for read/subscribe methods.");
-            }
-        });
-    }
-
-    private String generateSwiftProtoType(FileDescriptorProto protoFile, String type) {
-        return extractSwiftPackageName(protoFile)
-                + type.split(PROTO_PACKAGE_SEPARATOR)[type.split(PROTO_PACKAGE_SEPARATOR).length - 1];
-    }
-
     /** Template class that describe protobuf services. */
     @SuppressWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     @VisibleForTesting
@@ -210,8 +152,8 @@ public class ServiceGenerator {
         public String className;
         public String serviceName;
         public String serviceUUID;
-        public boolean deprecated;
         public ImmutableList<MethodContext> methods = ImmutableList.of();
+        public boolean deprecated;
     }
 
     /** Template class that describe protobuf methods. */
@@ -222,7 +164,6 @@ public class ServiceGenerator {
         public String upperCasedMethodName;
         public String inputType;
         public String characteristicUUID;
-        public String serviceUUID;
         public String outputType;
         public String typeWrite;
         public String typeRead;

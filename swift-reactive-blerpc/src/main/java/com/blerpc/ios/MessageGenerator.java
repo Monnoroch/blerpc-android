@@ -1,5 +1,7 @@
 package com.blerpc.ios;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
+
 import com.blerpc.proto.Blerpc;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
@@ -8,8 +10,6 @@ import com.google.protobuf.DescriptorProtos.FieldDescriptorProto;
 import com.google.protobuf.DescriptorProtos.FileDescriptorProto;
 import com.google.protobuf.compiler.PluginProtos.CodeGeneratorRequest;
 import edu.umd.cs.findbugs.annotations.SuppressWarnings;
-import java.util.Arrays;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /** Generator which generates message encoding/decoding Swift extensions. */
@@ -28,8 +28,6 @@ public class MessageGenerator {
     private static final String SWIFT_TYPE_BYTES = "ProtoType.byte";
     private static final String SWIFT_TYPE_BOOL = "ProtoType.bool";
     private static final String SWIFT_TYPE_UNKNOWN = "ProtoType.unknown";
-    private static final String SWIFT_PACKAGE_TO_CLASS_SAPARATOR = "_";
-    private static final String PROTO_PACKAGE_SEPARATOR = "\\.";
 
     /**
      * Builds message contexts based on input proto file request.
@@ -40,7 +38,7 @@ public class MessageGenerator {
         return request
                 .getProtoFileList()
                 .stream()
-                .filter(this::hasPackage)
+                .filter(Common::hasPackage)
                 .filter(file -> request.getFileToGenerateList().contains(file.getName()))
                 .flatMap(this::buildMessageContext);
     }
@@ -54,14 +52,14 @@ public class MessageGenerator {
     private MessageContext generateMessageInformation(DescriptorProto messageType,
                                                               FileDescriptorProto protoFile) {
         MessageContext messageContext = new MessageContext();
-        messageContext.swiftPackageName = extractSwiftPackageName(protoFile);
-        messageContext.packageName = extractPackageName(protoFile);
-        messageContext.serviceName = messageType.getName();
-        messageContext.className = messageContext.serviceName + OUTPUT_CLASS_POSTFIX;
+        messageContext.swiftPackageName = Common.extractSwiftPackageName(protoFile);
+        messageContext.packageName = Common.extractPackageName(protoFile);
+        messageContext.messageName = messageType.getName();
+        messageContext.className = messageContext.messageName + OUTPUT_CLASS_POSTFIX;
         messageContext.fileName = messageContext.className + OUTPUT_FILE_EXTENSION;
         messageContext.fields = messageType.getFieldList().stream().map(fieldType ->
                 generateFieldsInformation(fieldType, protoFile)
-        ).collect(ImmutableList.toImmutableList());
+        ).collect(toImmutableList());
         return messageContext;
     }
 
@@ -72,7 +70,6 @@ public class MessageGenerator {
         fieldContext.type = field.getType().toString();
         fieldContext.protoType = field.getTypeName().replace(protoFile.getPackage(), "")
                 .replace(".", "");
-
         fieldContext.isEnum = fieldContext.type.equals(TYPE_ENUM);
         fieldContext.isProtoObject = fieldContext.type.equals(TYPE_MESSAGE);
         fieldContext.isPrimitiveType = !fieldContext.isEnum && !fieldContext.isProtoObject;
@@ -97,27 +94,6 @@ public class MessageGenerator {
         return fieldContext;
     }
 
-    private boolean hasPackage(FileDescriptorProto file) {
-        return !file.getPackage().isEmpty();
-    }
-
-    private String extractPackageName(FileDescriptorProto proto) {
-        String javaPackage = proto.getOptions().getJavaPackage();
-        return javaPackage.isEmpty() ? proto.getPackage() : javaPackage;
-    }
-
-    private String extractSwiftPackageName(FileDescriptorProto proto) {
-        String packageName = proto.getPackage();
-        String[] splittedPackageName = packageName.split(PROTO_PACKAGE_SEPARATOR);
-        return Arrays.stream(splittedPackageName)
-                .map(key -> upperCaseFirstLetter(key) + SWIFT_PACKAGE_TO_CLASS_SAPARATOR)
-                .collect(Collectors.joining());
-    }
-
-    private String upperCaseFirstLetter(String string) {
-        return Character.toUpperCase(string.charAt(0)) + (string.length() > 1 ? string.substring(1) : "");
-    }
-
     /** Template class that describe protobuf message. */
     @SuppressWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
     @VisibleForTesting
@@ -126,7 +102,7 @@ public class MessageGenerator {
         public String packageName;
         public String swiftPackageName;
         public String className;
-        public String serviceName;
+        public String messageName;
         public ImmutableList<FieldContext> fields = ImmutableList.of();
     }
 
@@ -136,12 +112,12 @@ public class MessageGenerator {
     public static class FieldContext {
         public String type;
         public String swiftType;
-        public boolean isEnum;
-        public boolean isProtoObject;
-        public boolean isPrimitiveType;
         public String protoType;
         public String name;
         public int toByte;
         public int fromByte;
+        public boolean isEnum;
+        public boolean isProtoObject;
+        public boolean isPrimitiveType;
     }
 }
