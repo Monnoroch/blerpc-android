@@ -17,7 +17,7 @@ public class BleServiceDriver {
     // MARK: - Variables
 
     /// Connected peripheral.
-    private let peripheral: Peripheral
+    private var peripheral: Peripheral?
 
     /// BleServiceDriver queue which used to make thread safe read/write
     private let queue: DispatchQueue
@@ -29,12 +29,17 @@ public class BleServiceDriver {
     private var sharedConnectedPeripheral: Observable<Peripheral>?
     
     // MARK: - Initializers
-
+    
     /// Block default init.
     private init() {
         fatalError("Please use init(peripheral:, queue:) instead.")
     }
-
+    
+    // TODO (?): Make init(queue:) private and peripheral non optional type.
+    internal init(queue: DispatchQueue) {
+        self.queue = queue
+    }
+    
     /// Initialize with connected peripheral.
     /// - parameter device: peripheral to operate with.
     /// - parameter queue: dispatch queue used to make thread safe reqad/write.
@@ -139,8 +144,8 @@ public class BleServiceDriver {
         if let deviceConnectionObserver = self.sharedConnectedPeripheral {
             return deviceConnectionObserver.take(1).asSingle()
         }
-        let observerForDeviceConnection = self.peripheral.establishConnection().share(replay: 2)
-        self.disconnectionDisposable = observerForDeviceConnection
+        let observerForDeviceConnection = self.peripheral?.establishConnection().share(replay: 2)
+        self.disconnectionDisposable = observerForDeviceConnection?
             .catchError({ [weak self] (error) -> Observable<Peripheral> in
                 self?.doDisconnect()
                 return Observable.empty()

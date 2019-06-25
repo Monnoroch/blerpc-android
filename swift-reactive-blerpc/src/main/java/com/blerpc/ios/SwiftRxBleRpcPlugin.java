@@ -20,7 +20,7 @@ public class SwiftRxBleRpcPlugin extends Generator {
 
   public static void main(String[] args) {
     ProtocPlugin.generate(ImmutableList.of(new SwiftRxBleRpcPlugin()),
-            ImmutableList.of(Blerpc.message,
+            ImmutableList.of(Blerpc.service, Blerpc.message,
                     Blerpc.field,
                     Blerpc.characteristic));
   }

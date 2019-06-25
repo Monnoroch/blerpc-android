@@ -7,6 +7,17 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		29022B1B22C224AA009E3823 /* DataMatchable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29022B1A22C224AA009E3823 /* DataMatchable.swift */; };
+		29022B3322C2370D009E3823 /* NestedMessageExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29022B2622C236C7009E3823 /* NestedMessageExtension.swift */; };
+		29022B3422C2370D009E3823 /* GetValueRequestExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29022B2722C236C7009E3823 /* GetValueRequestExtension.swift */; };
+		29022B3522C2370D009E3823 /* TestService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29022B2822C236C7009E3823 /* TestService.swift */; };
+		29022B3622C2370D009E3823 /* SetValueRequestExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29022B2922C236C7009E3823 /* SetValueRequestExtension.swift */; };
+		29022B3722C2370D009E3823 /* GetValueResponseExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29022B2A22C236C7009E3823 /* GetValueResponseExtension.swift */; };
+		29022B3822C2370D009E3823 /* SetValueResponseExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29022B2B22C236C7009E3823 /* SetValueResponseExtension.swift */; };
+		29022B3922C23713009E3823 /* test_service.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29022B2222C236C7009E3823 /* test_service.pb.swift */; };
+		29022B3B22C237C2009E3823 /* BleRpcTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29022B3A22C237C2009E3823 /* BleRpcTests.swift */; };
+		29257EB022B790DA00F38C0E /* ProtoParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29257EAF22B790DA00F38C0E /* ProtoParserTests.swift */; };
+		29257EBA22B7AAAF00F38C0E /* GeneratedMocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29257EB922B7AAAF00F38C0E /* GeneratedMocks.swift */; };
 		295A24A322833F0B002A40A1 /* SwiftBleRpc.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 295A249922833F0B002A40A1 /* SwiftBleRpc.framework */; };
 		295A24AA22833F0B002A40A1 /* SwiftBleRpc.h in Headers */ = {isa = PBXBuildFile; fileRef = 295A249C22833F0B002A40A1 /* SwiftBleRpc.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		295A24B922833F9D002A40A1 /* ProtoParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 295A24B522833F9C002A40A1 /* ProtoParser.swift */; };
@@ -28,6 +39,18 @@
 
 /* Begin PBXFileReference section */
 		0F676AF989D74736A2ABE22F /* Pods_SwiftBleRpc.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_SwiftBleRpc.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		29022B1A22C224AA009E3823 /* DataMatchable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataMatchable.swift; sourceTree = "<group>"; };
+		29022B2222C236C7009E3823 /* test_service.pb.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = test_service.pb.swift; sourceTree = "<group>"; };
+		29022B2622C236C7009E3823 /* NestedMessageExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NestedMessageExtension.swift; sourceTree = "<group>"; };
+		29022B2722C236C7009E3823 /* GetValueRequestExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GetValueRequestExtension.swift; sourceTree = "<group>"; };
+		29022B2822C236C7009E3823 /* TestService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TestService.swift; sourceTree = "<group>"; };
+		29022B2922C236C7009E3823 /* SetValueRequestExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SetValueRequestExtension.swift; sourceTree = "<group>"; };
+		29022B2A22C236C7009E3823 /* GetValueResponseExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GetValueResponseExtension.swift; sourceTree = "<group>"; };
+		29022B2B22C236C7009E3823 /* SetValueResponseExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SetValueResponseExtension.swift; sourceTree = "<group>"; };
+		29022B3A22C237C2009E3823 /* BleRpcTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BleRpcTests.swift; sourceTree = "<group>"; };
+		29257EAE22B790D900F38C0E /* SwiftBleRpcTests-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "SwiftBleRpcTests-Bridging-Header.h"; sourceTree = "<group>"; };
+		29257EAF22B790DA00F38C0E /* ProtoParserTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ProtoParserTests.swift; sourceTree = "<group>"; };
+		29257EB922B7AAAF00F38C0E /* GeneratedMocks.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GeneratedMocks.swift; sourceTree = "<group>"; };
 		295A249922833F0B002A40A1 /* SwiftBleRpc.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = SwiftBleRpc.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		295A249C22833F0B002A40A1 /* SwiftBleRpc.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SwiftBleRpc.h; sourceTree = "<group>"; };
 		295A249D22833F0B002A40A1 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -64,6 +87,76 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		29022B1D22C236C7009E3823 /* generated */ = {
+			isa = PBXGroup;
+			children = (
+				29022B1E22C236C7009E3823 /* reactive-blerpc-test */,
+				29022B2322C236C7009E3823 /* com */,
+			);
+			path = generated;
+			sourceTree = SOURCE_ROOT;
+		};
+		29022B1E22C236C7009E3823 /* reactive-blerpc-test */ = {
+			isa = PBXGroup;
+			children = (
+				29022B1F22C236C7009E3823 /* src */,
+			);
+			path = "reactive-blerpc-test";
+			sourceTree = "<group>";
+		};
+		29022B1F22C236C7009E3823 /* src */ = {
+			isa = PBXGroup;
+			children = (
+				29022B2022C236C7009E3823 /* main */,
+			);
+			path = src;
+			sourceTree = "<group>";
+		};
+		29022B2022C236C7009E3823 /* main */ = {
+			isa = PBXGroup;
+			children = (
+				29022B2122C236C7009E3823 /* proto */,
+			);
+			path = main;
+			sourceTree = "<group>";
+		};
+		29022B2122C236C7009E3823 /* proto */ = {
+			isa = PBXGroup;
+			children = (
+				29022B2222C236C7009E3823 /* test_service.pb.swift */,
+			);
+			path = proto;
+			sourceTree = "<group>";
+		};
+		29022B2322C236C7009E3823 /* com */ = {
+			isa = PBXGroup;
+			children = (
+				29022B2422C236C7009E3823 /* device */,
+			);
+			path = com;
+			sourceTree = "<group>";
+		};
+		29022B2422C236C7009E3823 /* device */ = {
+			isa = PBXGroup;
+			children = (
+				29022B2522C236C7009E3823 /* proto */,
+			);
+			path = device;
+			sourceTree = "<group>";
+		};
+		29022B2522C236C7009E3823 /* proto */ = {
+			isa = PBXGroup;
+			children = (
+				29022B2622C236C7009E3823 /* NestedMessageExtension.swift */,
+				29022B2722C236C7009E3823 /* GetValueRequestExtension.swift */,
+				29022B2822C236C7009E3823 /* TestService.swift */,
+				29022B2922C236C7009E3823 /* SetValueRequestExtension.swift */,
+				29022B2A22C236C7009E3823 /* GetValueResponseExtension.swift */,
+				29022B2B22C236C7009E3823 /* SetValueResponseExtension.swift */,
+			);
+			path = proto;
+			sourceTree = "<group>";
+		};
 		295A248F22833F0B002A40A1 = {
 			isa = PBXGroup;
 			children = (
@@ -99,7 +192,13 @@
 		295A24A622833F0B002A40A1 /* SwiftBleRpcTests */ = {
 			isa = PBXGroup;
 			children = (
+				29022B1D22C236C7009E3823 /* generated */,
+				29257EB922B7AAAF00F38C0E /* GeneratedMocks.swift */,
+				29257EAF22B790DA00F38C0E /* ProtoParserTests.swift */,
+				29022B3A22C237C2009E3823 /* BleRpcTests.swift */,
 				295A24A922833F0B002A40A1 /* Info.plist */,
+				29257EAE22B790D900F38C0E /* SwiftBleRpcTests-Bridging-Header.h */,
+				29022B1A22C224AA009E3823 /* DataMatchable.swift */,
 			);
 			path = SwiftBleRpcTests;
 			sourceTree = "<group>";
@@ -147,6 +246,7 @@
 				295A249522833F0B002A40A1 /* Sources */,
 				295A249622833F0B002A40A1 /* Frameworks */,
 				295A249722833F0B002A40A1 /* Resources */,
+				29257EB822B7AA5600F38C0E /* Generate mock file */,
 			);
 			buildRules = (
 			);
@@ -193,6 +293,7 @@
 					};
 					295A24A122833F0B002A40A1 = {
 						CreatedOnToolsVersion = 10.2.1;
+						LastSwiftMigration = 1020;
 					};
 				};
 			};
@@ -232,6 +333,24 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		29257EB822B7AA5600F38C0E /* Generate mock file */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Generate mock file";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Define output file. Change \"$PROJECT_DIR/${PROJECT_NAME}Tests\" to your test's root source folder, if it's not the default name.\nOUTPUT_FILE=\"$PROJECT_DIR/${PROJECT_NAME}Tests/GeneratedMocks.swift\"\n\n# Define input directory. Change \"${PROJECT_DIR}/${PROJECT_NAME}\" to your project's root source folder, if it's not the default name.\nINPUT_DIR=\"${PROJECT_DIR}/${PROJECT_NAME}\"\n\n# Generate mock files, include as many input files as you'd like to create mocks for.\n\"${PODS_ROOT}/Cuckoo/run\" generate --testable \"$PROJECT_NAME\" \\\n--output \"${OUTPUT_FILE}\" \\\n\"$INPUT_DIR/BleRpcService.swift\" \\\n\"$INPUT_DIR/BleServiceDriver.swift\"\n";
+		};
 		2A18EA88DF3A60B70B9CFDFF /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -300,8 +419,15 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				29022B3322C2370D009E3823 /* NestedMessageExtension.swift in Sources */,
+				29022B3422C2370D009E3823 /* GetValueRequestExtension.swift in Sources */,
+				29022B3622C2370D009E3823 /* SetValueRequestExtension.swift in Sources */,
+				29022B3722C2370D009E3823 /* GetValueResponseExtension.swift in Sources */,
 				295A24B922833F9D002A40A1 /* ProtoParser.swift in Sources */,
+				29022B3522C2370D009E3823 /* TestService.swift in Sources */,
 				295A24BA22833F9D002A40A1 /* BleRpcService.swift in Sources */,
+				29022B3822C2370D009E3823 /* SetValueResponseExtension.swift in Sources */,
+				29022B3922C23713009E3823 /* test_service.pb.swift in Sources */,
 				299579EF22B2CCA600B22B2A /* BleServiceDriver.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -310,6 +436,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				29257EB022B790DA00F38C0E /* ProtoParserTests.swift in Sources */,
+				29022B1B22C224AA009E3823 /* DataMatchable.swift in Sources */,
+				29022B3B22C237C2009E3823 /* BleRpcTests.swift in Sources */,
+				29257EBA22B7AAAF00F38C0E /* GeneratedMocks.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -469,7 +599,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 4.2;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
@@ -496,7 +626,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.vsemenchenko.SwiftBleRpc;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 4.2;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
@@ -506,6 +636,7 @@
 			baseConfigurationReference = BB4F51906A54BA295BB10B82 /* Pods-SwiftBleRpcTests.debug.xcconfig */;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = CUKY3LM2S7;
 				INFOPLIST_FILE = SwiftBleRpcTests/Info.plist;
@@ -516,7 +647,9 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.vsemenchenko.SwiftBleRpcTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_VERSION = 5.0;
+				SWIFT_OBJC_BRIDGING_HEADER = "SwiftBleRpcTests/SwiftBleRpcTests-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 4.2;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
@@ -526,6 +659,7 @@
 			baseConfigurationReference = D7FA2C62F080410FA7DFC88F /* Pods-SwiftBleRpcTests.release.xcconfig */;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = CUKY3LM2S7;
 				INFOPLIST_FILE = SwiftBleRpcTests/Info.plist;
@@ -536,7 +670,8 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.vsemenchenko.SwiftBleRpcTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_VERSION = 5.0;
+				SWIFT_OBJC_BRIDGING_HEADER = "SwiftBleRpcTests/SwiftBleRpcTests-Bridging-Header.h";
+				SWIFT_VERSION = 4.2;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
