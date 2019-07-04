@@ -21,7 +21,7 @@ public enum ProtoParserErrors: Error {
     /// Called when client tryying to parse unsupported type.
     case notSupportedType
 
-    /// Called when ewaong data sended to parser.
+    /// Called when wrong data sended to parser.
     case wrongData
 }
 

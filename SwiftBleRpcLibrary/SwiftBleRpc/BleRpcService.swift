@@ -5,15 +5,15 @@ public class BleRpcService {
     // MARK: - Variables
 
     /// BleWorker with which service will interact.
-    internal let bleWorker: BleServiceDriver
+    internal let bleServiceDriver: BleServiceDriver
 
     // MARK: - Initializers
 
     /// Initialize with *BleWorker*.
     /// - parameter bleWorker: BleWorker with connected device.
     /// - returns: service with injected BleWorker.
-    public init(_ bleWorker: BleServiceDriver) {
-        self.bleWorker = bleWorker
+    public init(_ bleServiceDriver: BleServiceDriver) {
+        self.bleServiceDriver = bleServiceDriver
     }
 
     /// Block default init.

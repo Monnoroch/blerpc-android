@@ -132,7 +132,11 @@ public class ServiceGenerator {
                 .getKey()
                 .getService(fileLocation.getValue().getPath(SERVICE_NUMBER_OF_PATHS - 1))
                 .getOptions()
-                .hasExtension(Blerpc.service);
+                .hasExtension(Blerpc.service) || fileLocation
+                .getKey()
+                .getService(fileLocation.getValue().getPath(SERVICE_NUMBER_OF_PATHS - 1))
+                .getOptions().getUnknownFields()
+                .hasField(Blerpc.SERVICE_FIELD_NUMBER);
     }
 
     private boolean isProtoMethod(Location location, int serviceNumber) {

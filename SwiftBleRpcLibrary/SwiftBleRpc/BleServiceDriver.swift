@@ -35,7 +35,7 @@ public class BleServiceDriver {
         fatalError("Please use init(peripheral:, queue:) instead.")
     }
     
-    // TODO (?): Make init(queue:) private and peripheral non optional type.
+    // TODO (#70): Make init(queue:) private and peripheral non optional type.
     internal init(queue: DispatchQueue) {
         self.queue = queue
     }
@@ -138,12 +138,13 @@ public class BleServiceDriver {
         }
     }
     
-    /// Actual device connection. *share(replay: 2)* returns two last observers from buffer (including error) if presented.
+    /// Actual device connection.
     /// - returns: Peripheral as observable value.
     private func doGetConnectedPeripheral() -> Single<Peripheral> {
         if let deviceConnectionObserver = self.sharedConnectedPeripheral {
             return deviceConnectionObserver.take(1).asSingle()
         }
+        // *share(replay: 2)* returns two last observers from buffer (including error) if presented.
         let observerForDeviceConnection = self.peripheral?.establishConnection().share(replay: 2)
         self.disconnectionDisposable = observerForDeviceConnection?
             .catchError({ [weak self] (error) -> Observable<Peripheral> in

@@ -17,7 +17,7 @@ public class {{serviceName}}: BleRpcService {
         do {
             let data = try {{inputType}}.bleRpcEncode(proto: request)
 
-            return try bleWorker.read(
+            return try bleServiceDriver.read(
                 request: data,
                 serviceUUID: {{serviceName}}.{{serviceName}}UUID,
                 characteristicUUID: "{{characteristicUUID}}")
@@ -25,7 +25,7 @@ public class {{serviceName}}: BleRpcService {
                 try {{outputType}}.bleRpcDecode(data: response)
             }
         } catch {
-            return Single.error(BluetoothError.destroyed)
+            return Single.error(error)
         }
     }
     {{/typeRead}}
@@ -38,7 +38,7 @@ public class {{serviceName}}: BleRpcService {
         do {
             let data = try {{inputType}}.bleRpcEncode(proto: request)
 
-            return bleWorker.write(
+            return bleServiceDriver.write(
                 request: data,
                 serviceUUID: {{serviceName}}.{{serviceName}}UUID,
                 characteristicUUID: "{{characteristicUUID}}")
@@ -46,7 +46,7 @@ public class {{serviceName}}: BleRpcService {
                 try {{outputType}}.bleRpcDecode(data: response)
             }
         } catch {
-            return Single.error(BluetoothError.destroyed)
+            return Single.error(error)
         }
     }
     {{/typeWrite}}
@@ -59,7 +59,7 @@ public class {{serviceName}}: BleRpcService {
         do {
             let data = try {{inputType}}.bleRpcEncode(proto: request)
 
-            return try bleWorker.subscribe(
+            return try bleServiceDriver.subscribe(
                 request: data,
                 serviceUUID: {{serviceName}}.{{serviceName}}UUID,
                 characteristicUUID: "{{characteristicUUID}}")

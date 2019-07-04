@@ -15,7 +15,7 @@ public class TestService: BleRpcService {
         do {
             let data = try Device_GetValueRequest.bleRpcEncode(proto: request)
 
-            return try bleWorker.read(
+            return try bleServiceDriver.read(
                 request: data,
                 serviceUUID: TestService.TestServiceUUID,
                 characteristicUUID: "A0000001-0000-0000-0000-000000000000")
@@ -23,7 +23,7 @@ public class TestService: BleRpcService {
                 try Device_GetValueResponse.bleRpcDecode(data: response)
             }
         } catch {
-            return Single.error(BluetoothError.destroyed)
+            return Single.error(error)
         }
     }
 
@@ -34,7 +34,7 @@ public class TestService: BleRpcService {
         do {
             let data = try Device_SetValueRequest.bleRpcEncode(proto: request)
 
-            return bleWorker.write(
+            return bleServiceDriver.write(
                 request: data,
                 serviceUUID: TestService.TestServiceUUID,
                 characteristicUUID: "A0000001-0000-0000-0000-000000000000")
@@ -42,7 +42,7 @@ public class TestService: BleRpcService {
                 try Device_SetValueResponse.bleRpcDecode(data: response)
             }
         } catch {
-            return Single.error(BluetoothError.destroyed)
+            return Single.error(error)
         }
     }
 
@@ -53,7 +53,7 @@ public class TestService: BleRpcService {
         do {
             let data = try Device_GetValueRequest.bleRpcEncode(proto: request)
 
-            return try bleWorker.subscribe(
+            return try bleServiceDriver.subscribe(
                 request: data,
                 serviceUUID: TestService.TestServiceUUID,
                 characteristicUUID: "A0000001-0000-0000-0000-000000000000")
