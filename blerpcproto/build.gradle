@@ -53,7 +53,7 @@ jar {
 }
 
 ext {
-    blerpcprotoVersion = '0.2.2'
+    blerpcprotoVersion = '0.2.3'
 }
 
 publish {
