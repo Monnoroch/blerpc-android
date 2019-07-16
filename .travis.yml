@@ -25,9 +25,9 @@ script:
   - linters/run-linters.sh
 after_success:
   - if [ "$TRAVIS_BRANCH" == "master" ] && [ "$TRAVIS_PULL_REQUEST_BRANCH" == "" ]; then
-          gradle blerpc:bintrayUpload -PbintrayUser=monnoroch -PbintrayKey="$BINTRAY_API_KEY" -PdryRun=false;
-          gradle blerpcproto:bintrayUpload -PbintrayUser=monnoroch -PbintrayKey="$BINTRAY_API_KEY" -PdryRun=false;
-          gradle reactive-blerpc:bintrayUpload -PbintrayUser=monnoroch -PbintrayKey="$BINTRAY_API_KEY" -PdryRun=false;
+          sh gradlew blerpc:bintrayUpload -PbintrayUser=monnoroch -PbintrayKey="$BINTRAY_API_KEY" -PdryRun=false;
+          sh gradlew blerpcproto:bintrayUpload -PbintrayUser=monnoroch -PbintrayKey="$BINTRAY_API_KEY" -PdryRun=false;
+          sh gradlew reactive-blerpc:bintrayUpload -PbintrayUser=monnoroch -PbintrayKey="$BINTRAY_API_KEY" -PdryRun=false;
     fi
 notifications:
   email: false
