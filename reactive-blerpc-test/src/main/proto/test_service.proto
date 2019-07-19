@@ -7,7 +7,7 @@ option java_generic_services = true;
 
 package device;
 
-import "blerpc.proto";
+import "blerpcproto/src/main/proto/blerpc.proto";
 
 // A service for testing reactive-blerpc.
 service TestService {
