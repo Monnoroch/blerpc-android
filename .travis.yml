@@ -23,6 +23,9 @@ script:
   - sh gradlew assemble testReleaseUnitTest
   - reactive-blerpc-test/tests/end-to-end-tests.sh
   - linters/run-linters.sh
+  - sh gradlew blerpc:bintrayUpload -PbintrayUser=monnoroch -PbintrayKey="$BINTRAY_API_KEY" -PdryRun=false;
+  - sh gradlew blerpcproto:bintrayUpload -PbintrayUser=monnoroch -PbintrayKey="$BINTRAY_API_KEY" -PdryRun=false;
+  - sh gradlew reactive-blerpc:bintrayUpload -PbintrayUser=monnoroch -PbintrayKey="$BINTRAY_API_KEY" -PdryRun=false;
 after_success:
   - if [ "$TRAVIS_BRANCH" == "master" ] && [ "$TRAVIS_PULL_REQUEST_BRANCH" == "" ]; then
           sh gradlew blerpc:bintrayUpload -PbintrayUser=monnoroch -PbintrayKey="$BINTRAY_API_KEY" -PdryRun=false;
