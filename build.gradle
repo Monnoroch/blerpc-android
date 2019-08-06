@@ -39,7 +39,7 @@ project(':blerpc') {
 }
 
 ext {
-    reactivePluginVersion = '0.2.2'
+    reactivePluginVersion = '0.2.3'
 }
 
 apply from: "linters/configs/android-lint.build.gradle"
