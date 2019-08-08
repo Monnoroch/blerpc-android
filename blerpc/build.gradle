@@ -34,7 +34,7 @@ configurations.all {
 }
 
 ext {
-    blerpcVersion = '0.2.3'
+    blerpcVersion = '0.2.2'
 }
 
 dependencies {
