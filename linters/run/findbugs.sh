@@ -8,14 +8,14 @@ DIR=$(dirname "$0")
 DIR=$(dirname "$DIR")
 
 output=$(sh gradlew runFindbugs --stacktrace --info)
-if [ $? -ne 0 ]
+if [[ $? -ne 0 ]]
 then
     echo "${output}"
     echo "gradle findbugs failed."
     exitcode=1
 fi
 
-if [ ! -d ./build/linters ]; then
+if [[ ! -d ./build/linters ]]; then
     echo "there is nothing to check"
     exit $exitcode
 fi
@@ -32,7 +32,7 @@ function findbugs() {
 for file in $list; do
     count=$(findbugs "$file")
     # Print the error message and change the exit code if any errors are found.
-    if [ "$count" -ne 0 ]
+    if [[ "$count" -ne 0 ]]
     then
         exitcode=1
         echo "Found $count errors in $file."
