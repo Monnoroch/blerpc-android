@@ -32,7 +32,7 @@ function findbugs() {
 for file in $list; do
     count=$(findbugs "$file")
     # Print the error message and change the exit code if any errors are found.
-    if [ "$counzt" -ne 0 ]
+    if [ "$count" -ne 0 ]
     then
         exitcode=1
         echo "Found $count errors in $file."
