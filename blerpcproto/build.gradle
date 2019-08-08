@@ -57,7 +57,7 @@ ext {
 }
 
 publish {
-    userOrg = 'github.monnoroch'
+    userOrg = 'monnoroch'
     groupId = 'com.github.monnoroch'
     repoName = 'blerpc-android'
     artifactId = 'blerpcproto-android'
