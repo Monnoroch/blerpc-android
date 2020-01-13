@@ -150,7 +150,7 @@ public class BleRpcChannel implements RpcChannel {
 
   private void startConnection() {
     connectionStatus = ConnectionStatus.CONNECTING;
-    bluetoothGatt = Optional.fromNullable(bluetoothDevice.connectGatt(context, true, gattCallback));
+    bluetoothGatt = Optional.fromNullable(bluetoothDevice.connectGatt(context, /*autoConnect=*/ false, gattCallback));
     if (!bluetoothGatt.isPresent()) {
       failAllAndReset("Could not get bluetooth gatt.");
     }
