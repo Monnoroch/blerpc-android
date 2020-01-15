@@ -1,7 +1,7 @@
 import Foundation
 
 /// Ble abstract service that supports injection of BleWorker.
-public class BleRpcService {
+open class BleRpcService {
     // MARK: - Variables
 
     /// BleWorker with which service will interact.

@@ -13,7 +13,7 @@ public enum BleServiceDriverErrors: Error {
 }
 
 /// Class which holds all operation with data transfer between iOS and Ble Device.
-public class BleServiceDriver {
+open class BleServiceDriver {
     // MARK: - Variables
 
     /// Connected peripheral.
