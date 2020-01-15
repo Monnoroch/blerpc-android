@@ -41,6 +41,7 @@ open class BleServiceDriver {
     // TODO (#70): Make init(queue:) private and peripheral non optional type.
     internal init(queue: DispatchQueue) {
         self.queue = queue
+        self.connectedPeripheral = false
     }
 
     /// Initialize with connected peripheral.
@@ -50,6 +51,7 @@ open class BleServiceDriver {
     public init(peripheral: Peripheral, queue: DispatchQueue) {
         self.peripheral = peripheral
         self.queue = queue
+        self.connectedPeripheral = false
     }
 
     // TODO(#70): remove support for connected peripherals.
