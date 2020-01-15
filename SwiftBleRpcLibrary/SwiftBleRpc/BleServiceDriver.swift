@@ -149,7 +149,7 @@ open class BleServiceDriver {
     private func doGetConnectedPeripheral() -> Single<Peripheral> {
         // TODO(#70): remove support for connected peripherals.
         if self.connectedPeripheral {
-            return self.peripheral
+            return Single.just(self.peripheral)
         }
 
         if let deviceConnectionObserver = self.sharedConnectedPeripheral {
