@@ -1,4 +1,5 @@
 import Foundation
+import SwiftBleRpcLibrary
 
 /// Extension for {{swiftPackageName}}{{messageName}} which adds encode to Data and decode from Data methods.
 extension {{swiftPackageName}}{{messageName}} {
@@ -9,13 +10,13 @@ extension {{swiftPackageName}}{{messageName}} {
         var proto = {{swiftPackageName}}{{messageName}}()
 {{#fields}}
     {{#isEnum}}
-        proto.{{name}} = try {{swiftPackageName}}{{protoType}}.init(rawValue: ProtoDecoder.decode(data: data, from: {{fromByte}}, to: {{toByte}}, type: ProtoType.int32) as! Int)!
+        proto.{{name}} = try {{swiftPackageName}}{{protoType}}.init(rawValue: SwiftBleRpcLibrary.ProtoDecoder.decode(data: data, from: {{fromByte}}, to: {{toByte}}, type: ProtoType.int32) as! Int)!
     {{/isEnum}}
     {{#isProtoObject}}
         proto.{{name}} = try {{swiftPackageName}}{{protoType}}.bleRpcDecode(data: data.subdata(in: Range.init(NSRange.init(location: {{fromByte}}, length: {{toByte}} - {{fromByte}}))!))
     {{/isProtoObject}}
     {{#isPrimitiveType}}
-        proto.{{name}} = try ProtoDecoder.decode(data: data, from: {{fromByte}}, to: {{toByte}}, type: {{swiftType}}) as! {{type}}
+        proto.{{name}} = try SwiftBleRpcLibrary.ProtoDecoder.decode(data: data, from: {{fromByte}}, to: {{toByte}}, type: {{swiftType}}) as! {{type}}
     {{/isPrimitiveType}}
 {{/fields}}
         return proto
@@ -28,13 +29,13 @@ extension {{swiftPackageName}}{{messageName}} {
         var data = Data()
 {{#fields}}
     {{#isEnum}}
-        data.append(try ProtoEncoder.encode(object: proto.{{name}}.rawValue, from: {{fromByte}}, to: {{toByte}}, type: {{swiftType}}))
+        data.append(try SwiftBleRpcLibrary.ProtoEncoder.encode(object: proto.{{name}}.rawValue, from: {{fromByte}}, to: {{toByte}}, type: {{swiftType}}))
     {{/isEnum}}
     {{#isProtoObject}}
         data.append(try {{swiftPackageName}}{{protoType}}.bleRpcEncode(proto: proto.{{name}}))
     {{/isProtoObject}}
     {{#isPrimitiveType}}
-        data.append(try ProtoEncoder.encode(object: proto.{{name}}, from: {{fromByte}}, to: {{toByte}}, type: {{swiftType}}))
+        data.append(try SwiftBleRpcLibrary.ProtoEncoder.encode(object: proto.{{name}}, from: {{fromByte}}, to: {{toByte}}, type: {{swiftType}}))
     {{/isPrimitiveType}}
 {{/fields}}
         return data
