@@ -7,7 +7,7 @@ import RxSwift
 public enum BleServiceDriverErrors: Error {
     /// Called when device returned empty response so we can not parse it as Proto object.
     case emptyResponse
-    
+
     /// Called when client sends non empty request for read or subscribe methods.
     case nonEmptyRequest
 }
@@ -27,19 +27,22 @@ open class BleServiceDriver {
 
     /// Shared observer which holds establish device connection.
     private var sharedConnectedPeripheral: Observable<Peripheral>?
-    
+
+    // TODO(#70): remove support for connected peripherals.
+    private let connectedPeripheral: Bool
+
     // MARK: - Initializers
-    
+
     /// Block default init.
     private init() {
         fatalError("Please use init(peripheral:, queue:) instead.")
     }
-    
+
     // TODO (#70): Make init(queue:) private and peripheral non optional type.
     internal init(queue: DispatchQueue) {
         self.queue = queue
     }
-    
+
     /// Initialize with connected peripheral.
     /// - parameter device: peripheral to operate with.
     /// - parameter queue: dispatch queue used to make thread safe reqad/write.
@@ -49,20 +52,23 @@ open class BleServiceDriver {
         self.queue = queue
     }
 
+    // TODO(#70): remove support for connected peripherals.
+    public init(peripheral: Peripheral, queue: DispatchQueue, connected: Bool) {
+        self.peripheral = peripheral
+        self.queue = queue
+        self.connectedPeripheral = connected
+    }
+
     // MARK: - Public methods
 
     /// Disconnecting from peripheral synchronically.
     public func disconnect() {
         queue.sync {
-            doDisconnect()
+            disconnectionDisposable?.dispose()
+            disconnectionDisposable = nil
         }
     }
 
-    /// Actual disconnect from device and cleanup.
-    private func doDisconnect() {
-        disconnectionDisposable?.dispose()
-    }
-    
     // MARK: - Internal methods
 
     /// Call subscribe request over Ble.
@@ -137,10 +143,15 @@ open class BleServiceDriver {
             return doGetConnectedPeripheral()
         }
     }
-    
+
     /// Actual device connection.
     /// - returns: Peripheral as observable value.
     private func doGetConnectedPeripheral() -> Single<Peripheral> {
+        // TODO(#70): remove support for connected peripherals.
+        if self.connectedPeripheral {
+            return self.peripheral
+        }
+
         if let deviceConnectionObserver = self.sharedConnectedPeripheral {
             return deviceConnectionObserver.take(1).asSingle()
         }
@@ -148,13 +159,14 @@ open class BleServiceDriver {
         let observerForDeviceConnection = self.peripheral?.establishConnection().share(replay: 2)
         self.disconnectionDisposable = observerForDeviceConnection?
             .catchError({ [weak self] (error) -> Observable<Peripheral> in
-                self?.doDisconnect()
+                self?.disconnect()
+                // TODO(#70): return the error to the caller.
                 return Observable.empty()
             }).subscribe()
         self.sharedConnectedPeripheral = observerForDeviceConnection
         return doGetConnectedPeripheral()
     }
-    
+
     /// Method which connects to device (if needed) and discover requested characteristic.
     /// - parameter serviceUUID: UUID of requested service.
     /// - parameter characteristicUUID: UUID of requested characteristic.
