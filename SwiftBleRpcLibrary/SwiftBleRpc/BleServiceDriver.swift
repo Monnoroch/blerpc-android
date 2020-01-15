@@ -71,7 +71,7 @@ open class BleServiceDriver {
     /// - parameter characteristicUUID: *UUID* of a characteristic.
     /// - returns: Data as observable value.
     /// - warning: request must be empty for Read requests.
-    internal func subscribe(request data: Data,
+    public func subscribe(request data: Data,
                             serviceUUID: String,
                             characteristicUUID: String) throws -> Observable<Data> {
         if data.count > 0 {
@@ -96,7 +96,7 @@ open class BleServiceDriver {
     /// - parameter characteristicUUID: *UUID* of a characteristic.
     /// - returns: Data as observable value.
     /// - warning: request must be empty for Read requests.
-    internal func read(request data: Data, serviceUUID: String, characteristicUUID: String) throws -> Single<Data> {
+    public func read(request data: Data, serviceUUID: String, characteristicUUID: String) throws -> Single<Data> {
         if data.count > 0 {
             return Single.error(BleServiceDriverErrors.nonEmptyRequest)
         }
@@ -118,7 +118,7 @@ open class BleServiceDriver {
     /// - parameter serviceUUID: *UUID* of a service.
     /// - parameter characteristicUUID: *UUID* of a characteristic.
     /// - returns: Data as observable value.
-    internal func write(request: Data, serviceUUID: String, characteristicUUID: String) -> Single<Data> {
+    public func write(request: Data, serviceUUID: String, characteristicUUID: String) -> Single<Data> {
         return self.connectToDeviceAndDiscoverCharacteristic(serviceUUID: serviceUUID,
                                                        characteristicUUID: characteristicUUID)
             .flatMap { characteristic in

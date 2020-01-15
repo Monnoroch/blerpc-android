@@ -5,7 +5,7 @@ open class BleRpcService {
     // MARK: - Variables
 
     /// BleWorker with which service will interact.
-    internal let bleServiceDriver: BleServiceDriver
+    public let bleServiceDriver: BleServiceDriver
 
     // MARK: - Initializers
 
