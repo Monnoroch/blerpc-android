@@ -171,8 +171,12 @@ gradle-app.setting
 
 # Generated files
 generated
+SwiftBleRpcLibrary/SwiftBleRpcTests/GeneratedMocks.swift
 
 # Swift/iOS files
 swift-reactive-blerpc-test/tests/com
 SwiftBleRpcLibrary/SwiftBleRpc/Proto
 .swift-format.json
+SwiftBleRpcLibrary/Pods
+
+

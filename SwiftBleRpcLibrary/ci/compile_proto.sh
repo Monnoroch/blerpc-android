@@ -5,6 +5,7 @@ set -e
 echo "Running $0 $*..."
 
 # generate messages
+mkdir 'SwiftBleRpcLibrary/generated'
 /usr/local/bin/protoc \
 --proto_path='.' \
 --swift_out='SwiftBleRpcLibrary/generated' \
