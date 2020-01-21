@@ -8,6 +8,51 @@
 ## iOS support
 Swift Reactive Ble Rpc service generator plugin generates `Rx.Swift` wrappers to request methods over Bluettoth Low Energy and automatically encode/decode messages.
 
+### How to build SwiftBleRpc project (Mac OS)
+1. Install protobuf
+```
+brew install protobuf
+```
+2. Install gradlew it's required version is 4.6
+```
+ci/create-gradle-wrapper-4.6.sh
+```
+* (command should be run from main directory)
+3. Check if gradlew installed version is required
+```
+sh gradlew -v
+```
+4. Update google and android libs before start generating java files. Open project in Android studio and wait untill project will complete building. 
+5. Generate java files
+```
+sh gradlew reactive-blerpc:assemble reactive-blerpc:test
+```
+6. Generate swift files
+```
+sh gradlew swift-reactive-blerpc:assemble swift-reactive-blerpc:test
+```
+7. Generate java reactive plugin
+```
+ci/generate-reactive-plugin.sh
+```
+8. Generate swift reactive plugin
+```
+ci/generate-swift-reactive-plugin.sh
+```
+9. Generate swift protobuf files
+```
+SwiftBleRpcLibrary/ci/compile_proto.sh
+```
+10. Change directory and run SwiftBleRpc.xcworkspace
+```
+cd SwiftBleRpcLibrary
+open -a Xcode SwiftBleRpc.xcworkspace
+```
+11. Install pods if it needs
+```
+pod install
+``` 
+
 ### How to use
 You need to add classes from `SwiftBleRpcLibrary` to your project. These classes is high level classes over Bluetooth Low Energy interaction and parsing.
 
