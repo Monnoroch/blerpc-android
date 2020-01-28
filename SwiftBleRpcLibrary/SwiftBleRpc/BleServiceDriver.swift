@@ -157,7 +157,8 @@ open class BleServiceDriver {
         if let deviceConnectionObserver = self.sharedConnectedPeripheral {
             return deviceConnectionObserver.take(1).asSingle()
         }
-        // *share(replay: 2)* returns two last observers from buffer (including error) if presented.
+        // *share(replay: 2)* returns two last peripherals from buffer (including error) if presented.
+        // it uses 2 replays to know for sure that we have сщттусеув peripheral
         let observerForDeviceConnection = self.peripheral?.establishConnection().share(replay: 2)
         self.disconnectionDisposable = observerForDeviceConnection?
             .catchError({ [weak self] (error) -> Observable<Peripheral> in

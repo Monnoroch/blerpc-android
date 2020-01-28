@@ -15,7 +15,7 @@
 		29022B3722C2370D009E3823 /* GetValueResponseExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29022B2A22C236C7009E3823 /* GetValueResponseExtension.swift */; };
 		29022B3822C2370D009E3823 /* SetValueResponseExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29022B2B22C236C7009E3823 /* SetValueResponseExtension.swift */; };
 		29022B3922C23713009E3823 /* test_service.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29022B2222C236C7009E3823 /* test_service.pb.swift */; };
-		29022B3B22C237C2009E3823 /* BleRpcTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29022B3A22C237C2009E3823 /* BleRpcTests.swift */; };
+		29022B3B22C237C2009E3823 /* TestBleRpcServiceTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29022B3A22C237C2009E3823 /* TestBleRpcServiceTest.swift */; };
 		29257EB022B790DA00F38C0E /* ProtoParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29257EAF22B790DA00F38C0E /* ProtoParserTests.swift */; };
 		29257EBA22B7AAAF00F38C0E /* GeneratedMocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29257EB922B7AAAF00F38C0E /* GeneratedMocks.swift */; };
 		295A24A322833F0B002A40A1 /* SwiftBleRpc.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 295A249922833F0B002A40A1 /* SwiftBleRpc.framework */; };
@@ -47,7 +47,7 @@
 		29022B2922C236C7009E3823 /* SetValueRequestExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SetValueRequestExtension.swift; sourceTree = "<group>"; };
 		29022B2A22C236C7009E3823 /* GetValueResponseExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GetValueResponseExtension.swift; sourceTree = "<group>"; };
 		29022B2B22C236C7009E3823 /* SetValueResponseExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SetValueResponseExtension.swift; sourceTree = "<group>"; };
-		29022B3A22C237C2009E3823 /* BleRpcTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BleRpcTests.swift; sourceTree = "<group>"; };
+		29022B3A22C237C2009E3823 /* TestBleRpcServiceTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestBleRpcServiceTest.swift; sourceTree = "<group>"; };
 		29257EAE22B790D900F38C0E /* SwiftBleRpcTests-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "SwiftBleRpcTests-Bridging-Header.h"; sourceTree = "<group>"; };
 		29257EAF22B790DA00F38C0E /* ProtoParserTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ProtoParserTests.swift; sourceTree = "<group>"; };
 		29257EB922B7AAAF00F38C0E /* GeneratedMocks.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GeneratedMocks.swift; sourceTree = "<group>"; };
@@ -195,7 +195,7 @@
 				29022B1D22C236C7009E3823 /* generated */,
 				29257EB922B7AAAF00F38C0E /* GeneratedMocks.swift */,
 				29257EAF22B790DA00F38C0E /* ProtoParserTests.swift */,
-				29022B3A22C237C2009E3823 /* BleRpcTests.swift */,
+				29022B3A22C237C2009E3823 /* TestBleRpcServiceTest.swift */,
 				295A24A922833F0B002A40A1 /* Info.plist */,
 				29257EAE22B790D900F38C0E /* SwiftBleRpcTests-Bridging-Header.h */,
 				29022B1A22C224AA009E3823 /* DataMatchable.swift */,
@@ -438,7 +438,7 @@
 			files = (
 				29257EB022B790DA00F38C0E /* ProtoParserTests.swift in Sources */,
 				29022B1B22C224AA009E3823 /* DataMatchable.swift in Sources */,
-				29022B3B22C237C2009E3823 /* BleRpcTests.swift in Sources */,
+				29022B3B22C237C2009E3823 /* TestBleRpcServiceTest.swift in Sources */,
 				29257EBA22B7AAAF00F38C0E /* GeneratedMocks.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -4,7 +4,10 @@ import Cuckoo
 import RxSwift
 @testable import SwiftBleRpc
 
-class BleRpcTests: XCTestCase {
+/**
+*  A service for testing BleRpcService.
+*/
+class TestBleRpcServiceTest: XCTestCase {
     
     let bleRpcDriverMock: MockBleServiceDriver = MockBleServiceDriver(queue: DispatchQueue(label: "test_ble_queue"))
     let characteristicUUID: String = "A0000001-0000-0000-0000-000000000000"
@@ -23,6 +26,9 @@ class BleRpcTests: XCTestCase {
         dispose?.dispose()
     }
     
+    /**
+    *  Read value test method.
+    */
     func testRead() throws {
         let requestData = try Device_GetValueRequest.bleRpcEncode(proto: readRequest)
         var responseMessage = Device_GetValueResponse()
@@ -34,12 +40,37 @@ class BleRpcTests: XCTestCase {
         }
         
         dispose = service?.readValue(request: readRequest).subscribe(onSuccess: { (response) in
-            expect(response.intValue).to(equal(responseMessage.intValue))
+            expect(response).to(equal(responseMessage))
         }) { (error) in
             expect(error).to(beNil())
         }
     }
     
+    /**
+    *  Read method called test method.
+    */
+    func testReadWasCalled() throws {
+        let requestData = try Device_GetValueRequest.bleRpcEncode(proto: readRequest)
+        let responseMessage = Device_GetValueResponse()
+        let responseData = try Device_GetValueResponse.bleRpcEncode(proto: responseMessage)
+        
+        stub(bleRpcDriverMock) { stub in
+            when(stub.read(request: requestData, serviceUUID: TestService.TestServiceUUID, characteristicUUID: characteristicUUID)).thenReturn(Single<Data>.just(responseData))
+        }
+        
+        let exp = expectation(description: "Read was called")
+        dispose = service?.readValue(request: readRequest).subscribe(onSuccess: { (response) in
+            exp.fulfill()
+        }) { (error) in
+            exp.fulfill()
+        }
+        
+        waitForExpectations(timeout: 3)
+    }
+    
+    /**
+    *  Wrong response handling test method.
+    */
     func testWrongResponse() throws {
         let requestData = try Device_GetValueRequest.bleRpcEncode(proto: readRequest)
         var responseMessage = Device_GetValueResponse()
@@ -50,12 +81,15 @@ class BleRpcTests: XCTestCase {
         }
         
         dispose = service?.readValue(request: readRequest).subscribe(onSuccess: { (response) in
-            expect(response.intValue).to(equal(responseMessage.intValue))
+            expect(response).to(equal(responseMessage))
         }) { (error) in
             expect(String(reflecting: error)).to(equal(String(reflecting: ProtoParserErrors.wrongData)))
         }
     }
     
+    /**
+    *  Write value test method.
+    */
     func testWrite() throws {
         writeRequest.intValue = 45
         let requestData = try Device_SetValueRequest.bleRpcEncode(proto: writeRequest)
@@ -73,6 +107,9 @@ class BleRpcTests: XCTestCase {
         }
     }
     
+    /**
+    *  Subscribe test method.
+    */
     func testSubscribe() throws {
         let requestData = try Device_GetValueRequest.bleRpcEncode(proto: readRequest)
         var responseMessage = Device_GetValueResponse()
@@ -84,7 +121,7 @@ class BleRpcTests: XCTestCase {
         }
         
         dispose = service?.getValueUpdates(request: readRequest).subscribe(onNext: { (response) in
-            expect(response.intValue).to(equal(responseMessage.intValue))
+            expect(response).to(equal(responseMessage))
         }, onError: { (error) in
             expect(error).to(beNil())
         })
