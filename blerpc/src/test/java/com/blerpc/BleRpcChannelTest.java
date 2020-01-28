@@ -768,6 +768,17 @@ public class BleRpcChannelTest {
   }
 
   @Test
+  public void testUnsubscribe() throws Exception {
+    BleRpcController localController = spy(controller);
+    callSubscribeMethod(localController, callback);
+    finishSubscribing(descriptor);
+
+    localController.startCancel();
+    onUnsubscribe(descriptor);
+    verify(bluetoothGatt).setCharacteristicNotification(descriptor.getCharacteristic(), false);
+  }
+
+  @Test
   public void testValueChangedBeforeOnDescriptorWriteSubscribe() {
     callSubscribeMethod(controller, callback);
     finishConnecting();

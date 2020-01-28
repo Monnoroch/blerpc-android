@@ -186,6 +186,11 @@ public class BleRpcChannel implements RpcChannel {
       // New rpc calls might have been added since we started unsubscribing.
       subscription.clearCanceled();
       if (!subscription.hasAnySubscriber()) {
+        failIfFalse(
+            gatt.setCharacteristicNotification(characteristic, /*enable=*/ false),
+            "Failed to disable notification for characteristic %s in service %s.",
+            rpcCall.characteristicUuid,
+            rpcCall.serviceUuid);
         subscriptions.remove(subscription.characteristicUuid);
         return;
       }
