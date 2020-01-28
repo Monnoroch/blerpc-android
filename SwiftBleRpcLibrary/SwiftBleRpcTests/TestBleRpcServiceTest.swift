@@ -31,8 +31,7 @@ class TestBleRpcServiceTest: XCTestCase {
     */
     func testRead() throws {
         let requestData = try Device_GetValueRequest.bleRpcEncode(proto: readRequest)
-        var responseMessage = Device_GetValueResponse()
-        responseMessage.intValue = 94
+        let responseMessage = Device_GetValueResponse()
         let responseData = try Device_GetValueResponse.bleRpcEncode(proto: responseMessage)
         
         stub(bleRpcDriverMock) { stub in
@@ -73,8 +72,7 @@ class TestBleRpcServiceTest: XCTestCase {
     */
     func testWrongResponse() throws {
         let requestData = try Device_GetValueRequest.bleRpcEncode(proto: readRequest)
-        var responseMessage = Device_GetValueResponse()
-        responseMessage.intValue = 94
+        let responseMessage = Device_GetValueResponse()
         
         stub(bleRpcDriverMock) { stub in
             when(stub.read(request: requestData, serviceUUID: TestService.TestServiceUUID, characteristicUUID: characteristicUUID)).thenReturn(Single<Data>.just(Data()))
@@ -112,8 +110,7 @@ class TestBleRpcServiceTest: XCTestCase {
     */
     func testSubscribe() throws {
         let requestData = try Device_GetValueRequest.bleRpcEncode(proto: readRequest)
-        var responseMessage = Device_GetValueResponse()
-        responseMessage.intValue = 94
+        let responseMessage = Device_GetValueResponse()
         let responseData = try Device_GetValueResponse.bleRpcEncode(proto: responseMessage)
         
         stub(bleRpcDriverMock) { stub in
