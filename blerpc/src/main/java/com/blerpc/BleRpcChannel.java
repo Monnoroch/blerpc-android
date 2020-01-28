@@ -320,10 +320,9 @@ public class BleRpcChannel implements RpcChannel {
   }
 
   private void startNextCallIfNotInProgress() {
-    if (callInProgress) {
-      return;
+    if (!callInProgress) {
+      startNextCall();
     }
-    startNextCall();
   }
 
   private void startNextCall() {
