@@ -118,11 +118,11 @@ public class BleRpcChannel implements RpcChannel {
   private void addCall(RpcCall rpcCall) {
     calls.add(rpcCall);
     if (rpcCall.getMethodType().equals(MethodType.SUBSCRIBE)) {
-      getSubscription(rpcCall).calls.add(rpcCall);
+      getSubscriptionForCall(rpcCall).calls.add(rpcCall);
     }
   }
 
-  private SubscriptionCallsGroup getSubscription(RpcCall rpcCall) {
+  private SubscriptionCallsGroup getSubscriptionForCall(RpcCall rpcCall) {
     UUID characteristic = rpcCall.getCharacteristic();
     if (subscriptions.containsKey(characteristic)) {
       return subscriptions.get(characteristic);
