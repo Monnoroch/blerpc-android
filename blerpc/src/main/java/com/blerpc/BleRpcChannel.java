@@ -225,7 +225,6 @@ public class BleRpcChannel implements RpcChannel {
       return;
     }
 
-    BluetoothGattDescriptor descriptor = getDescriptor(characteristic, subscription.descriptorUuid);
     // If all calls were cancelled, abandon the subscription.
     subscription.clearCanceled();
     if (!subscription.hasAnySubscriber()) {
