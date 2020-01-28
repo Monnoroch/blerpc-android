@@ -95,8 +95,9 @@ public class BleRpcChannel implements RpcChannel {
       Message responsePrototype,
       RpcCallback<Message> done
   ) {
+    checkArgument(controller instanceof BleRpcController, "Invalid RpcController instance.");
     workHandler.post(() -> {
-      RpcCall rpcCall = new RpcCall(method, controller, request, responsePrototype, done);
+      RpcCall rpcCall = new RpcCall(method, (BleRpcController) controller, request, responsePrototype, done);
       if (!checkMethodType(rpcCall)) {
         return;
       }
@@ -739,7 +740,7 @@ public class BleRpcChannel implements RpcChannel {
 
   private static class RpcCall {
     private final MethodDescriptor method;
-    private final RpcController controller;
+    private final BleRpcController controller;
     private final Message request;
     private final Message responsePrototype;
     private final RpcCallback<Message> done;
@@ -749,7 +750,7 @@ public class BleRpcChannel implements RpcChannel {
     private final UUID descriptorUuid;
 
     // Create normal RpcCall.
-    RpcCall(MethodDescriptor method, RpcController controller, Message request, Message responsePrototype,
+    RpcCall(MethodDescriptor method, BleRpcController controller, Message request, Message responsePrototype,
             RpcCallback<Message> done) {
       this.method = method;
       this.controller = controller;
