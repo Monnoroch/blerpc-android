@@ -173,7 +173,7 @@ public class BleRpcChannel implements RpcChannel {
     startNextCall();
   }
 
-  private void handleSubscribe(BluetoothGattCharacteristic characteristic, byte[] value) {
+  private void handleSubscribe(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, byte[] value) {
     RpcCall rpcCall = finishRpcCall();
     UUID characteristicUuid = characteristic.getUuid();
     if (Arrays.equals(value, ENABLE_NOTIFICATION_VALUE)) {
@@ -186,6 +186,11 @@ public class BleRpcChannel implements RpcChannel {
       // New rpc calls might have been added since we started unsubscribing.
       subscription.clearCanceled();
       if (!subscription.hasAnySubscriber()) {
+        failIfFalse(
+            gatt.setCharacteristicNotification(characteristic, /*enable=*/ false),
+            "Failed to disable notification for characteristic %s in service %s.",
+            rpcCall.characteristicUuid,
+            rpcCall.serviceUuid);
         subscriptions.remove(subscription.characteristicUuid);
         return;
       }
@@ -639,7 +644,7 @@ public class BleRpcChannel implements RpcChannel {
           handleSubscribeError(characteristic, descriptor.getUuid(), descriptor.getValue(),
               "Failed to subscribe to descriptor %s: status=%d.", descriptor.getUuid(), status);
         } else {
-          handleSubscribe(characteristic, descriptor.getValue());
+          handleSubscribe(gatt, characteristic, descriptor.getValue());
         }
       });
     }
