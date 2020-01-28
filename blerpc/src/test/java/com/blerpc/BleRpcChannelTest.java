@@ -1,5 +1,6 @@
 package com.blerpc;
 
+import static com.blerpc.Assert.assertError;
 import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -198,6 +199,7 @@ public class BleRpcChannelTest {
     when(bluetoothGatt.writeCharacteristic(characteristic2)).thenReturn(true);
     when(bluetoothGatt.setCharacteristicNotification(characteristic, true)).thenReturn(true);
     when(bluetoothGatt.setCharacteristicNotification(characteristic2, true)).thenReturn(true);
+    when(bluetoothGatt.setCharacteristicNotification(characteristic, false)).thenReturn(true);
     when(bluetoothGatt.writeDescriptor(descriptor)).thenReturn(true);
     when(bluetoothGatt.writeDescriptor(descriptor2)).thenReturn(true);
     when(gattService.getCharacteristic(TEST_CHARACTERISTIC)).thenReturn(characteristic);
@@ -774,8 +776,21 @@ public class BleRpcChannelTest {
     finishSubscribing(descriptor);
 
     localController.startCancel();
+    onCharacteristicChanged(characteristic);
     onUnsubscribe(descriptor);
     verify(bluetoothGatt).setCharacteristicNotification(descriptor.getCharacteristic(), false);
+  }
+
+  @Test
+  public void testUnsubscribe_disableNotificationFail() throws Exception {
+    BleRpcController localController = spy(controller);
+    callSubscribeMethod(localController, callback);
+    finishSubscribing(descriptor);
+
+    localController.startCancel();
+    onCharacteristicChanged(characteristic);
+    when(bluetoothGatt.setCharacteristicNotification(descriptor.getCharacteristic(), false)).thenReturn(false);
+    assertError(() -> onUnsubscribe(descriptor), "Failed to disable notification");
   }
 
   @Test
