@@ -6,7 +6,7 @@
 
 
 ## iOS support
-Swift Reactive Ble Rpc service generator plugin generates `Rx.Swift` wrappers to request methods over Bluettoth Low Energy and automatically encode/decode messages.
+Swift Reactive Ble Rpc service generator plugin generates `Rx.Swift` wrappers to request methods over Bluetooth Low Energy and automatically encode/decode messages.
 
 ### How to build SwiftBleRpc project (Mac OS)
 1. Install protobuf
