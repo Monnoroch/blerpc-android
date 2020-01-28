@@ -31,7 +31,8 @@ class TestBleRpcServiceTest: XCTestCase {
     */
     func testRead() throws {
         let requestData = try Device_GetValueRequest.bleRpcEncode(proto: readRequest)
-        let responseMessage = Device_GetValueResponse()
+        var int = 94
+        let responseMessage = try Device_GetValueResponse.bleRpcDecode(data: Data(bytes: &int, count: MemoryLayout<Int>.size))
         let responseData = try Device_GetValueResponse.bleRpcEncode(proto: responseMessage)
         
         stub(bleRpcDriverMock) { stub in
@@ -50,7 +51,8 @@ class TestBleRpcServiceTest: XCTestCase {
     */
     func testReadWasCalled() throws {
         let requestData = try Device_GetValueRequest.bleRpcEncode(proto: readRequest)
-        let responseMessage = Device_GetValueResponse()
+        var int = 94
+        let responseMessage = try Device_GetValueResponse.bleRpcDecode(data: Data(bytes: &int, count: MemoryLayout<Int>.size))
         let responseData = try Device_GetValueResponse.bleRpcEncode(proto: responseMessage)
         
         stub(bleRpcDriverMock) { stub in
@@ -72,7 +74,8 @@ class TestBleRpcServiceTest: XCTestCase {
     */
     func testWrongResponse() throws {
         let requestData = try Device_GetValueRequest.bleRpcEncode(proto: readRequest)
-        let responseMessage = Device_GetValueResponse()
+        var int = 94
+        let responseMessage = try Device_GetValueResponse.bleRpcDecode(data: Data(bytes: &int, count: MemoryLayout<Int>.size))
         
         stub(bleRpcDriverMock) { stub in
             when(stub.read(request: requestData, serviceUUID: TestService.TestServiceUUID, characteristicUUID: characteristicUUID)).thenReturn(Single<Data>.just(Data()))
@@ -110,7 +113,8 @@ class TestBleRpcServiceTest: XCTestCase {
     */
     func testSubscribe() throws {
         let requestData = try Device_GetValueRequest.bleRpcEncode(proto: readRequest)
-        let responseMessage = Device_GetValueResponse()
+        var int = 94
+        let responseMessage = try Device_GetValueResponse.bleRpcDecode(data: Data(bytes: &int, count: MemoryLayout<Int>.size))
         let responseData = try Device_GetValueResponse.bleRpcEncode(proto: responseMessage)
         
         stub(bleRpcDriverMock) { stub in
