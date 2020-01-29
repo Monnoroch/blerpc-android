@@ -20,7 +20,7 @@ script:
   - ci/create-gradle-wrapper-4.6.sh
   - sh gradlew reactive-blerpc:assemble reactive-blerpc:test
   - ci/generate-reactive-plugin.sh
-  - sh gradlew assemble testReleaseUnitTest --debug --stacktrace
+  - sh gradlew assemble testReleaseUnitTest --info
   - reactive-blerpc-test/tests/end-to-end-tests.sh
   - linters/run-linters.sh
 after_success:
