@@ -162,8 +162,7 @@ open class BleServiceDriver {
         self.disconnectionDisposable = observerForDeviceConnection?
             .catchError({ [weak self] (error) -> Observable<Peripheral> in
                 self?.disconnect()
-                // TODO(#70): return the error to the caller.
-                return Observable.empty()
+                return .error(error)
             }).subscribe()
         self.sharedConnectedPeripheral = observerForDeviceConnection
         return doGetConnectedPeripheral()
