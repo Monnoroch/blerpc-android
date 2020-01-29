@@ -120,11 +120,11 @@ public class AnnotationMessageConverter implements MessageConverter {
         bytesCount);
     if (fieldExtension.getByteOrder().equals(ByteOrder.BIG_ENDIAN)) {
       for (int i = 0; i < bytesCount; i++) {
-        messageBytes[firstByte + i] = (byte) (fieldValue >> 8 * (bytesCount - i - 1));
+        messageBytes[firstByte + i] = (byte) (fieldValue >> (8 * (bytesCount - i - 1)));
       }
     } else {
       for (int i = 0; i < bytesCount; i++) {
-        messageBytes[firstByte + i] = (byte) (fieldValue >> 8 * i);
+        messageBytes[firstByte + i] = (byte) (fieldValue >> (8 * i));
       }
     }
   }
