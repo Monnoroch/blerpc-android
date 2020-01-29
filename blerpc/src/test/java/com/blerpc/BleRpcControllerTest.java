@@ -102,14 +102,9 @@ public class BleRpcControllerTest {
     assertError(() -> bleRpcController.notifyOnCancel(TEST_RPC_CALLBACK), "Not implemented.");
   }
 
-    @Test
+  @Test
   public void testRunOnCancel() {
     bleRpcController.runOnCancel(cancelCallback);
-  }
-
-  @Test
-  public void testRunOnCancel_nullCallback() {
-    assertError(() -> bleRpcController.runOnCancel(null), "callback is null.");
   }
 
   @Test

@@ -1,7 +1,5 @@
 package com.blerpc;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 import com.google.common.base.Optional;
 import com.google.protobuf.RpcCallback;
 import com.google.protobuf.RpcController;
@@ -45,10 +43,7 @@ public class BleRpcController implements RpcController {
   public void startCancel() {
     canceled.set(true);
 
-    Optional<RpcCallback<Void>> callback = getCallback();
-    synchronized (this) {
-      cancelCallback = Optional.absent();
-    }
+    Optional<RpcCallback<Void>> callback = getAndClearCallback();
     if (callback.isPresent()) {
       callback.get().run(null);
     }
@@ -82,8 +77,6 @@ public class BleRpcController implements RpcController {
    * @param callback callback for notifying about cancel events
    */
   void runOnCancel(RpcCallback<Void> callback) {
-    checkArgument(callback != null, "Can't notify on cancel: callback is null.");
-
     if (canceled.get()) {
       callback.run(null);
       return;
@@ -94,8 +87,15 @@ public class BleRpcController implements RpcController {
     }
   }
 
-  private synchronized Optional<RpcCallback<Void>> getCallback() {
-    return this.cancelCallback;
+  private synchronized Optional<RpcCallback<Void>> getAndClearCallback() {
+    synchronized (this) {
+      if (!cancelCallback.isPresent()) {
+        return Optional.absent();
+      }
+      Optional<RpcCallback<Void>> callback = cancelCallback;
+      cancelCallback = Optional.absent();
+      return callback;
+    }
   }
 
   /**
