@@ -840,6 +840,20 @@ public class BleRpcChannelTest {
   }
 
   @Test
+  public void testUnsubscribe_callSomethingInProcess() throws Exception {
+    callSubscribeMethod(controller, callback);
+    finishSubscribing(descriptor);
+
+    controller.startCancel();
+    onCharacteristicChanged(characteristic);
+    callWriteMethod(controller2);
+    onUnsubscribe(descriptor);
+
+    onCharacteristicWrite(characteristic);
+    assertCallSucceeded(controller2);
+  }
+
+  @Test
   public void testValueChangedBeforeOnDescriptorWriteSubscribe() {
     callSubscribeMethod(controller, callback);
     finishConnecting();

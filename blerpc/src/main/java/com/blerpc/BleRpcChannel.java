@@ -415,7 +415,6 @@ public class BleRpcChannel implements RpcChannel {
             rpcCall.getCharacteristic(), rpcCall.getService());
       }
       subscriptions.remove(subscription.characteristicUuid);
-      return;
     }
     startNextCall();
   }
