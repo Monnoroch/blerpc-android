@@ -411,7 +411,8 @@ public class BleRpcChannel implements RpcChannel {
           /* enabled= */ false);
       } catch (Characteristics.BleApiException error) {
         // TODO(#83): just log events if resets become so common to the point of being noisy and annoying.
-        failAllAndReset("Can't unsubscribe from characteristic: %s", rpcCall.getCharacteristic());
+        failAllAndReset("Can't unsubscribe from characteristic: %s in service %s.",
+            rpcCall.getCharacteristic(), rpcCall.getService());
       }
       subscriptions.remove(subscription.characteristicUuid);
       return;

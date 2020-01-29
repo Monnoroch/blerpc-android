@@ -164,8 +164,6 @@ public class BleRpcChannelTest {
   private MethodDescriptor methodUnsupported;
   @Mock
   private Handler listenerHandler;
-  @Mock
-  private Logger logger;
 
   private MethodDescriptor methodReadChar = TestBleService.getDescriptor().findMethodByName("TestReadChar");
   private MethodDescriptor methodWriteChar = TestBleService.getDescriptor().findMethodByName("TestWriteChar");
@@ -212,7 +210,7 @@ public class BleRpcChannelTest {
     }).when(listenerHandler).post(any());
 
     channel = new BleRpcChannel(bluetoothDevice, context, messageConverter, workHandler, listenerHandler,
-        logger);
+        Mockito.mock(Logger.class));
   }
 
   /**
@@ -838,7 +836,7 @@ public class BleRpcChannelTest {
     onCharacteristicChanged(characteristic);
     onUnsubscribe(descriptor);
 
-    verify(bluetoothGatt).close();
+    verifyReset();
   }
 
   @Test
