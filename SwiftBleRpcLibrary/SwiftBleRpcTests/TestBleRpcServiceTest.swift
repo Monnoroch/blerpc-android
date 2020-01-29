@@ -9,7 +9,7 @@ import RxSwift
 */
 class TestBleRpcServiceTest: XCTestCase {
     
-    let bleRpcDriverMock: MockBleServiceDriver = MockBleServiceDriver(queue: DispatchQueue(label: "test_ble_queue"))
+    let bleRpcDriverMock: MockBleServiceDriver = MockBleServiceDriver(peripheral: Peripheral, queue: DispatchQueue(label: "test_ble_queue"))
     let characteristicUUID: String = "A0000001-0000-0000-0000-000000000000"
     let readRequest = Device_GetValueRequest()
     var writeRequest = Device_SetValueRequest()
