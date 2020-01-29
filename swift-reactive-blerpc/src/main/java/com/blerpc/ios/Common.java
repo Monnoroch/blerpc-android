@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 /** Helpers for generator. */
 public class Common {
 
+    private static final String SWIFT_PACKAGE_TO_CLASS_SAPARATOR = "_";
     private static final String PROTO_PACKAGE_SEPARATOR = "\\.";
 
     /**
@@ -39,8 +40,8 @@ public class Common {
         String packageName = proto.getPackage();
         String[] splittedPackageName = packageName.split(PROTO_PACKAGE_SEPARATOR);
         return Arrays.stream(splittedPackageName)
-                .map(key -> upperCaseFirstLetter(key))
-                .collect(Collectors.joining("_"));
+                .map(key -> upperCaseFirstLetter(key) + SWIFT_PACKAGE_TO_CLASS_SAPARATOR)
+                .collect(Collectors.joining());
     }
 
     /**

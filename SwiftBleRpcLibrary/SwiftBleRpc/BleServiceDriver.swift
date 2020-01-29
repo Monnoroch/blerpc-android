@@ -28,7 +28,7 @@ open class BleServiceDriver {
     /// Shared observer which holds establish device connection.
     private var sharedConnectedPeripheral: Observable<Peripheral>?
 
-    /// Connected peripheral.
+    // TODO(#70): remove support for connected peripherals.
     private let connectedPeripheral: Bool
 
     // MARK: - Initializers
@@ -38,7 +38,7 @@ open class BleServiceDriver {
         fatalError("Please use init(peripheral:, queue:) instead.")
     }
 
-    /// Init to make simplify mock creation.
+    // TODO (#70): Make init(queue:) private and peripheral non optional type.
     internal init(queue: DispatchQueue) {
         self.queue = queue
         self.connectedPeripheral = false
@@ -54,6 +54,7 @@ open class BleServiceDriver {
         self.connectedPeripheral = false
     }
 
+    // TODO(#70): remove support for connected peripherals.
     public init(peripheral: Peripheral, queue: DispatchQueue, connected: Bool) {
         self.peripheral = peripheral
         self.queue = queue
@@ -148,6 +149,7 @@ open class BleServiceDriver {
     /// Actual device connection.
     /// - returns: Peripheral as observable value.
     private func doGetConnectedPeripheral() -> Single<Peripheral> {
+        // TODO(#70): remove support for connected peripherals.
         if self.connectedPeripheral {
             return Single.just(self.peripheral!)
         }
@@ -160,6 +162,7 @@ open class BleServiceDriver {
         self.disconnectionDisposable = observerForDeviceConnection?
             .catchError({ [weak self] (error) -> Observable<Peripheral> in
                 self?.disconnect()
+                // TODO(#70): return the error to the caller.
                 return Observable.empty()
             }).subscribe()
         self.sharedConnectedPeripheral = observerForDeviceConnection
