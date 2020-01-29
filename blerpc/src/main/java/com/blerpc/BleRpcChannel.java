@@ -131,10 +131,29 @@ public class BleRpcChannel implements RpcChannel {
     }
   }
 
+  /**
+   * Cancel subscription and start unsubscribing from characteristic if there isn't other
+   * subscriptions for this characteristic.
+   *
+   * @param subscriptionToCancel - subscription for cancel.
+   */
+  private void cancelSubscription(SubscriptionCallsGroup subscriptionToCancel) {
+    workHandler.post(
+        () -> {
+          subscriptionToCancel.clearCanceled();
+          if (!subscriptionToCancel.hasAnySubscriber()
+              && subscriptionToCancel.status == SubscriptionStatus.SUBSCRIBED) {
+            startUnsubscribing(subscriptionToCancel);
+          }
+        });
+  }
+
   private void addCall(RpcCall rpcCall) {
     calls.add(rpcCall);
     if (rpcCall.getMethodType().equals(MethodType.SUBSCRIBE)) {
-      getSubscriptionForCall(rpcCall).calls.add(rpcCall);
+      SubscriptionCallsGroup subscription = getSubscriptionForCall(rpcCall);
+      rpcCall.controller.runOnCancel(unusedObject -> cancelSubscription(subscription));
+      subscription.calls.add(rpcCall);
     }
   }
 
@@ -434,13 +453,6 @@ public class BleRpcChannel implements RpcChannel {
 
     SubscriptionCallsGroup subscription = getSubscription(characteristicUuid);
     if (!subscription.status.equals(SubscriptionStatus.SUBSCRIBED)) {
-      return;
-    }
-
-    // If all calls were cancelled, abandon the subscription.
-    subscription.clearCanceled();
-    if (!subscription.hasAnySubscriber()) {
-      startUnsubscribing(subscription);
       return;
     }
 

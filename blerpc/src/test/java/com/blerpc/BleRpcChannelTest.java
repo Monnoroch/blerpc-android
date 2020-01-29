@@ -639,6 +639,17 @@ public class BleRpcChannelTest {
   }
 
   @Test
+  public void testSubscribeSuccess_unsubscribeOnCancel() {
+    BleRpcController bleRpcController = spy(controller);
+    callSubscribeMethod(bleRpcController, callback);
+    verify(bleRpcController).runOnCancel(any(RpcCallback.class));
+    finishSubscribing(descriptor);
+
+    bleRpcController.startCancel();
+    verifyUnsubscribe(descriptor);
+  }
+
+  @Test
   public void testSubscribeCalled_onSubscribeSuccessCalled_notBleRpcController() throws Exception {
     RpcController rpcController = spy(controller);
     callSubscribeMethod(rpcController, callback);
@@ -781,8 +792,10 @@ public class BleRpcChannelTest {
 
   @Test
   public void testSubscribeToCharacteristicOnlyOnce() throws Exception {
-    callSubscribeMethod(methodSubscribeChar);
-    callSubscribeMethod(methodSubscribeCharCopy);
+    BleRpcController localController1 = spy(controller);
+    BleRpcController localController2 = spy(controller2);
+    callSubscribeMethod(methodSubscribeChar, localController1);
+    callSubscribeMethod(methodSubscribeCharCopy, localController2);
     finishConnecting();
     verifySubscribe(descriptor);
   }
@@ -854,6 +867,21 @@ public class BleRpcChannelTest {
   }
 
   @Test
+  public void testUnsubscribe_onlyOnCancelSecondCall() throws Exception {
+    BleRpcController localController1 = spy(controller);
+    BleRpcController localController2 = spy(controller2);
+    callSubscribeMethod(localController1, callback);
+    callSubscribeMethod(localController2, callback);
+    finishSubscribing(descriptor);
+
+    localController1.startCancel();
+    verifyNoUnsubscribe(descriptor);
+    localController2.startCancel();
+    onUnsubscribe(descriptor);
+    verifyUnsubscribed();
+  }
+
+  @Test
   public void testValueChangedBeforeOnDescriptorWriteSubscribe() {
     callSubscribeMethod(controller, callback);
     finishConnecting();
@@ -909,6 +937,10 @@ public class BleRpcChannelTest {
   void verifyUnsubscribe(BluetoothGattDescriptor descriptor) {
     verify(descriptor).setValue(TEST_DISABLE_NOTIFICATION_VALUE);
     verify(bluetoothGatt, atLeast(2)).writeDescriptor(descriptor);
+  }
+
+  void verifyNoUnsubscribe(BluetoothGattDescriptor descriptor) {
+    verify(descriptor, never()).setValue(TEST_DISABLE_NOTIFICATION_VALUE);
   }
 
   void assertFailBeforeDiscoveringServices(BleRpcController controller) {

@@ -1,5 +1,8 @@
 package com.blerpc;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
+import com.google.common.base.Optional;
 import com.google.protobuf.RpcCallback;
 import com.google.protobuf.RpcController;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -12,6 +15,7 @@ public class BleRpcController implements RpcController {
   private AtomicBoolean canceled = new AtomicBoolean(false);
   private boolean failed = false;
   private String failMassage = null;
+  private Optional<RpcCallback<Void>> cancelCallback = Optional.absent();
 
   @Override
   public void reset() {
@@ -19,6 +23,7 @@ public class BleRpcController implements RpcController {
     synchronized (this) {
       failed = false;
       failMassage = null;
+      cancelCallback = Optional.absent();
     }
   }
 
@@ -39,6 +44,14 @@ public class BleRpcController implements RpcController {
   @Override
   public void startCancel() {
     canceled.set(true);
+
+    Optional<RpcCallback<Void>> callback = getCallback();
+    synchronized (this) {
+      cancelCallback = Optional.absent();
+    }
+    if (callback.isPresent()) {
+      callback.get().run(null);
+    }
   }
 
   @Override
@@ -57,6 +70,32 @@ public class BleRpcController implements RpcController {
   @Override
   public void notifyOnCancel(RpcCallback<Object> callback) {
     throw new UnsupportedOperationException("Not implemented.");
+  }
+
+  /**
+   * Assings a custom callback, which will be called once for:
+   * <ul>
+   *   <li> cancel event;
+   *   <li> dispose event.
+   * </ul>
+   *
+   * @param callback callback for notifying about cancel events
+   */
+  void runOnCancel(RpcCallback<Void> callback) {
+    checkArgument(callback != null, "Can't notify on cancel: callback is null.");
+
+    if (canceled.get()) {
+      callback.run(null);
+      return;
+    }
+
+    synchronized (this) {
+      cancelCallback = Optional.of(callback);
+    }
+  }
+
+  private synchronized Optional<RpcCallback<Void>> getCallback() {
+    return this.cancelCallback;
   }
 
   /**
