@@ -450,7 +450,7 @@ public class BleRpcChannel implements RpcChannel {
   }
 
   private void makeRequest(BluetoothGatt bluetoothGatt, RpcCall rpcCall)
-      throws CouldNotConvertMessageException | Characteristics.BleApiException {
+      throws CouldNotConvertMessageException, Characteristics.BleApiException {
     switch (rpcCall.getMethodType()) {
       case READ: {
         makeReadRequest(bluetoothGatt, rpcCall);
@@ -471,7 +471,7 @@ public class BleRpcChannel implements RpcChannel {
   }
 
   private void makeWriteRequest(BluetoothGatt bluetoothGatt, BluetoothGattCharacteristic characteristic,
-      RpcCall rpcCall) throws CouldNotConvertMessageException | Characteristics.BleApiException {
+      RpcCall rpcCall) throws CouldNotConvertMessageException, Characteristics.BleApiException {
     byte[] value = messageConverter.serializeRequest(rpcCall.method, rpcCall.request);
     Characteristics.writeValue(bluetoothGatt, rpcCall.getService(), rpcCall.getCharacteristic(), value);
   }
