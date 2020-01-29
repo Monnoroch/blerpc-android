@@ -116,6 +116,21 @@ public class BleRpcChannel implements RpcChannel {
     });
   }
 
+  private boolean checkMethodType(RpcCall rpcCall) {
+    MethodType methodType = rpcCall.getMethodType();
+    switch (methodType) {
+      case READ:
+      case WRITE:
+      case SUBSCRIBE: {
+        return true;
+      }
+      default: {
+        notifyCallFailed(rpcCall, "Unsupported method type %s.", methodType);
+        return false;
+      }
+    }
+  }
+
   private void addCall(RpcCall rpcCall) {
     calls.add(rpcCall);
     if (rpcCall.getMethodType().equals(MethodType.SUBSCRIBE)) {
@@ -135,186 +150,11 @@ public class BleRpcChannel implements RpcChannel {
     }
   }
 
-  private boolean checkMethodType(RpcCall rpcCall) {
-    MethodType methodType = rpcCall.getMethodType();
-    switch (methodType) {
-      case READ:
-      case WRITE:
-      case SUBSCRIBE: {
-        return true;
-      }
-      default: {
-        notifyCallFailed(rpcCall, "Unsupported method type %s.", methodType);
-        return false;
-      }
-    }
-  }
-
   private void startConnection() {
     connectionStatus = ConnectionStatus.CONNECTING;
     bluetoothGatt = Optional.fromNullable(bluetoothDevice.connectGatt(context, /*autoConnect=*/ false, gattCallback));
     if (!bluetoothGatt.isPresent()) {
       failAllAndReset("Could not get bluetooth gatt.");
-    }
-  }
-
-  private void handleResult(byte[] value) {
-    RpcCall currentCall = finishRpcCall();
-    try {
-      Message response = messageConverter.deserializeResponse(currentCall.method, currentCall.responsePrototype, value);
-      notifyResultForCall(currentCall, response);
-    } catch (CouldNotConvertMessageException exception) {
-      notifyCallFailed(currentCall, exception.getMessage());
-    }
-    startNextCall();
-  }
-
-  private void handleError(String format, Object... args) {
-    RpcCall currentCall = finishRpcCall();
-    notifyCallFailed(currentCall, format, args);
-    startNextCall();
-  }
-
-  private void handleSubscribe(BluetoothGattCharacteristic characteristic, byte[] value) {
-    RpcCall rpcCall = finishRpcCall();
-    UUID characteristicUuid = characteristic.getUuid();
-    if (Arrays.equals(value, ENABLE_NOTIFICATION_VALUE)) {
-      SubscriptionCallsGroup subscription = getSubscribingSubscription(characteristicUuid);
-      subscription.status = SubscriptionStatus.SUBSCRIBED;
-      rpcCall.controller.onSubscribeSuccess();
-    } else if (Arrays.equals(value, DISABLE_NOTIFICATION_VALUE)) {
-      SubscriptionCallsGroup subscription = getUnsubscribingSubscription(characteristicUuid);
-      subscription.status = SubscriptionStatus.UNSUBSCRIBED;
-      // New rpc calls might have been added since we started unsubscribing.
-      subscription.clearCanceled();
-      if (!subscription.hasAnySubscriber()) {
-        subscriptions.remove(subscription.characteristicUuid);
-        return;
-      }
-    } else {
-      checkArgument(false, "Unexpected value \"%s\" of the subscription state.", Arrays.toString(value));
-    }
-    startNextCall();
-  }
-
-  private void handleSubscribeError(BluetoothGattCharacteristic characteristic, UUID descriptorUuid, byte[] value,
-                                    String format, Object... args) {
-    finishRpcCall();
-    UUID characteristicUuid = characteristic.getUuid();
-    if (Arrays.equals(value, ENABLE_NOTIFICATION_VALUE)) {
-      SubscriptionCallsGroup subscription = getSubscribingSubscription(characteristicUuid);
-      failAllSubscribersAndClear(subscription,
-          "Failed to enable notifications for descriptor %s in characteristic %s.",
-          characteristicUuid, descriptorUuid);
-      startNextCall();
-    } else if (Arrays.equals(value, DISABLE_NOTIFICATION_VALUE)) {
-      failAllAndReset("Failed unsubscribing from characteristic %s, descriptor %s.",
-          characteristicUuid, descriptorUuid);
-    } else {
-      checkArgument(false, "Unexpected value \"%s\" of the subscription state.", Arrays.toString(value));
-    }
-  }
-
-  private void handleValueChange(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
-    UUID characteristicUuid = characteristic.getUuid();
-    if (!subscriptions.containsKey(characteristicUuid)) {
-      return;
-    }
-
-    SubscriptionCallsGroup subscription = getSubscription(characteristicUuid);
-    if (subscription.status != SubscriptionStatus.SUBSCRIBED) {
-      return;
-    }
-
-    // If all calls were cancelled, abandon the subscription.
-    subscription.clearCanceled();
-    if (!subscription.hasAnySubscriber()) {
-      startUnsubscribing(subscription);
-      return;
-    }
-
-    try {
-      Message response = messageConverter.deserializeResponse(subscription.method, subscription.responsePrototype, characteristic.getValue());
-      for (RpcCall call : subscription.calls) {
-        notifyResultForCall(call, response);
-      }
-    } catch (CouldNotConvertMessageException exception) {
-      failAllSubscribers(subscription, exception.getMessage());
-      startUnsubscribing(subscription);
-    }
-  }
-
-  private SubscriptionCallsGroup getSubscribingSubscription(UUID characteristicUuid) {
-    SubscriptionCallsGroup subscription = getSubscriptionWithSubscribers(characteristicUuid);
-    checkArgument(subscription.status.equals(SubscriptionStatus.SUBSCRIBING), "The characteristic %s is not subscribing.", characteristicUuid);
-    return subscription;
-  }
-
-  private SubscriptionCallsGroup getUnsubscribingSubscription(UUID characteristicUuid) {
-    SubscriptionCallsGroup subscription = getSubscription(characteristicUuid);
-    checkArgument(subscription.status.equals(SubscriptionStatus.UNSUBSCRIBING), "The characteristic %s is not unsubscribing.", characteristicUuid);
-    return subscription;
-  }
-
-  private SubscriptionCallsGroup getSubscriptionWithSubscribers(UUID characteristicUuid) {
-    SubscriptionCallsGroup subscription = getSubscription(characteristicUuid);
-    checkArgument(subscription.hasAnySubscriber(),
-        "There are no subscribers for characteristic %s.", characteristicUuid);
-    return subscription;
-  }
-
-  private SubscriptionCallsGroup getSubscription(UUID characteristicUuid) {
-    checkArgument(subscriptions.containsKey(characteristicUuid),
-        "There is no subscription calls group for characteristic %s", characteristicUuid);
-    return subscriptions.get(characteristicUuid);
-  }
-
-  private RpcCall finishRpcCall() {
-    checkArgument(callInProgress, "There is no call in progress.");
-    checkArgument(!calls.isEmpty(), "There are no RPC calls.");
-    callInProgress = false;
-    return calls.poll();
-  }
-
-  private void failAllSubscribers(SubscriptionCallsGroup subscription, String format, Object... args) {
-    for (RpcCall rpcCall : subscription.calls) {
-      notifyCallFailed(rpcCall, format, args);
-    }
-    // TODO: clear before calling user code.
-    subscription.calls.clear();
-  }
-
-  private void failAllSubscribersAndClear(SubscriptionCallsGroup subscription, String format, Object... args) {
-    failAllSubscribers(subscription, format, args);
-    subscriptions.remove(subscription.characteristicUuid);
-  }
-
-  private void failAllAndReset(String format, Object... args) {
-    FluentIterable<RpcCall> callsToNotify = FluentIterable.from(calls)
-        .filter(rpcCall -> !rpcCall.isUnsubscribeCall)
-        .filter(rpcCall -> !skipFailedCall(rpcCall));
-    for (RpcCall call : callsToNotify) {
-      notifyCallFailed(call, format, args);
-    }
-    for (RpcCall call : Sets.difference(allSubscriptionCalls(), ImmutableSet.copyOf(calls))) {
-      notifyCallFailed(call, format, args);
-    }
-    // TODO: reset before calling user code.
-    reset();
-  }
-
-  private Set<RpcCall> allSubscriptionCalls() {
-    return FluentIterable.from(subscriptions.values()).transformAndConcat(callsGroup -> callsGroup.calls).toSet();
-  }
-
-  protected void reset() {
-    connectionStatus = ConnectionStatus.DISCONNECTED;
-    callInProgress = false;
-    calls.clear();
-    subscriptions.clear();
-    if (bluetoothGatt.isPresent()) {
-      bluetoothGatt.get().close();
-      bluetoothGatt = Optional.absent();
     }
   }
 
@@ -426,28 +266,6 @@ public class BleRpcChannel implements RpcChannel {
     }
   }
 
-  private boolean startNextSubscribeCall(BluetoothGatt bluetoothGatt, RpcCall rpcCall) {
-    SubscriptionCallsGroup subscription = getSubscription(rpcCall.getCharacteristic());
-    callInProgress = true;
-    subscription.status = SubscriptionStatus.SUBSCRIBING;
-    try {
-      makeSubscribeRequest(bluetoothGatt, rpcCall);
-      return true;
-    } catch (Characteristics.BleApiException exception) {
-      subscription.status = SubscriptionStatus.UNSUBSCRIBED;
-      finishRpcCall();
-      failAllSubscribersAndClear(subscription, exception.getMessage());
-      return false;
-    }
-  }
-
-  private boolean startNextUnsubscribeCall(BluetoothGatt bluetoothGatt, RpcCall rpcCall) {
-    getUnsubscribingSubscription(rpcCall.getCharacteristic());
-    callInProgress = true;
-    makeUnsubscribeRequest(bluetoothGatt, rpcCall);
-    return true;
-  }
-
   private void makeRequest(BluetoothGatt bluetoothGatt, RpcCall rpcCall)
       throws CouldNotConvertMessageException, Characteristics.BleApiException {
     switch (rpcCall.getMethodType()) {
@@ -475,6 +293,38 @@ public class BleRpcChannel implements RpcChannel {
     Characteristics.writeValue(bluetoothGatt, rpcCall.getService(), rpcCall.getCharacteristic(), value);
   }
 
+  private void handleResult(byte[] value) {
+    RpcCall currentCall = finishRpcCall();
+    try {
+      Message response = messageConverter.deserializeResponse(currentCall.method, currentCall.responsePrototype, value);
+      notifyResultForCall(currentCall, response);
+    } catch (CouldNotConvertMessageException exception) {
+      notifyCallFailed(currentCall, exception.getMessage());
+    }
+    startNextCall();
+  }
+
+  private void handleError(String format, Object... args) {
+    RpcCall currentCall = finishRpcCall();
+    notifyCallFailed(currentCall, format, args);
+    startNextCall();
+  }
+
+  private boolean startNextSubscribeCall(BluetoothGatt bluetoothGatt, RpcCall rpcCall) {
+    SubscriptionCallsGroup subscription = getSubscription(rpcCall.getCharacteristic());
+    callInProgress = true;
+    subscription.status = SubscriptionStatus.SUBSCRIBING;
+    try {
+      makeSubscribeRequest(bluetoothGatt, rpcCall);
+      return true;
+    } catch (Characteristics.BleApiException exception) {
+      subscription.status = SubscriptionStatus.UNSUBSCRIBED;
+      finishRpcCall();
+      failAllSubscribersAndClear(subscription, exception.getMessage());
+      return false;
+    }
+  }
+
   private static void makeSubscribeRequest(BluetoothGatt bluetoothGatt, RpcCall rpcCall)
       throws Characteristics.BleApiException {
     Characteristics.setNotification(bluetoothGatt, rpcCall.getService(), rpcCall.getCharacteristic(),
@@ -487,11 +337,44 @@ public class BleRpcChannel implements RpcChannel {
         ENABLE_NOTIFICATION_VALUE);
   }
 
+  private void handleSubscribed(int status) {
+    if (status == BluetoothGatt.GATT_SUCCESS) {
+      handleSubscribedSuccess();
+    } else {
+      handleSubscribedError(status);
+    }
+  }
+
+  private void handleSubscribedSuccess() {
+    RpcCall rpcCall = finishRpcCall();
+    SubscriptionCallsGroup subscription = getSubscribingSubscription(rpcCall.getCharacteristic());
+    subscription.status = SubscriptionStatus.SUBSCRIBED;
+    rpcCall.controller.onSubscribeSuccess();
+    startNextCall();
+  }
+
+  private void handleSubscribedError(int status) {
+    RpcCall rpcCall = finishRpcCall();
+    UUID characteristicUuid = rpcCall.getCharacteristic();
+    SubscriptionCallsGroup subscription = getSubscribingSubscription(characteristicUuid);
+    failAllSubscribersAndClear(subscription,
+        "Failed to subscribe to descriptor %s in characteristic %s in service %s with status %d.",
+        rpcCall.getDescriptor(), characteristicUuid, rpcCall.getService(), status);
+    startNextCall();
+  }
+
   private void startUnsubscribing(SubscriptionCallsGroup subscription) {
     subscription.status = SubscriptionStatus.UNSUBSCRIBING;
     calls.add(RpcCall.unsubscribeCall(subscription.serviceUuid, subscription.characteristicUuid,
         subscription.descriptorUuid));
     startNextCallIfNotInProgress();
+  }
+
+  private boolean startNextUnsubscribeCall(BluetoothGatt bluetoothGatt, RpcCall rpcCall) {
+    getUnsubscribingSubscription(rpcCall.getCharacteristic());
+    callInProgress = true;
+    makeUnsubscribeRequest(bluetoothGatt, rpcCall);
+    return true;
   }
 
   private void makeUnsubscribeRequest(BluetoothGatt bluetoothGatt, RpcCall rpcCall) {
@@ -505,6 +388,95 @@ public class BleRpcChannel implements RpcChannel {
     } catch (Characteristics.BleApiException exception) {
       failAllAndReset(exception.getMessage());
     }
+  }
+
+  private void handleUnsubscribed(int status) {
+    if (status == BluetoothGatt.GATT_SUCCESS) {
+      handleUnsubscribedSuccess();
+    } else {
+      handleUnsubscribedError(status);
+    }
+  }
+
+  private void handleUnsubscribedSuccess() {
+    RpcCall rpcCall = finishRpcCall();
+    SubscriptionCallsGroup subscription = getUnsubscribingSubscription(rpcCall.getCharacteristic());
+    subscription.status = SubscriptionStatus.UNSUBSCRIBED;
+    // New rpc calls might have been added since we started unsubscribing.
+    subscription.clearCanceled();
+    if (!subscription.hasAnySubscriber()) {
+      subscriptions.remove(subscription.characteristicUuid);
+      return;
+    }
+    startNextCall();
+  }
+
+  private void handleUnsubscribedError(int status) {
+    RpcCall rpcCall = finishRpcCall();
+    failAllAndReset("Failed unsubscribing from descriptor %s in characteristic %s in service %s with status %d.",
+        rpcCall.getDescriptor(), rpcCall.getCharacteristic(), rpcCall.getService(), status);
+  }
+
+  private void handleValueChange(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
+    UUID characteristicUuid = characteristic.getUuid();
+    if (!subscriptions.containsKey(characteristicUuid)) {
+      // Just skip unwanted values.
+      return;
+    }
+
+    SubscriptionCallsGroup subscription = getSubscription(characteristicUuid);
+    if (!subscription.status.equals(SubscriptionStatus.SUBSCRIBED)) {
+      return;
+    }
+
+    // If all calls were cancelled, abandon the subscription.
+    subscription.clearCanceled();
+    if (!subscription.hasAnySubscriber()) {
+      startUnsubscribing(subscription);
+      return;
+    }
+
+    try {
+      Message response = messageConverter.deserializeResponse(subscription.method, subscription.responsePrototype, characteristic.getValue());
+      for (RpcCall call : subscription.calls) {
+        notifyResultForCall(call, response);
+      }
+    } catch (CouldNotConvertMessageException exception) {
+      failAllSubscribers(subscription, exception.getMessage());
+      startUnsubscribing(subscription);
+    }
+  }
+
+  private SubscriptionCallsGroup getSubscribingSubscription(UUID characteristicUuid) {
+    SubscriptionCallsGroup subscription = getSubscriptionWithSubscribers(characteristicUuid);
+    checkArgument(subscription.status.equals(SubscriptionStatus.SUBSCRIBING), "The characteristic %s is not subscribing.", characteristicUuid);
+    return subscription;
+  }
+
+  private SubscriptionCallsGroup getUnsubscribingSubscription(UUID characteristicUuid) {
+    SubscriptionCallsGroup subscription = getSubscription(characteristicUuid);
+    checkArgument(subscription.status.equals(SubscriptionStatus.UNSUBSCRIBING), "The characteristic %s is not unsubscribing.", characteristicUuid);
+    return subscription;
+  }
+
+  private SubscriptionCallsGroup getSubscriptionWithSubscribers(UUID characteristicUuid) {
+    SubscriptionCallsGroup subscription = getSubscription(characteristicUuid);
+    checkArgument(subscription.hasAnySubscriber(),
+        "There are no subscribers for characteristic %s.", characteristicUuid);
+    return subscription;
+  }
+
+  private SubscriptionCallsGroup getSubscription(UUID characteristicUuid) {
+    checkArgument(subscriptions.containsKey(characteristicUuid),
+        "There is no subscription calls group for characteristic %s", characteristicUuid);
+    return subscriptions.get(characteristicUuid);
+  }
+
+  private RpcCall finishRpcCall() {
+    checkArgument(callInProgress, "There is no call in progress.");
+    checkArgument(!calls.isEmpty(), "There are no RPC calls.");
+    callInProgress = false;
+    return calls.poll();
   }
 
   private final BluetoothGattCallback gattCallback = new BluetoothGattCallback() {
@@ -570,12 +542,13 @@ public class BleRpcChannel implements RpcChannel {
     @Override
     public void onDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
       workHandler.post(() -> {
-        BluetoothGattCharacteristic characteristic = descriptor.getCharacteristic();
-        if (status != BluetoothGatt.GATT_SUCCESS) {
-          handleSubscribeError(characteristic, descriptor.getUuid(), descriptor.getValue(),
-              "Failed to subscribe to descriptor %s: status=%d.", descriptor.getUuid(), status);
+        byte[] value = descriptor.getValue();
+        if (Arrays.equals(value, ENABLE_NOTIFICATION_VALUE)) {
+          handleSubscribed(status);
+        } else if (Arrays.equals(value, DISABLE_NOTIFICATION_VALUE)) {
+          handleUnsubscribed(status);
         } else {
-          handleSubscribe(characteristic, descriptor.getValue());
+          checkArgument(false, "Unexpected value \"%s\" of the subscription state.", Arrays.toString(value));
         }
       });
     }
@@ -585,6 +558,48 @@ public class BleRpcChannel implements RpcChannel {
       workHandler.post(() -> handleValueChange(gatt, characteristic));
     }
   };
+
+  protected void reset() {
+    connectionStatus = ConnectionStatus.DISCONNECTED;
+    callInProgress = false;
+    calls.clear();
+    subscriptions.clear();
+    if (bluetoothGatt.isPresent()) {
+      bluetoothGatt.get().close();
+      bluetoothGatt = Optional.absent();
+    }
+  }
+
+  private void failAllSubscribers(SubscriptionCallsGroup subscription, String format, Object... args) {
+    for (RpcCall rpcCall : subscription.calls) {
+      notifyCallFailed(rpcCall, format, args);
+    }
+    // TODO: clear before calling user code.
+    subscription.calls.clear();
+  }
+
+  private void failAllSubscribersAndClear(SubscriptionCallsGroup subscription, String format, Object... args) {
+    failAllSubscribers(subscription, format, args);
+    subscriptions.remove(subscription.characteristicUuid);
+  }
+
+  private void failAllAndReset(String format, Object... args) {
+    FluentIterable<RpcCall> callsToNotify = FluentIterable.from(calls)
+        .filter(rpcCall -> !rpcCall.isUnsubscribeCall)
+        .filter(rpcCall -> !skipFailedCall(rpcCall));
+    for (RpcCall call : callsToNotify) {
+      notifyCallFailed(call, format, args);
+    }
+    for (RpcCall call : Sets.difference(allSubscriptionCalls(), ImmutableSet.copyOf(calls))) {
+      notifyCallFailed(call, format, args);
+    }
+    // TODO: reset before calling user code.
+    reset();
+  }
+
+  private Set<RpcCall> allSubscriptionCalls() {
+    return FluentIterable.from(subscriptions.values()).transformAndConcat(callsGroup -> callsGroup.calls).toSet();
+  }
 
   private void notifyCallFailed(RpcCall rpcCall, String format, Object... args) {
     rpcCall.controller.setFailed(String.format(format, args));
