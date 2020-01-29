@@ -542,6 +542,7 @@ public class BleRpcChannel implements RpcChannel {
     @Override
     public void onDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
       workHandler.post(() -> {
+        byte[] value = descriptor.getValue();
         if (Arrays.equals(value, ENABLE_NOTIFICATION_VALUE)) {
           handleSubscribed(status);
         } else if (Arrays.equals(value, DISABLE_NOTIFICATION_VALUE)) {
