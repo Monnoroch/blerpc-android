@@ -97,6 +97,43 @@ public class BleRpcChannelTest {
   private static final UUID TEST_DESCRIPTOR2 = UUID.fromString(
       TestBleService.getDescriptor().findMethodByName("TestSubscribeChar2").getOptions()
           .getExtension(Blerpc.characteristic).getDescriptorUuid());
+  private static final RpcController INVALID_CONTROLLER = new RpcController() {
+
+    @Override
+    public void reset() {
+
+    }
+
+    @Override
+    public boolean failed() {
+      return false;
+    }
+
+    @Override
+    public String errorText() {
+      return null;
+    }
+
+    @Override
+    public void startCancel() {
+
+    }
+
+    @Override
+    public void setFailed(String reason) {
+
+    }
+
+    @Override
+    public boolean isCanceled() {
+      return false;
+    }
+
+    @Override
+    public void notifyOnCancel(RpcCallback<Object> callback) {
+
+    }
+  };
 
   private static final byte[] TEST_ENABLE_NOTIFICATION_VALUE = new byte[]{1};
   private static final byte[] TEST_DISABLE_NOTIFICATION_VALUE = new byte[]{2};
@@ -241,6 +278,12 @@ public class BleRpcChannelTest {
     callWriteMethod(methodUnsupported, controller);
     assertCallFailed(controller);
     verifyNoWrite();
+  }
+
+  @Test
+  public void testUnsupportedControllerType() throws Exception {
+    assertError(() -> channel.callMethod(methodReadChar, INVALID_CONTROLLER, TestBleReadRequest.getDefaultInstance(),
+        TestBleReadResponse.getDefaultInstance(), callback), "Invalid RpcController instance.");
   }
 
   @Test

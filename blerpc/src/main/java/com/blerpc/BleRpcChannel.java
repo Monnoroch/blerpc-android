@@ -95,8 +95,9 @@ public class BleRpcChannel implements RpcChannel {
       Message responsePrototype,
       RpcCallback<Message> done
   ) {
+    checkArgument(controller instanceof BleRpcController, "Invalid RpcController instance.");
     workHandler.post(() -> {
-      RpcCall rpcCall = new RpcCall(method, controller, request, responsePrototype, done);
+      RpcCall rpcCall = new RpcCall(method, (BleRpcController) controller, request, responsePrototype, done);
       if (!checkMethodType(rpcCall)) {
         return;
       }
@@ -180,7 +181,7 @@ public class BleRpcChannel implements RpcChannel {
     if (Arrays.equals(value, ENABLE_NOTIFICATION_VALUE)) {
       SubscriptionCallsGroup subscription = getSubscribingSubscription(characteristicUuid);
       subscription.status = SubscriptionStatus.SUBSCRIBED;
-      callOnSubscribeSuccess(rpcCall.controller);
+      rpcCall.controller.onSubscribeSuccess();
     } else if (Arrays.equals(value, DISABLE_NOTIFICATION_VALUE)) {
       SubscriptionCallsGroup subscription = getUnsubscribingSubscription(characteristicUuid);
       subscription.status = SubscriptionStatus.UNSUBSCRIBED;
@@ -397,19 +398,13 @@ public class BleRpcChannel implements RpcChannel {
 
     SubscriptionCallsGroup subscription = getSubscription(rpcCall.getCharacteristic());
     if (subscription.status == SubscriptionStatus.SUBSCRIBED) {
-      callOnSubscribeSuccess(rpcCall.controller);
+      rpcCall.controller.onSubscribeSuccess();
     }
     if (subscription.status != SubscriptionStatus.UNSUBSCRIBED) {
       return true;
     }
     subscription.clearCanceled();
     return !subscription.hasAnySubscriber();
-  }
-
-  private void callOnSubscribeSuccess(RpcController controller) {
-    if (controller instanceof BleRpcController) {
-      ((BleRpcController) controller).onSubscribeSuccess();
-    }
   }
 
   private boolean checkRpcCallMethod(BluetoothGatt bluetoothGatt, RpcCall rpcCall) {
@@ -739,7 +734,7 @@ public class BleRpcChannel implements RpcChannel {
 
   private static class RpcCall {
     private final MethodDescriptor method;
-    private final RpcController controller;
+    private final BleRpcController controller;
     private final Message request;
     private final Message responsePrototype;
     private final RpcCallback<Message> done;
@@ -749,7 +744,7 @@ public class BleRpcChannel implements RpcChannel {
     private final UUID descriptorUuid;
 
     // Create normal RpcCall.
-    RpcCall(MethodDescriptor method, RpcController controller, Message request, Message responsePrototype,
+    RpcCall(MethodDescriptor method, BleRpcController controller, Message request, Message responsePrototype,
             RpcCallback<Message> done) {
       this.method = method;
       this.controller = controller;
