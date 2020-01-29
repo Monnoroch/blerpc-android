@@ -1,10 +1,13 @@
 package com.blerpc;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
 import com.blerpc.proto.MethodType;
+import java.util.Arrays;
 import java.util.UUID;
 
 /* Utilities for working with characteristics objects. */
@@ -32,7 +35,7 @@ class Characteristics {
       }
     }
 
-    validateCharacteristicProperties(serviceId, characteristicId, methodType);
+    validateCharacteristicProperties(serviceId, characteristicId, characteristic, methodType);
   }
 
   private static void validateCharacteristicProperties(UUID serviceId, UUID characteristicId,
