@@ -17,7 +17,7 @@ open class BleServiceDriver {
     // MARK: - Variables
 
     /// Connected peripheral.
-    private var peripheral: Peripheral
+    private var peripheral: Peripheral?
 
     /// BleServiceDriver queue which used to make thread safe read/write
     private let queue: DispatchQueue
@@ -28,11 +28,20 @@ open class BleServiceDriver {
     /// Shared observer which holds establish device connection.
     private var sharedConnectedPeripheral: Observable<Peripheral>?
 
+    // TODO(#70): remove support for connected peripherals.
+    private let connectedPeripheral: Bool
+
     // MARK: - Initializers
 
     /// Block default init.
     private init() {
         fatalError("Please use init(peripheral:, queue:) instead.")
+    }
+
+    // TODO (#70): Make init(queue:) private and peripheral non optional type.
+    internal init(queue: DispatchQueue) {
+        self.queue = queue
+        self.connectedPeripheral = false
     }
 
     /// Initialize with connected peripheral.
@@ -42,6 +51,14 @@ open class BleServiceDriver {
     public init(peripheral: Peripheral, queue: DispatchQueue) {
         self.peripheral = peripheral
         self.queue = queue
+        self.connectedPeripheral = false
+    }
+
+    // TODO(#70): remove support for connected peripherals.
+    public init(peripheral: Peripheral, queue: DispatchQueue, connected: Bool) {
+        self.peripheral = peripheral
+        self.queue = queue
+        self.connectedPeripheral = connected
     }
 
     // MARK: - Public methods
@@ -132,14 +149,20 @@ open class BleServiceDriver {
     /// Actual device connection.
     /// - returns: Peripheral as observable value.
     private func doGetConnectedPeripheral() -> Single<Peripheral> {
+        // TODO(#70): remove support for connected peripherals.
+        if self.connectedPeripheral {
+            return Single.just(self.peripheral!)
+        }
+
         if let deviceConnectionObserver = self.sharedConnectedPeripheral {
             return deviceConnectionObserver.take(1).asSingle()
         }
 
-        let observerForDeviceConnection = self.peripheral.establishConnection().share(replay: 1)
-        self.disconnectionDisposable = observerForDeviceConnection
+        let observerForDeviceConnection = self.peripheral?.establishConnection().share(replay: 1)
+        self.disconnectionDisposable = observerForDeviceConnection?
             .catchError({ [weak self] (error) -> Observable<Peripheral> in
                 self?.disconnect()
+                // TODO(#70): return the error to the caller.
                 return Observable.empty()
             }).subscribe()
         self.sharedConnectedPeripheral = observerForDeviceConnection
