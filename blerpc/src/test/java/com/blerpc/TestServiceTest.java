@@ -185,7 +185,6 @@ public class TestServiceTest {
             | BluetoothGattCharacteristic.PROPERTY_NOTIFY);
     when(descriptor.getCharacteristic()).thenReturn(characteristic);
     when(descriptor.setValue(any(byte[].class))).thenReturn(true);
-    when(descriptor.getUuid()).thenReturn(TEST_DESCRIPTOR);
 
     BleRpcChannel channel = new BleRpcChannel(bluetoothDevice, context, messageConverter, workHandler,
         listenerHandler, Logger.getGlobal());
