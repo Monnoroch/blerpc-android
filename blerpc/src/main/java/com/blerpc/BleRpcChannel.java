@@ -29,7 +29,6 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -411,8 +410,8 @@ public class BleRpcChannel implements RpcChannel {
             rpcCall.getCharacteristic(),
           /* enabled= */ false);
       } catch (Characteristics.BleApiException error) {
-        // TODO(#83): should we reset a channel?
-        logger.log(Level.WARNING, "Can't disable notification", error);
+        // TODO(#83): just log events if resets become so common to the point of being noisy and annoying.
+        failAllAndReset("Can't unsubscribe from characteristic: %s", rpcCall.getCharacteristic());
       }
       subscriptions.remove(subscription.characteristicUuid);
       return;

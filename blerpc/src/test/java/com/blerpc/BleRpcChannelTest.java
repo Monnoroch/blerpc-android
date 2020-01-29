@@ -4,7 +4,6 @@ import static com.blerpc.Assert.assertError;
 import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.doAnswer;
@@ -40,7 +39,6 @@ import com.google.protobuf.Message;
 import com.google.protobuf.RpcCallback;
 import com.google.protobuf.RpcController;
 import java.util.UUID;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -839,8 +837,8 @@ public class BleRpcChannelTest {
     localController.startCancel();
     onCharacteristicChanged(characteristic);
     onUnsubscribe(descriptor);
-    verify(logger).log(eq(Level.WARNING), contains("Can't disable notification"),
-        any(Characteristics.BleApiException.class));
+
+    verify(bluetoothGatt).close();
   }
 
   @Test
