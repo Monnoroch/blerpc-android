@@ -337,6 +337,32 @@ public class BleRpcChannel implements RpcChannel {
         ENABLE_NOTIFICATION_VALUE);
   }
 
+  private void handleSubscribed(int status) {
+    if (status == BluetoothGatt.GATT_SUCCESS) {
+      handleSubscribedSuccess();
+    } else {
+      handleSubscribedError(status);
+    }
+  }
+
+  private void handleSubscribedSuccess() {
+    RpcCall rpcCall = finishRpcCall();
+    SubscriptionCallsGroup subscription = getSubscribingSubscription(rpcCall.getCharacteristic());
+    subscription.status = SubscriptionStatus.SUBSCRIBED;
+    rpcCall.controller.onSubscribeSuccess();
+    startNextCall();
+  }
+
+  private void handleSubscribedError(int status) {
+    RpcCall rpcCall = finishRpcCall();
+    UUID characteristicUuid = rpcCall.getCharacteristic();
+    SubscriptionCallsGroup subscription = getSubscribingSubscription(characteristicUuid);
+    failAllSubscribersAndClear(subscription,
+        "Failed to subscribe to descriptor %s in characteristic %s in service %s with status %d.",
+        rpcCall.getDescriptor(), characteristicUuid, rpcCall.getService(), status);
+    startNextCall();
+  }
+
   private void startUnsubscribing(SubscriptionCallsGroup subscription) {
     subscription.status = SubscriptionStatus.UNSUBSCRIBING;
     calls.add(RpcCall.unsubscribeCall(subscription.serviceUuid, subscription.characteristicUuid,
@@ -364,41 +390,15 @@ public class BleRpcChannel implements RpcChannel {
     }
   }
 
-  private void handleSubscribe(int status) {
+  private void handleUnsubscribed(int status) {
     if (status == BluetoothGatt.GATT_SUCCESS) {
-      handleSubscribeSuccess();
+      handleUnsubscribedSuccess();
     } else {
-      handleSubscribeError(status);
+      handleUnsubscribedError(status);
     }
   }
 
-  private void handleSubscribeSuccess() {
-    RpcCall rpcCall = finishRpcCall();
-    SubscriptionCallsGroup subscription = getSubscribingSubscription(rpcCall.getCharacteristic());
-    subscription.status = SubscriptionStatus.SUBSCRIBED;
-    rpcCall.controller.onSubscribeSuccess();
-    startNextCall();
-  }
-
-  private void handleSubscribeError(int status) {
-    RpcCall rpcCall = finishRpcCall();
-    UUID characteristicUuid = rpcCall.getCharacteristic();
-    SubscriptionCallsGroup subscription = getSubscribingSubscription(characteristicUuid);
-    failAllSubscribersAndClear(subscription,
-        "Failed to subscribe to descriptor %s in characteristic %s in service %s with status %d.",
-        rpcCall.getDescriptor(), characteristicUuid, rpcCall.getService(), status);
-    startNextCall();
-  }
-
-  private void handleUnsubscribe(int status) {
-    if (status == BluetoothGatt.GATT_SUCCESS) {
-      handleUnsubscribeSuccess();
-    } else {
-      handleUnsubscribeError(status);
-    }
-  }
-
-  private void handleUnsubscribeSuccess() {
+  private void handleUnsubscribedSuccess() {
     RpcCall rpcCall = finishRpcCall();
     SubscriptionCallsGroup subscription = getUnsubscribingSubscription(rpcCall.getCharacteristic());
     subscription.status = SubscriptionStatus.UNSUBSCRIBED;
@@ -411,7 +411,7 @@ public class BleRpcChannel implements RpcChannel {
     startNextCall();
   }
 
-  private void handleUnsubscribeError(int status) {
+  private void handleUnsubscribedError(int status) {
     RpcCall rpcCall = finishRpcCall();
     failAllAndReset("Failed unsubscribing from descriptor %s in characteristic %s in service %s with status %d.",
         rpcCall.getDescriptor(), rpcCall.getCharacteristic(), rpcCall.getService(), status);
@@ -543,9 +543,9 @@ public class BleRpcChannel implements RpcChannel {
     public void onDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
       workHandler.post(() -> {
         if (Arrays.equals(value, ENABLE_NOTIFICATION_VALUE)) {
-          handleSubscribe(status);
+          handleSubscribed(status);
         } else if (Arrays.equals(value, DISABLE_NOTIFICATION_VALUE)) {
-          handleUnsubscribe(status);
+          handleUnsubscribed(status);
         } else {
           checkArgument(false, "Unexpected value \"%s\" of the subscription state.", Arrays.toString(value));
         }
