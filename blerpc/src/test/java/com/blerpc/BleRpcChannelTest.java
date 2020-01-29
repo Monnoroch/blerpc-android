@@ -1,5 +1,6 @@
 package com.blerpc;
 
+import static com.blerpc.Assert.assertError;
 import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -96,6 +97,43 @@ public class BleRpcChannelTest {
   private static final UUID TEST_DESCRIPTOR2 = UUID.fromString(
       TestBleService.getDescriptor().findMethodByName("TestSubscribeChar2").getOptions()
           .getExtension(Blerpc.characteristic).getDescriptorUuid());
+  private static final RpcController INVALID_CONTROLLER = new RpcController() {
+
+    @Override
+    public void reset() {
+
+    }
+
+    @Override
+    public boolean failed() {
+      return false;
+    }
+
+    @Override
+    public String errorText() {
+      return null;
+    }
+
+    @Override
+    public void startCancel() {
+
+    }
+
+    @Override
+    public void setFailed(String reason) {
+
+    }
+
+    @Override
+    public boolean isCanceled() {
+      return false;
+    }
+
+    @Override
+    public void notifyOnCancel(RpcCallback<Object> callback) {
+
+    }
+  };
 
   private static final byte[] TEST_ENABLE_NOTIFICATION_VALUE = new byte[]{1};
   private static final byte[] TEST_DISABLE_NOTIFICATION_VALUE = new byte[]{2};
@@ -198,6 +236,7 @@ public class BleRpcChannelTest {
     when(bluetoothGatt.writeCharacteristic(characteristic2)).thenReturn(true);
     when(bluetoothGatt.setCharacteristicNotification(characteristic, true)).thenReturn(true);
     when(bluetoothGatt.setCharacteristicNotification(characteristic2, true)).thenReturn(true);
+    when(bluetoothGatt.setCharacteristicNotification(characteristic, false)).thenReturn(true);
     when(bluetoothGatt.writeDescriptor(descriptor)).thenReturn(true);
     when(bluetoothGatt.writeDescriptor(descriptor2)).thenReturn(true);
     when(gattService.getCharacteristic(TEST_CHARACTERISTIC)).thenReturn(characteristic);
@@ -239,6 +278,12 @@ public class BleRpcChannelTest {
     callWriteMethod(methodUnsupported, controller);
     assertCallFailed(controller);
     verifyNoWrite();
+  }
+
+  @Test
+  public void testUnsupportedControllerType() throws Exception {
+    assertError(() -> channel.callMethod(methodReadChar, INVALID_CONTROLLER, TestBleReadRequest.getDefaultInstance(),
+        TestBleReadResponse.getDefaultInstance(), callback), "Invalid RpcController instance.");
   }
 
   @Test
@@ -765,6 +810,47 @@ public class BleRpcChannelTest {
     verify(callback).run(TEST_SUBSCRIBE_RESPONSE);
     assertCallSucceeded(controller2);
     verify(callback2).run(TEST_SUBSCRIBE_RESPONSE2);
+  }
+
+  @Test
+  public void testUnsubscribe() throws Exception {
+    BleRpcController localController = spy(controller);
+    callSubscribeMethod(localController, callback);
+    finishSubscribing(descriptor);
+
+    localController.startCancel();
+    onCharacteristicChanged(characteristic);
+    onUnsubscribe(descriptor);
+    verify(bluetoothGatt).setCharacteristicNotification(descriptor.getCharacteristic(), false);
+  }
+
+  @Test
+  public void testUnsubscribe_failSetNotificationDisabled() throws Exception {
+    BleRpcController localController = spy(controller);
+    callSubscribeMethod(localController, callback);
+    finishSubscribing(descriptor);
+
+    when(bluetoothGatt.setCharacteristicNotification(descriptor.getCharacteristic(), false))
+        .thenReturn(false);
+    localController.startCancel();
+    onCharacteristicChanged(characteristic);
+    onUnsubscribe(descriptor);
+
+    verifyReset();
+  }
+
+  @Test
+  public void testUnsubscribe_callSomethingInProcess() throws Exception {
+    callSubscribeMethod(controller, callback);
+    finishSubscribing(descriptor);
+
+    controller.startCancel();
+    onCharacteristicChanged(characteristic);
+    callWriteMethod(controller2);
+    onUnsubscribe(descriptor);
+
+    onCharacteristicWrite(characteristic);
+    assertCallSucceeded(controller2);
   }
 
   @Test

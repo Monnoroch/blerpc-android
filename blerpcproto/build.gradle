@@ -53,11 +53,11 @@ jar {
 }
 
 ext {
-    blerpcprotoVersion = '0.2.2'
+    blerpcprotoVersion = '0.2.3'
 }
 
 publish {
-    userOrg = 'github.monnoroch'
+    userOrg = 'monnoroch'
     groupId = 'com.github.monnoroch'
     repoName = 'blerpc-android'
     artifactId = 'blerpcproto-android'
