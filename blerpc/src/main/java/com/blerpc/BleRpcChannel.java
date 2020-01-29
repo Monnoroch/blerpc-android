@@ -29,6 +29,7 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -390,21 +391,29 @@ public class BleRpcChannel implements RpcChannel {
     }
   }
 
-  private void handleUnsubscribed(int status) {
+  private void handleUnsubscribed(BluetoothGatt gatt, int status) {
     if (status == BluetoothGatt.GATT_SUCCESS) {
-      handleUnsubscribedSuccess();
+      handleUnsubscribedSuccess(gatt);
     } else {
       handleUnsubscribedError(status);
     }
   }
 
-  private void handleUnsubscribedSuccess() {
+  private void handleUnsubscribedSuccess(BluetoothGatt gatt) {
     RpcCall rpcCall = finishRpcCall();
     SubscriptionCallsGroup subscription = getUnsubscribingSubscription(rpcCall.getCharacteristic());
     subscription.status = SubscriptionStatus.UNSUBSCRIBED;
     // New rpc calls might have been added since we started unsubscribing.
     subscription.clearCanceled();
     if (!subscription.hasAnySubscriber()) {
+      try {
+        Characteristics.setNotification(gatt, rpcCall.getService(),
+            rpcCall.getCharacteristic(),
+          /* enabled= */ false);
+      } catch (Characteristics.BleApiException error) {
+        // TODO(#83): should we reset a channel?
+        logger.log(Level.WARNING, "Can't disable notification", error);
+      }
       subscriptions.remove(subscription.characteristicUuid);
       return;
     }
@@ -546,7 +555,7 @@ public class BleRpcChannel implements RpcChannel {
         if (Arrays.equals(value, ENABLE_NOTIFICATION_VALUE)) {
           handleSubscribed(status);
         } else if (Arrays.equals(value, DISABLE_NOTIFICATION_VALUE)) {
-          handleUnsubscribed(status);
+          handleUnsubscribed(gatt, status);
         } else {
           checkArgument(false, "Unexpected value \"%s\" of the subscription state.", Arrays.toString(value));
         }

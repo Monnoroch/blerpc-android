@@ -4,6 +4,7 @@ import static com.blerpc.Assert.assertError;
 import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.doAnswer;
@@ -39,6 +40,7 @@ import com.google.protobuf.Message;
 import com.google.protobuf.RpcCallback;
 import com.google.protobuf.RpcController;
 import java.util.UUID;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -164,6 +166,8 @@ public class BleRpcChannelTest {
   private MethodDescriptor methodUnsupported;
   @Mock
   private Handler listenerHandler;
+  @Mock
+  private Logger logger;
 
   private MethodDescriptor methodReadChar = TestBleService.getDescriptor().findMethodByName("TestReadChar");
   private MethodDescriptor methodWriteChar = TestBleService.getDescriptor().findMethodByName("TestWriteChar");
@@ -210,7 +214,7 @@ public class BleRpcChannelTest {
     }).when(listenerHandler).post(any());
 
     channel = new BleRpcChannel(bluetoothDevice, context, messageConverter, workHandler, listenerHandler,
-        Mockito.mock(Logger.class));
+        logger);
   }
 
   /**
@@ -236,6 +240,7 @@ public class BleRpcChannelTest {
     when(bluetoothGatt.writeCharacteristic(characteristic2)).thenReturn(true);
     when(bluetoothGatt.setCharacteristicNotification(characteristic, true)).thenReturn(true);
     when(bluetoothGatt.setCharacteristicNotification(characteristic2, true)).thenReturn(true);
+    when(bluetoothGatt.setCharacteristicNotification(characteristic, false)).thenReturn(true);
     when(bluetoothGatt.writeDescriptor(descriptor)).thenReturn(true);
     when(bluetoothGatt.writeDescriptor(descriptor2)).thenReturn(true);
     when(gattService.getCharacteristic(TEST_CHARACTERISTIC)).thenReturn(characteristic);
@@ -809,6 +814,33 @@ public class BleRpcChannelTest {
     verify(callback).run(TEST_SUBSCRIBE_RESPONSE);
     assertCallSucceeded(controller2);
     verify(callback2).run(TEST_SUBSCRIBE_RESPONSE2);
+  }
+
+  @Test
+  public void testUnsubscribe() throws Exception {
+    BleRpcController localController = spy(controller);
+    callSubscribeMethod(localController, callback);
+    finishSubscribing(descriptor);
+
+    localController.startCancel();
+    onCharacteristicChanged(characteristic);
+    onUnsubscribe(descriptor);
+    verify(bluetoothGatt).setCharacteristicNotification(descriptor.getCharacteristic(), false);
+  }
+
+  @Test
+  public void testUnsubscribe_failSetNotificationDisabled() throws Exception {
+    BleRpcController localController = spy(controller);
+    callSubscribeMethod(localController, callback);
+    finishSubscribing(descriptor);
+
+    when(bluetoothGatt.setCharacteristicNotification(descriptor.getCharacteristic(), false))
+        .thenReturn(false);
+    localController.startCancel();
+    onCharacteristicChanged(characteristic);
+    onUnsubscribe(descriptor);
+    verify(logger).log(eq(Level.WARNING), contains("Can't disable notification"),
+        any(Characteristics.BleApiException.class));
   }
 
   @Test
