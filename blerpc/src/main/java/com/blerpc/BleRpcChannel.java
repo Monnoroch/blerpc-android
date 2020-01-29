@@ -97,6 +97,7 @@ public class BleRpcChannel implements RpcChannel {
   ) {
     checkArgument(controller instanceof BleRpcController, "Invalid RpcController instance.");
     workHandler.post(() -> {
+      // TODO: move validation outside handler.
       RpcCall rpcCall = new RpcCall(method, (BleRpcController) controller, request, responsePrototype, done);
       if (!checkMethodType(rpcCall)) {
         return;
@@ -246,13 +247,13 @@ public class BleRpcChannel implements RpcChannel {
 
   private SubscriptionCallsGroup getSubscribingSubscription(UUID characteristicUuid) {
     SubscriptionCallsGroup subscription = getSubscriptionWithSubscribers(characteristicUuid);
-    checkArgument(subscription.status == SubscriptionStatus.SUBSCRIBING, "The characteristic %s is not subscribing.", characteristicUuid);
+    checkArgument(subscription.status.equals(SubscriptionStatus.SUBSCRIBING), "The characteristic %s is not subscribing.", characteristicUuid);
     return subscription;
   }
 
   private SubscriptionCallsGroup getUnsubscribingSubscription(UUID characteristicUuid) {
     SubscriptionCallsGroup subscription = getSubscription(characteristicUuid);
-    checkArgument(subscription.status == SubscriptionStatus.UNSUBSCRIBING, "The characteristic %s is not unsubscribing.", characteristicUuid);
+    checkArgument(subscription.status.equals(SubscriptionStatus.UNSUBSCRIBING), "The characteristic %s is not unsubscribing.", characteristicUuid);
     return subscription;
   }
 
@@ -269,10 +270,6 @@ public class BleRpcChannel implements RpcChannel {
     return subscriptions.get(characteristicUuid);
   }
 
-  private static long toNumber(boolean value) {
-    return value ? 1 : 0;
-  }
-
   private RpcCall finishRpcCall() {
     checkArgument(callInProgress, "There is no call in progress.");
     checkArgument(!calls.isEmpty(), "There are no RPC calls.");
@@ -284,6 +281,7 @@ public class BleRpcChannel implements RpcChannel {
     for (RpcCall rpcCall : subscription.calls) {
       notifyCallFailed(rpcCall, format, args);
     }
+    // TODO: clear before calling user code.
     subscription.calls.clear();
   }
 
@@ -302,6 +300,7 @@ public class BleRpcChannel implements RpcChannel {
     for (RpcCall call : Sets.difference(allSubscriptionCalls(), ImmutableSet.copyOf(calls))) {
       notifyCallFailed(call, format, args);
     }
+    // TODO: reset before calling user code.
     reset();
   }
 
@@ -338,6 +337,15 @@ public class BleRpcChannel implements RpcChannel {
 
   private boolean tryStartNextCall(BluetoothGatt gatt) {
     RpcCall rpcCall = calls.peek();
+    if (rpcCall.isUnsubscribeCall) {
+      return startNextUnsubscribeCall(gatt, rpcCall);
+    }
+
+    if (!validateCharacteristic(gatt, rpcCall)) {
+      calls.poll();
+      return false;
+    }
+
     if (skipCall(gatt, rpcCall)) {
       calls.poll();
       return false;
@@ -348,28 +356,33 @@ public class BleRpcChannel implements RpcChannel {
       case WRITE:
         return startNextReadWriteCall(gatt, rpcCall);
       case SUBSCRIBE:
-        return rpcCall.isUnsubscribeCall
-            ? startNextUnsubscribeCall(gatt, rpcCall)
-            : startNextSubscribeCall(gatt, rpcCall);
+        return startNextSubscribeCall(gatt, rpcCall);
       default:
         return false;
     }
   }
 
-  private boolean skipCall(BluetoothGatt gatt, RpcCall rpcCall) {
-    if (rpcCall.isUnsubscribeCall) {
+  private boolean validateCharacteristic(BluetoothGatt gatt, RpcCall rpcCall) {
+    try {
+      Characteristics.validate(gatt, rpcCall.getService(), rpcCall.getCharacteristic(), rpcCall.getDescriptor(),
+          rpcCall.getMethodType());
+      return true;
+    } catch (Characteristics.BleValidationException exception) {
+      notifyCallFailed(rpcCall, exception.getMessage());
       return false;
     }
+  }
+
+  private boolean skipCall(BluetoothGatt gatt, RpcCall rpcCall) {
     return skipFailedCall(rpcCall)
         || skipCancelledCall(rpcCall)
-        || skipSubscriptionNotNeeded(rpcCall)
-        || !checkRpcCallMethod(gatt, rpcCall)
-        || !checkCharacteristicParams(gatt, rpcCall);
+        || skipSubscriptionNotNeeded(rpcCall);
   }
 
   private static boolean skipFailedCall(RpcCall rpcCall) {
     if (rpcCall.controller.failed()) {
-      checkArgument(rpcCall.getMethodType() == MethodType.SUBSCRIBE,
+      // Because we always make sure to remove the call from the queue before failing it.
+      checkArgument(rpcCall.getMethodType().equals(MethodType.SUBSCRIBE),
           "Only SUBSCRIBE method calls can be failed while in the call queue.");
       return true;
     }
@@ -380,101 +393,26 @@ public class BleRpcChannel implements RpcChannel {
     if (!rpcCall.controller.isCanceled()) {
       return false;
     }
-    if (rpcCall.getMethodType() != MethodType.SUBSCRIBE) {
+    if (!rpcCall.getMethodType().equals(MethodType.SUBSCRIBE)) {
       notifyDefaultResultForCall(rpcCall);
     }
     return true;
   }
 
   private boolean skipSubscriptionNotNeeded(RpcCall rpcCall) {
-    if (rpcCall.getMethodType() != MethodType.SUBSCRIBE) {
+    if (!rpcCall.getMethodType().equals(MethodType.SUBSCRIBE)) {
       return false;
     }
 
     SubscriptionCallsGroup subscription = getSubscription(rpcCall.getCharacteristic());
-    if (subscription.status == SubscriptionStatus.SUBSCRIBED) {
+    if (subscription.status.equals(SubscriptionStatus.SUBSCRIBED)) {
       rpcCall.controller.onSubscribeSuccess();
     }
-    if (subscription.status != SubscriptionStatus.UNSUBSCRIBED) {
+    if (!subscription.status.equals(SubscriptionStatus.UNSUBSCRIBED)) {
       return true;
     }
     subscription.clearCanceled();
     return !subscription.hasAnySubscriber();
-  }
-
-  private boolean checkRpcCallMethod(BluetoothGatt bluetoothGatt, RpcCall rpcCall) {
-    UUID serviceId = rpcCall.getService();
-    UUID characteristicId = rpcCall.getCharacteristic();
-    BluetoothGattService service = bluetoothGatt.getService(serviceId);
-    if (service == null) {
-      notifyCallFailed(rpcCall, "Device does not have service %s.", serviceId);
-      return false;
-    }
-
-    BluetoothGattCharacteristic characteristic = service.getCharacteristic(characteristicId);
-    if (characteristic == null) {
-      notifyCallFailed(rpcCall, "Service %s does not have characteristic %s.", serviceId, characteristicId);
-      return false;
-    }
-
-    if (rpcCall.getMethodType() == MethodType.SUBSCRIBE) {
-      BluetoothGattDescriptor descriptor = characteristic.getDescriptor(rpcCall.getDescriptor());
-      if (descriptor == null) {
-        notifyCallFailed(rpcCall, "Characteristic %s in service service %s does not have descriptor %s.",
-            characteristicId, serviceId, rpcCall.getDescriptor());
-        return false;
-      }
-    }
-    return true;
-  }
-
-  private boolean checkCharacteristicParams(BluetoothGatt bluetoothGatt, RpcCall rpcCall) {
-    UUID serviceId = rpcCall.getService();
-    UUID characteristicId = rpcCall.getCharacteristic();
-    BluetoothGattService service = bluetoothGatt.getService(serviceId);
-    BluetoothGattCharacteristic characteristic = service.getCharacteristic(characteristicId);
-    MethodType methodType = rpcCall.getMethodType();
-    switch (methodType) {
-      case READ: {
-        if (!isReadable(characteristic)) {
-          notifyCallFailed(rpcCall, "Characteristic %s on service %s is not readable.",
-              characteristicId, serviceId);
-          return false;
-        }
-        break;
-      }
-      case WRITE: {
-        if (!isWritable(characteristic)) {
-          notifyCallFailed(rpcCall, "Characteristic %s on service %s is not writable.",
-              characteristicId, serviceId);
-          return false;
-        }
-        break;
-      }
-      case SUBSCRIBE: {
-        if (!isNotifiable(characteristic)) {
-          notifyCallFailed(rpcCall, "Characteristic %s on service %s is not notifiable.",
-              characteristicId, serviceId);
-          return false;
-        }
-        break;
-      }
-      default:
-    }
-    return true;
-  }
-
-  private static boolean isReadable(BluetoothGattCharacteristic characteristic) {
-    return (characteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_READ) != 0;
-  }
-
-  private static boolean isWritable(BluetoothGattCharacteristic characteristic) {
-    return (characteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_WRITE) != 0
-        || (characteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE) != 0;
-  }
-
-  private static boolean isNotifiable(BluetoothGattCharacteristic characteristic) {
-    return (characteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_NOTIFY) != 0;
   }
 
   private boolean startNextReadWriteCall(BluetoothGatt bluetoothGatt, RpcCall rpcCall) {
@@ -482,9 +420,8 @@ public class BleRpcChannel implements RpcChannel {
     try {
       makeRequest(bluetoothGatt, rpcCall);
       return true;
-    } catch (CouldNotConvertMessageException | MakeRequestException exception) {
-      calls.poll();
-      callInProgress = false;
+    } catch (CouldNotConvertMessageException | Characteristics.BleApiException exception) {
+      finishRpcCall();
       notifyCallFailed(rpcCall, exception.getMessage());
       return false;
     }
@@ -497,10 +434,9 @@ public class BleRpcChannel implements RpcChannel {
     try {
       makeSubscribeRequest(bluetoothGatt, rpcCall);
       return true;
-    } catch (MakeRequestException exception) {
-      calls.poll();
+    } catch (Characteristics.BleApiException exception) {
       subscription.status = SubscriptionStatus.UNSUBSCRIBED;
-      callInProgress = false;
+      finishRpcCall();
       failAllSubscribersAndClear(subscription, exception.getMessage());
       return false;
     }
@@ -508,56 +444,48 @@ public class BleRpcChannel implements RpcChannel {
 
   private boolean startNextUnsubscribeCall(BluetoothGatt bluetoothGatt, RpcCall rpcCall) {
     getUnsubscribingSubscription(rpcCall.getCharacteristic());
-    BluetoothGattCharacteristic characteristic = getCharacteristic(bluetoothGatt, rpcCall);
-    BluetoothGattDescriptor descriptor = getDescriptor(characteristic, rpcCall.getDescriptor());
     callInProgress = true;
-    makeUnsubscribeRequest(bluetoothGatt, rpcCall.getCharacteristic(), descriptor);
+    makeUnsubscribeRequest(bluetoothGatt, rpcCall);
     return true;
   }
 
   private void makeRequest(BluetoothGatt bluetoothGatt, RpcCall rpcCall)
-      throws CouldNotConvertMessageException {
-    BluetoothGattCharacteristic characteristic = getCharacteristic(bluetoothGatt, rpcCall);
+      throws CouldNotConvertMessageException | Characteristics.BleApiException {
     switch (rpcCall.getMethodType()) {
       case READ: {
-        makeReadRequest(bluetoothGatt, characteristic);
+        makeReadRequest(bluetoothGatt, rpcCall);
         break;
       }
       case WRITE: {
-        makeWriteRequest(bluetoothGatt, characteristic, rpcCall);
+        makeWriteRequest(bluetoothGatt, rpcCall);
         break;
       }
-      default: {
-        checkArgument(false, "Unsupported method type %s.", rpcCall.getMethodType());
-      }
+      default:
+        break;
     }
   }
 
-  private static void makeReadRequest(BluetoothGatt bluetoothGatt, BluetoothGattCharacteristic characteristic) {
-    failIfFalse(bluetoothGatt.readCharacteristic(characteristic), "Failed to read characteristic %s.",
-        characteristic.getUuid());
+  private static void makeReadRequest(BluetoothGatt bluetoothGatt, RpcCall rpcCall)
+      throws Characteristics.BleApiException {
+    Characteristics.readValue(bluetoothGatt, rpcCall.getService(), rpcCall.getCharacteristic());
   }
 
   private void makeWriteRequest(BluetoothGatt bluetoothGatt, BluetoothGattCharacteristic characteristic,
-                                RpcCall rpcCall) throws CouldNotConvertMessageException {
+      RpcCall rpcCall) throws CouldNotConvertMessageException | Characteristics.BleApiException {
     byte[] value = messageConverter.serializeRequest(rpcCall.method, rpcCall.request);
-    setCharacteristicValue(characteristic, value);
-    failIfFalse(bluetoothGatt.writeCharacteristic(characteristic), "Failed to write characteristic %s.",
-        characteristic.getUuid());
+    Characteristics.writeValue(bluetoothGatt, rpcCall.getService(), rpcCall.getCharacteristic(), value);
   }
 
-  private static void makeSubscribeRequest(BluetoothGatt bluetoothGatt, RpcCall rpcCall) {
-    UUID serviceId = rpcCall.getService();
-    UUID characteristicId = rpcCall.getCharacteristic();
-    UUID descriptorId = rpcCall.getDescriptor();
-    BluetoothGattCharacteristic characteristic = getCharacteristic(bluetoothGatt, rpcCall);
-    BluetoothGattDescriptor descriptor = getDescriptor(characteristic, rpcCall);
-    failIfFalse(bluetoothGatt.setCharacteristicNotification(characteristic, /* enabled= */ true),
-        "Failed to enable notification for characteristic %s in service %s.", characteristicId, serviceId);
-    setDescriptorValue(descriptor, ENABLE_NOTIFICATION_VALUE);
-    failIfFalse(bluetoothGatt.writeDescriptor(descriptor),
-        "Failed to write the descriptor %s in characteristic %s in service %s.",
-        descriptorId, characteristicId, serviceId);
+  private static void makeSubscribeRequest(BluetoothGatt bluetoothGatt, RpcCall rpcCall)
+      throws Characteristics.BleApiException {
+    Characteristics.setNotification(bluetoothGatt, rpcCall.getService(), rpcCall.getCharacteristic(),
+        /* enabled= */ true);
+    Characteristics.writeDescriptorValue(
+        bluetoothGatt,
+        rpcCall.getService(),
+        rpcCall.getCharacteristic(),
+        rpcCall.getDescriptor(),
+        ENABLE_NOTIFICATION_VALUE);
   }
 
   private void startUnsubscribing(SubscriptionCallsGroup subscription) {
@@ -567,12 +495,16 @@ public class BleRpcChannel implements RpcChannel {
     startNextCallIfNotInProgress();
   }
 
-  private void makeUnsubscribeRequest(BluetoothGatt bluetoothGatt, UUID characteristicUuid,
-                                      BluetoothGattDescriptor descriptor) {
-    setDescriptorValue(descriptor, DISABLE_NOTIFICATION_VALUE);
-    if (!bluetoothGatt.writeDescriptor(descriptor)) {
-      failAllAndReset("Failed unsubscribing from characteristic %s, descriptor %s.",
-          characteristicUuid, descriptor.getUuid());
+  private void makeUnsubscribeRequest(BluetoothGatt bluetoothGatt, RpcCall rpcCall) {
+    try {
+      Characteristics.writeDescriptorValue(
+          bluetoothGatt,
+          rpcCall.getService(),
+          rpcCall.getCharacteristic(),
+          rpcCall.getDescriptor(),
+          DISABLE_NOTIFICATION_VALUE);
+    } catch (Characteristics.BleApiException exception) {
+      failAllAndReset(exception.getMessage());
     }
   }
 
@@ -657,7 +589,7 @@ public class BleRpcChannel implements RpcChannel {
 
   private void notifyCallFailed(RpcCall rpcCall, String format, Object... args) {
     rpcCall.controller.setFailed(String.format(format, args));
-    callCallback(rpcCall, rpcCall.responsePrototype.getDefaultInstanceForType());
+    notifyDefaultResultForCall(rpcCall);
   }
 
   private void notifyDefaultResultForCall(RpcCall rpcCall) {
@@ -675,56 +607,6 @@ public class BleRpcChannel implements RpcChannel {
     // will be called independently on canceling and value after cancel should be ignored by
     // class that implement callback.
     listenerHandler.post(() -> rpcCall.done.run(message));
-  }
-
-  private static BluetoothGattService getService(BluetoothGatt gatt, UUID serviceUuid) {
-    BluetoothGattService service = gatt.getService(serviceUuid);
-    checkArgument(service != null, "Device does not have service %s.", serviceUuid);
-    return service;
-  }
-
-  private static BluetoothGattCharacteristic getCharacteristic(BluetoothGatt gatt, RpcCall rpcCall) {
-    BluetoothGattService service = getService(gatt, rpcCall.getService());
-    BluetoothGattCharacteristic characteristic = service.getCharacteristic(rpcCall.getCharacteristic());
-    checkArgument(characteristic != null, "Service %s does not have characteristic %s.", rpcCall.getService(),
-        rpcCall.getCharacteristic());
-    return characteristic;
-  }
-
-  private static BluetoothGattDescriptor getDescriptor(BluetoothGattCharacteristic characteristic, RpcCall rpcCall) {
-    BluetoothGattDescriptor descriptor = characteristic.getDescriptor(rpcCall.getDescriptor());
-    checkArgument(descriptor != null, "Characteristic %s in service %s does not have descriptor %s.",
-        rpcCall.getCharacteristic(), rpcCall.getService(), rpcCall.getDescriptor());
-    return descriptor;
-  }
-
-  private static BluetoothGattDescriptor getDescriptor(BluetoothGattCharacteristic characteristic, UUID descriptorUuid) {
-    BluetoothGattDescriptor descriptor = characteristic.getDescriptor(descriptorUuid);
-    checkArgument(descriptor != null, "Characteristic %s does not have descriptor %s.",
-        characteristic.getUuid(), descriptorUuid);
-    return descriptor;
-  }
-
-  private static void setCharacteristicValue(BluetoothGattCharacteristic characteristic, byte[] value) {
-    // characteristic.setValue always returns true (as of the date this code was written).
-    checkArgument(characteristic.setValue(value), "Failed to set value \"%s\" for characteristic %s.",
-        Arrays.toString(value), characteristic.getUuid());
-  }
-
-  private static void setDescriptorValue(BluetoothGattDescriptor descriptor, byte[] value) {
-    // descriptor.setValue always returns true (as of the date this code was written).
-    checkArgument(descriptor.setValue(value), "Failed to set value \"%s\" for descriptor %s.",
-        Arrays.toString(value), descriptor.getUuid());
-  }
-
-  /**
-   * The {@link checkArgument} is used as an assert to ckeck for impossible conditions and catch bugs.
-   * This method to be used for checking success in normal execution instead.
-   */
-  private static void failIfFalse(boolean value, String format, Object... args) {
-    if (!value) {
-      throw new MakeRequestException(format, args);
-    }
   }
 
   private static class RpcCall {
@@ -787,7 +669,8 @@ public class BleRpcChannel implements RpcChannel {
       if (isUnsubscribeCall) {
         return descriptorUuid;
       }
-      return UUID.fromString(method.getOptions().getExtension(Blerpc.characteristic).getDescriptorUuid());
+      String descriptorUuid = method.getOptions().getExtension(Blerpc.characteristic).getDescriptorUuid();
+      return descriptorUuid.isEmpty() ? null : UUID.fromString(descriptorUuid);
     }
 
     MethodType getMethodType() {
@@ -828,15 +711,6 @@ public class BleRpcChannel implements RpcChannel {
       return FluentIterable.from(calls)
           .filter(call -> call.controller.isCanceled())
           .toSet();
-    }
-  }
-
-  /**
-   * An exception to be thrown when making a read/write request has failed.
-   */
-  private static class MakeRequestException extends RuntimeException {
-    public MakeRequestException(String format, Object... args) {
-      super(String.format(format, args));
     }
   }
 
