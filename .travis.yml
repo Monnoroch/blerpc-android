@@ -21,6 +21,7 @@ script:
   - sh gradlew reactive-blerpc:assemble reactive-blerpc:test
   - ci/generate-reactive-plugin.sh
   - sh gradlew assemble testReleaseUnitTest
+  - cat /home/travis/build/Monnoroch/blerpc-android/blerpc/build/reports/tests/testReleaseUnitTest/index.html
   - reactive-blerpc-test/tests/end-to-end-tests.sh
   - linters/run-linters.sh
 after_success:
