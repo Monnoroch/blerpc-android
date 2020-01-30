@@ -17,6 +17,7 @@ target 'SwiftBleRpc' do
     
     pod 'Nimble' # helpers for testing
     pod 'Cuckoo'
+    pod 'RxBlocking'
   end
 
 end

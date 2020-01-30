@@ -1,7 +1,7 @@
 package com.blerpc.ios;
 
-import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.truth.Truth.assertThat;
 
 import com.blerpc.proto.Blerpc;
 import com.google.common.collect.ImmutableList;

@@ -17,7 +17,7 @@ public class Common {
      * @param file - input proto file.
      * @return boolean indicating if proto file has package or not.
      */
-    static public boolean hasPackage(FileDescriptorProto file) {
+    static boolean hasPackage(FileDescriptorProto file) {
         return !file.getPackage().isEmpty();
     }
 
@@ -26,7 +26,7 @@ public class Common {
      * @param proto - input proto file.
      * @return extracted package name as string.
      */
-    static public String extractPackageName(FileDescriptorProto proto) {
+    static String extractPackageName(FileDescriptorProto proto) {
         String javaPackage = proto.getOptions().getJavaPackage();
         return javaPackage.isEmpty() ? proto.getPackage() : javaPackage;
     }
@@ -36,7 +36,7 @@ public class Common {
      * @param proto - input proto file.
      * @return extracted package name as string and formatted for Swift.
      */
-    static public String extractSwiftPackageName(FileDescriptorProto proto) {
+    static String extractSwiftPackageName(FileDescriptorProto proto) {
         String packageName = proto.getPackage();
         String[] splittedPackageName = packageName.split(PROTO_PACKAGE_SEPARATOR);
         return Arrays.stream(splittedPackageName)
@@ -49,9 +49,8 @@ public class Common {
      * @param string - input string which need to be uppercased.
      * @return uppercased string.
      */
-    static public String upperCaseFirstLetter(String string) {
-        if (string.isEmpty())
-        {
+    static String upperCaseFirstLetter(String string) {
+        if (string.isEmpty()) {
             return "";
         }
         return Character.toUpperCase(string.charAt(0)) + (string.length() > 1 ? string.substring(1) : "");
@@ -62,9 +61,8 @@ public class Common {
      * @param string - input string which need to be lowercased.
      * @return lowercased string.
      */
-    static public String lowerCaseFirstLetter(String string) {
-        if (string.isEmpty())
-        {
+    static String lowerCaseFirstLetter(String string) {
+        if (string.isEmpty()) {
             return "";
         }
         return Character.toLowerCase(string.charAt(0))
@@ -77,7 +75,7 @@ public class Common {
      * @param type - type which need to convert in Swift type.
      * @return string which represents proto type in Swift format.
      */
-    static public String generateSwiftProtoType(FileDescriptorProto protoFile, String type) {
+    static String generateSwiftProtoType(FileDescriptorProto protoFile, String type) {
         return extractSwiftPackageName(protoFile)
                 + type.split(PROTO_PACKAGE_SEPARATOR)[type.split(PROTO_PACKAGE_SEPARATOR).length - 1];
     }
@@ -87,7 +85,7 @@ public class Common {
      * @param protoFile - proto file in with which to operate.
      * @param inputType - request type.
      */
-    static public void checkIsEmptyRequest(FileDescriptorProto protoFile, String inputType) {
+    static void checkIsEmptyRequest(FileDescriptorProto protoFile, String inputType) {
         protoFile.getMessageTypeList().forEach((message) -> {
             if (generateSwiftProtoType(protoFile, message.getName()).equals(inputType)) {
                 checkArgument(

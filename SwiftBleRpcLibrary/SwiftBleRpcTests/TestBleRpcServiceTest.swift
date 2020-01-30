@@ -1,6 +1,7 @@
 import XCTest
 import Nimble
 import Cuckoo
+import RxBlocking
 import RxSwift
 @testable import SwiftBleRpc
 
@@ -43,11 +44,11 @@ class TestBleRpcServiceTest: XCTestCase {
                     characteristicUUID: characteristicUUID)).thenReturn(Single<Data>.just(responseData))
         }
 
-        dispose = service?.readValue(request: readRequest).subscribe(onSuccess: { (response) in
-            expect(response).to(equal(responseMessage))
-        }) { (error) in
-            expect(error).to(beNil())
-        }
+        let result = try service?.readValue(request: readRequest)
+            .toBlocking()
+            .first()
+
+        XCTAssertEqual(result, responseMessage)
     }
 
     /**
@@ -67,14 +68,12 @@ class TestBleRpcServiceTest: XCTestCase {
                     characteristicUUID: characteristicUUID)).thenReturn(Single<Data>.just(responseData))
         }
 
-        let exp = expectation(description: "Read was called")
-        dispose = service?.readValue(request: readRequest).subscribe(onSuccess: { (response) in
-            exp.fulfill()
-        }) { (error) in
-            exp.fulfill()
-        }
+        let result = try service?.readValue(request: readRequest)
+            .asObservable()
+            .timeout(5, scheduler: MainScheduler.instance)
+            .toBlocking().first()
 
-        waitForExpectations(timeout: 3)
+        XCTAssertNotNil(result)
     }
 
     /**
@@ -116,11 +115,11 @@ class TestBleRpcServiceTest: XCTestCase {
                     characteristicUUID: characteristicUUID)).thenReturn(Single<Data>.just(responseData))
         }
 
-        dispose = service?.writeValue(request: writeRequest).subscribe(onSuccess: { (response) in
-            expect(response).to(equal(responseMessage))
-        }) { (error) in
-            expect(error).to(beNil())
-        }
+        let result = try service?.writeValue(request: writeRequest)
+            .toBlocking()
+            .first()
+
+        XCTAssertEqual(result, responseMessage)
     }
 
     /**
@@ -140,13 +139,11 @@ class TestBleRpcServiceTest: XCTestCase {
                     characteristicUUID: characteristicUUID)).thenReturn(Observable<Data>.just(responseData))
         }
 
-        dispose = service?.getValueUpdates(request: readRequest).subscribe(
-            onNext: { (response) in
-                expect(response).to(equal(responseMessage))
-            },
-            onError: { (error) in
-                expect(error).to(beNil())
-            })
+        let result = try service?.getValueUpdates(request: readRequest)
+            .toBlocking()
+            .first()
+
+        XCTAssertEqual(result, responseMessage)
     }
 
 }

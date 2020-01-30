@@ -90,7 +90,7 @@ open class BleServiceDriver {
         return connectToDeviceAndDiscoverCharacteristic(
             serviceUUID: serviceUUID,
             characteristicUUID: characteristicUUID)
-            .flatMapLatest { characteristic in
+            .flatMap { characteristic in
                 characteristic.observeValueUpdateAndSetNotification()
             }.asObservable().map { characteristic in
                 guard let data = characteristic.value else {
@@ -112,7 +112,7 @@ open class BleServiceDriver {
         if data.count > 0 {
             return Single.error(BleServiceDriverErrors.nonEmptyRequest)
         }
-        return self.connectToDeviceAndDiscoverCharacteristic(
+        return connectToDeviceAndDiscoverCharacteristic(
             serviceUUID: serviceUUID,
             characteristicUUID: characteristicUUID)
             .flatMap { characteristic in
@@ -133,7 +133,7 @@ open class BleServiceDriver {
     /// - parameter characteristicUUID: *UUID* of a characteristic.
     /// - returns: Data as observable value.
     public func write(request: Data, serviceUUID: String, characteristicUUID: String) -> Single<Data> {
-        return self.connectToDeviceAndDiscoverCharacteristic(
+        return connectToDeviceAndDiscoverCharacteristic(
             serviceUUID: serviceUUID,
             characteristicUUID: characteristicUUID)
             .flatMap { characteristic in
@@ -157,8 +157,8 @@ open class BleServiceDriver {
     /// - returns: Peripheral as observable value.
     private func doGetConnectedPeripheral() -> Single<Peripheral> {
         // TODO(#70): remove support for connected peripherals.
-        if self.connectedPeripheral {
-            return Single.just(self.peripheral!)
+        if connectedPeripheral {
+            return Single.just(peripheral!)
         }
 
         if let deviceConnectionObserver = self.sharedConnectedPeripheral {
@@ -187,7 +187,7 @@ open class BleServiceDriver {
                 Observable.from(services)
             }.flatMap { service in
                 service.discoverCharacteristics([CBUUID(string: characteristicUUID)])
-            }.flatMapLatest( { characteristics in
+            }.flatMapLatest({ characteristics in
                 Observable.from(characteristics)
             })
         }
