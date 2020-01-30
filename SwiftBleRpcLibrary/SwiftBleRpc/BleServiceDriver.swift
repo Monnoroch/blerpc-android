@@ -79,23 +79,27 @@ open class BleServiceDriver {
     /// - parameter characteristicUUID: *UUID* of a characteristic.
     /// - returns: Data as observable value.
     /// - warning: request must be empty for Read requests.
-    public func subscribe(request data: Data,
-                            serviceUUID: String,
-                            characteristicUUID: String) throws -> Observable<Data> {
+    public func subscribe(
+        request data: Data,
+        serviceUUID: String,
+        characteristicUUID: String
+    ) throws -> Observable<Data> {
         if data.count > 0 {
             return Observable.error(BleServiceDriverErrors.nonEmptyRequest)
         }
-        return self.connectToDeviceAndDiscoverCharacteristic(serviceUUID: serviceUUID,
-                                                       characteristicUUID: characteristicUUID)
-            .flatMap { characteristic in
-            characteristic.observeValueUpdateAndSetNotification()
-        }.asObservable().map { characteristic in
-            guard let data = characteristic.value else {
-                throw BluetoothError.characteristicReadFailed(characteristic,
-                                                               BleServiceDriverErrors.emptyResponse)
+        return connectToDeviceAndDiscoverCharacteristic(
+            serviceUUID: serviceUUID,
+            characteristicUUID: characteristicUUID)
+            .flatMapLatest { characteristic in
+                characteristic.observeValueUpdateAndSetNotification()
+            }.asObservable().map { characteristic in
+                guard let data = characteristic.value else {
+                    throw BluetoothError.characteristicReadFailed(
+                        characteristic,
+                        BleServiceDriverErrors.emptyResponse)
+                }
+                return data
             }
-            return data
-        }
     }
 
     /// Call read request over Ble.
@@ -108,17 +112,19 @@ open class BleServiceDriver {
         if data.count > 0 {
             return Single.error(BleServiceDriverErrors.nonEmptyRequest)
         }
-        return self.connectToDeviceAndDiscoverCharacteristic(serviceUUID: serviceUUID,
-                                                       characteristicUUID: characteristicUUID)
+        return self.connectToDeviceAndDiscoverCharacteristic(
+            serviceUUID: serviceUUID,
+            characteristicUUID: characteristicUUID)
             .flatMap { characteristic in
-            characteristic.readValue()
-        }.asSingle().map { characteristic in
-            guard let data = characteristic.value else {
-                throw BluetoothError.characteristicReadFailed(characteristic,
-                                                                             BleServiceDriverErrors.emptyResponse)
+                characteristic.readValue()
+            }.asSingle().map { characteristic in
+                guard let data = characteristic.value else {
+                    throw BluetoothError.characteristicReadFailed(
+                        characteristic,
+                        BleServiceDriverErrors.emptyResponse)
+                }
+                return data
             }
-            return data
-        }
     }
 
     /// Call write request over Ble.
@@ -127,13 +133,14 @@ open class BleServiceDriver {
     /// - parameter characteristicUUID: *UUID* of a characteristic.
     /// - returns: Data as observable value.
     public func write(request: Data, serviceUUID: String, characteristicUUID: String) -> Single<Data> {
-        return self.connectToDeviceAndDiscoverCharacteristic(serviceUUID: serviceUUID,
-                                                       characteristicUUID: characteristicUUID)
+        return self.connectToDeviceAndDiscoverCharacteristic(
+            serviceUUID: serviceUUID,
+            characteristicUUID: characteristicUUID)
             .flatMap { characteristic in
-            characteristic.writeValue(request, type: .withResponse)
-        }.asSingle().map { _ in
-            return Data()
-        }
+                characteristic.writeValue(request, type: .withResponse)
+            }.asSingle().map { _ in
+                return Data()
+            }
     }
 
     // MARK: - Private methods
@@ -173,15 +180,16 @@ open class BleServiceDriver {
     /// - parameter characteristicUUID: UUID of requested characteristic.
     /// - returns: Characteristic as observable value.
     private func connectToDeviceAndDiscoverCharacteristic(serviceUUID: String, characteristicUUID: String)
-        -> Observable<Characteristic> {
+        -> Observable<Characteristic>
+    {
         return self.getConnectedPeripheral().asObservable().flatMap { peripheral -> Observable<Characteristic> in
             peripheral.discoverServices([CBUUID(string: serviceUUID)]).asObservable().flatMap { services in
                 Observable.from(services)
             }.flatMap { service in
                 service.discoverCharacteristics([CBUUID(string: characteristicUUID)])
-            }.asObservable().flatMap { characteristics in
+            }.flatMapLatest( { characteristics in
                 Observable.from(characteristics)
-            }
+            })
         }
     }
 }

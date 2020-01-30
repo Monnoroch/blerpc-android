@@ -50,6 +50,10 @@ public class Common {
      * @return uppercased string.
      */
     static public String upperCaseFirstLetter(String string) {
+        if (string.isEmpty())
+        {
+            return "";
+        }
         return Character.toUpperCase(string.charAt(0)) + (string.length() > 1 ? string.substring(1) : "");
     }
 
@@ -59,6 +63,10 @@ public class Common {
      * @return lowercased string.
      */
     static public String lowerCaseFirstLetter(String string) {
+        if (string.isEmpty())
+        {
+            return "";
+        }
         return Character.toLowerCase(string.charAt(0))
                 + (string.length() > 1 ? string.substring(1) : "");
     }

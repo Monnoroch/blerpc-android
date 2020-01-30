@@ -57,7 +57,7 @@ public class ProtoDecoder {
     /// - parameter data: data from which need to convert.
     /// - returns: converted value Int16.
     private class func decodeInt16(fromByte: Int, data: Data) -> Int16 {
-        let subData = data.subdata(in: fromByte ..< fromByte + 2)
+        let subData = data.subdata(in: fromByte..<fromByte + 2)
         return subData.bytes.withUnsafeBufferPointer { pointer in
             (
                 pointer.baseAddress!.withMemoryRebound(to: Int16.self, capacity: 1) { pointer in
@@ -86,7 +86,7 @@ public class ProtoDecoder {
     /// - parameter data: data from which need to convert.
     /// - returns: converted value Int32.
     private class func decodeInt32(fromByte: Int, data: Data) -> Int32 {
-        return data.subdata(in: fromByte ..< 4).bytes.withUnsafeBufferPointer { pointer in
+        return data.subdata(in: fromByte..<4).bytes.withUnsafeBufferPointer { pointer in
             (
                 pointer.baseAddress!.withMemoryRebound(to: Int32.self, capacity: 1) { pointer in
                     pointer
@@ -101,7 +101,7 @@ public class ProtoDecoder {
     /// - parameter data: data from which need to convert.
     /// - returns: converted value String.
     private class func decodeString(fromByte: Int, toByte: Int, data: Data) -> String? {
-        let subData = data.subdata(in: Range<Int>.init(fromByte ... toByte - fromByte))
+        let subData = data.subdata(in: Range<Int>.init(fromByte...toByte - fromByte))
         return String(data: subData, encoding: String.Encoding.utf8)
     }
 
