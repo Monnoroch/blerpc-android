@@ -3,22 +3,21 @@ package com.blerpc;
 import com.google.common.base.Optional;
 import com.google.protobuf.RpcCallback;
 import com.google.protobuf.RpcController;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Implementation of the {@link RpcController}.
  */
 public class BleRpcController implements RpcController {
 
-  private AtomicBoolean canceled = new AtomicBoolean(false);
+  private boolean canceled;
   private boolean failed = false;
   private String failMassage = null;
   private Optional<RpcCallback<Void>> cancelCallback = Optional.absent();
 
   @Override
   public void reset() {
-    canceled.set(false);
     synchronized (this) {
+      canceled = false;
       failed = false;
       failMassage = null;
       cancelCallback = Optional.absent();
@@ -41,7 +40,9 @@ public class BleRpcController implements RpcController {
 
   @Override
   public void startCancel() {
-    canceled.set(true);
+    synchronized (this) {
+      canceled = true;
+    }
 
     Optional<RpcCallback<Void>> callback = getAndClearCallback();
     if (callback.isPresent()) {
@@ -59,7 +60,9 @@ public class BleRpcController implements RpcController {
 
   @Override
   public boolean isCanceled() {
-    return canceled.get();
+    synchronized (this) {
+      return canceled;
+    }
   }
 
   @Override
@@ -77,7 +80,7 @@ public class BleRpcController implements RpcController {
    * @param callback callback for notifying about cancel events
    */
   void runOnCancel(RpcCallback<Void> callback) {
-    if (canceled.get()) {
+    if (isCanceled()) {
       callback.run(null);
       return;
     }
