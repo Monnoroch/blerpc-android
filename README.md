@@ -129,22 +129,122 @@ message SetValueResponse {
     }];
 }
 ```
+Save it in the directory folder with your project with name 'service.proto'.
+
 You can create as many methods as you want. Each proto file must contains one service. Current version of blerpc supports `Read`, `Write` and `Subscribe` methods.
+
+For successfull compile you need to add `blerpc.proto` file into the root of the directory where your project is.
+```
+syntax = "proto3";
+
+option java_package = "com.blerpc.proto";
+option java_multiple_files = true;
+option optimize_for = CODE_SIZE;
+option java_generic_services = true;
+
+// A proto part of the BLE RPC library.
+package com.blerpc;
+
+import "google/protobuf/descriptor.proto";
+
+// An interaction type with the characteristic.
+// A method can interact with a characteristic in three ways: it can write to it, read from it and
+// subscribe to it's updates.
+enum MethodType {
+  // Unknown method type.
+  UNKNOWN = 0;
+  // A method with this type is allowed to write to a characteristic.
+  WRITE = 1;
+  // A method with this type is allowed to read the value of a characteristic.
+  READ = 2;
+  // A method with this type is allowed to subscribe to a characteristic's updates.
+  SUBSCRIBE = 3;
+}
+
+// BLE characteristic data.
+message BleCharacteristicRule {
+  // Characteristic UUID.
+  string uuid = 1;
+  // Descriptor UUID.
+  string descriptor_uuid = 3;
+  // The method's interaction type with the characteristic.
+  MethodType type = 2;
+}
+
+message BleServiceRule {
+  // Service UUID.
+  string uuid = 1;
+}
+
+// A description of a message for automatic converter.
+message MessageExtension {
+  // Message size in bytes.
+  int32 size_bytes = 1;
+  // Byte order for the message.
+  // Default byte order for the message is BIG_ENDIAN.
+  ByteOrder byte_order = 2;
+}
+
+// A description of a field for automatic converter.
+message FieldExtension {
+  // The number of the first byte within a message for a field.
+  int32 from_byte = 1;
+  // The number of the last byte within a message for a field.
+  // This bound is excluded, i.e. {from = 3, to = 5} describes a two-byte field.
+  int32 to_byte = 2;
+  // Byte order for the field.
+  // Default byte order for the field is BIG_ENDIAN.
+  ByteOrder byte_order = 3;
+}
+
+// Byte order type of message or field converted to bytes.
+enum ByteOrder {
+  // Default byte order that sets when creating com.blerpc.AnnotationMessageConverter.
+  DEFAULT = 0;
+  // Big endian byte order. Short number "50" is converted into 2 bytes {0, 50}.
+  // This is a default byte order.
+  BIG_ENDIAN = 1;
+  // Little endian byte order. Short number "50" is converter into 2 bytes {50, 0}".
+  LITTLE_ENDIAN = 2;
+}
+
+// Allow annotating fields with com.blerpc.field annotation to specify parameters for automatic converter.
+extend google.protobuf.FieldOptions {
+  FieldExtension field = 82595722;
+}
+
+// Allow annotating messages with com.blerpc.message annotation to specify parameters for automatic converter.
+extend google.protobuf.MessageOptions {
+  MessageExtension message = 82595723;
+}
+
+// Add `characteristic` method option for attaching the method to a BLE characteristic.
+extend google.protobuf.MethodOptions {
+  BleCharacteristicRule characteristic = 82595724;
+}
+
+// Add `service` service option for attaching the service to a BLE service.
+extend google.protobuf.ServiceOptions {
+  BleServiceRule service = 82595725;
+}
+```
 
 Let's assume that plugins was builded (see Android support documentation about building plugins). Then you need to compile proto file with command:
 
 ```
 protoc service.proto --swift_out=. --swiftgrpc_out=.
 ```
+For successfull files generation you need to add `swift-reactive-blerpc` file from `generated` directory and put it into the root of the directory where your project is.
+
 This will output swift files describing messages. Then call
 
 ```
+mkdir '<Your project name>/generated'
 protoc \
---plugin=protoc-gen-rx='path-to-plugin/swift-reactive-blerpc' \
+--plugin=protoc-gen-rx='swift-reactive-blerpc' \
 --proto_path='.' \
--I 'dependency-protos/' \
---rx_out='output-folder/' \
-'proto-to-parse/service.proto'
+--rx_out='<Your project name>/generated' \
+'service.proto'
 ```
 
 to generate reactive Rpc services for calling methods over Bluetooth Low Energy and extensions for Swift files which we already compiled in step above to support  parsing messages.
