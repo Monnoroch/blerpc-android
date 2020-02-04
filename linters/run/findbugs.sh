@@ -26,7 +26,7 @@ list=$(find ./build/linters -type f -name "*findbugs.xml")
 # A function to check the findbugs xml result.
 function findbugs() {
     # Find one line with the text "<FindBugsSummary" and take the "total_bugs" field from it.
-    grep "<FindBugsSummary" "$1" | sed -n 's:.*total_bugs="\([^"]\+\).*:\1:p'
+    grep "<FindBugsSummary" "$1" | sed -n 's:.*total_bugs="\([^"]\+\).*:\1:p' && echo $?
 }
 
 for file in $list; do
