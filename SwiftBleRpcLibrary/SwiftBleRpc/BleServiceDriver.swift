@@ -165,7 +165,7 @@ open class BleServiceDriver {
             return deviceConnectionObserver.take(1).asSingle()
         }
 
-        let observerForDeviceConnection = self.peripheral?.establishConnection().share(replay: 1)
+        let observerForDeviceConnection = self.peripheral?.establishConnection().share(replay: 2)
         self.disconnectionDisposable = observerForDeviceConnection?
             .catchError({ [weak self] (error) -> Observable<Peripheral> in
                 self?.disconnect()
@@ -187,9 +187,9 @@ open class BleServiceDriver {
                 Observable.from(services)
             }.flatMap { service in
                 service.discoverCharacteristics([CBUUID(string: characteristicUUID)])
-            }.flatMapLatest({ characteristics in
+            }.flatMap { characteristics in
                 Observable.from(characteristics)
-            })
+            }
         }
     }
 }

@@ -25,6 +25,7 @@
 		299579EF22B2CCA600B22B2A /* BleServiceDriver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 299579EE22B2CCA600B22B2A /* BleServiceDriver.swift */; };
 		5D21277509341BB655E7215C /* Pods_SwiftBleRpcTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CFB355EE6D443950FDF2D78A /* Pods_SwiftBleRpcTests.framework */; };
 		B62A26EF86216392FB7D5192 /* Pods_SwiftBleRpc.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0F676AF989D74736A2ABE22F /* Pods_SwiftBleRpc.framework */; };
+		DD6157B723EAC67800BE4490 /* BleServiceDriverTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD6157B623EAC67800BE4490 /* BleServiceDriverTest.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -63,6 +64,7 @@
 		BB4F51906A54BA295BB10B82 /* Pods-SwiftBleRpcTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SwiftBleRpcTests.debug.xcconfig"; path = "Target Support Files/Pods-SwiftBleRpcTests/Pods-SwiftBleRpcTests.debug.xcconfig"; sourceTree = "<group>"; };
 		CFB355EE6D443950FDF2D78A /* Pods_SwiftBleRpcTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_SwiftBleRpcTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		D7FA2C62F080410FA7DFC88F /* Pods-SwiftBleRpcTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SwiftBleRpcTests.release.xcconfig"; path = "Target Support Files/Pods-SwiftBleRpcTests/Pods-SwiftBleRpcTests.release.xcconfig"; sourceTree = "<group>"; };
+		DD6157B623EAC67800BE4490 /* BleServiceDriverTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BleServiceDriverTest.swift; sourceTree = "<group>"; };
 		E2C4C5E29D7DEBE985C646C6 /* Pods-SwiftBleRpc.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SwiftBleRpc.debug.xcconfig"; path = "Target Support Files/Pods-SwiftBleRpc/Pods-SwiftBleRpc.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -196,6 +198,7 @@
 				29257EB922B7AAAF00F38C0E /* GeneratedMocks.swift */,
 				29257EAF22B790DA00F38C0E /* ProtoParserTests.swift */,
 				29022B3A22C237C2009E3823 /* TestBleRpcServiceTest.swift */,
+				DD6157B623EAC67800BE4490 /* BleServiceDriverTest.swift */,
 				295A24A922833F0B002A40A1 /* Info.plist */,
 				29257EAE22B790D900F38C0E /* SwiftBleRpcTests-Bridging-Header.h */,
 				29022B1A22C224AA009E3823 /* DataMatchable.swift */,
@@ -436,6 +439,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DD6157B723EAC67800BE4490 /* BleServiceDriverTest.swift in Sources */,
 				29257EB022B790DA00F38C0E /* ProtoParserTests.swift in Sources */,
 				29022B1B22C224AA009E3823 /* DataMatchable.swift in Sources */,
 				29022B3B22C237C2009E3823 /* TestBleRpcServiceTest.swift in Sources */,
