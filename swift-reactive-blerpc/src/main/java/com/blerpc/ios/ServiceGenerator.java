@@ -129,8 +129,8 @@ public class ServiceGenerator {
 
     private boolean isBleRpcService(
             AbstractMap.SimpleEntry<FileDescriptorProto, Location> fileLocation) {
-        return getServiceOptions(fileLocation).hasExtension(Blerpc.service) ||
-                getServiceOptions(fileLocation).getUnknownFields().hasField(Blerpc.SERVICE_FIELD_NUMBER);
+        return getServiceOptions(fileLocation).hasExtension(Blerpc.service)
+                || getServiceOptions(fileLocation).getUnknownFields().hasField(Blerpc.SERVICE_FIELD_NUMBER);
     }
 
     private DescriptorProtos.ServiceOptions getServiceOptions(AbstractMap.SimpleEntry<FileDescriptorProto, Location> fileLocation) {
