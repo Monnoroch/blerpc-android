@@ -140,7 +140,6 @@ class BleServiceDriverTest: XCTestCase {
         let uuid = result?.peripheral.identifier.uuidString
         let driver = BleServiceDriver(
             peripheral: result!.peripheral,
-            queue: DispatchQueue(label: "BleServiceDriverRead", qos: .background),
             connected: true
         )
         let resultRead = try! driver.read(
@@ -148,7 +147,6 @@ class BleServiceDriverTest: XCTestCase {
             serviceUUID: uuid!,
             characteristicUUID: uuid!
         ).toBlocking(timeout: 5).first()
-        driver.disconnect()
         XCTAssertEqual(TestConstants.testText, String(data: resultRead!, encoding: .utf8))
     }
     
@@ -157,7 +155,6 @@ class BleServiceDriverTest: XCTestCase {
         let uuid = result?.peripheral.identifier.uuidString
         let driver = BleServiceDriver(
             peripheral: result!.peripheral,
-            queue: DispatchQueue(label: "BleServiceDriverWrite", qos: .background),
             connected: true
         )
         let writeResponse = try! driver.write(
@@ -165,7 +162,6 @@ class BleServiceDriverTest: XCTestCase {
             serviceUUID: uuid!,
             characteristicUUID: uuid!
         ).toBlocking(timeout: 5).first()
-        driver.disconnect()
         XCTAssertEqual(Data(), writeResponse!)
     }
     
@@ -174,7 +170,6 @@ class BleServiceDriverTest: XCTestCase {
         let uuid = result?.peripheral.identifier.uuidString
         let driver = BleServiceDriver(
             peripheral: result!.peripheral,
-            queue: DispatchQueue(label: "BleServiceDriverSubscribe", qos: .background),
             connected: true
         )
         let subscribeResponse = try! driver.subscribe(
@@ -182,7 +177,6 @@ class BleServiceDriverTest: XCTestCase {
             serviceUUID: uuid!,
             characteristicUUID: uuid!
         ).toBlocking(timeout: 5).first()
-        driver.disconnect()
         XCTAssertEqual(TestConstants.testText, String(data: subscribeResponse!, encoding: .utf8))
     }
 }

@@ -7,6 +7,7 @@ import com.blerpc.proto.Blerpc;
 import com.blerpc.proto.MethodType;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
+import com.google.protobuf.DescriptorProtos;
 import com.google.protobuf.DescriptorProtos.FileDescriptorProto;
 import com.google.protobuf.DescriptorProtos.MethodDescriptorProto;
 import com.google.protobuf.DescriptorProtos.ServiceDescriptorProto;
@@ -28,7 +29,7 @@ public class ServiceGenerator {
 
     /**
      * Builds service contexts based on input proto file request.
-     * @param request - input request (usually as input proto file).
+     * @param request input request (usually as input proto file).
      * @return prepared service contexts parsed from input proto request.
      */
     public Stream<ServiceContext> buildServiceContexts(CodeGeneratorRequest request) {
@@ -128,15 +129,15 @@ public class ServiceGenerator {
 
     private boolean isBleRpcService(
             AbstractMap.SimpleEntry<FileDescriptorProto, Location> fileLocation) {
+        return getServiceOptions(fileLocation).hasExtension(Blerpc.service) ||
+                getServiceOptions(fileLocation).getUnknownFields().hasField(Blerpc.SERVICE_FIELD_NUMBER);
+    }
+
+    private DescriptorProtos.ServiceOptions getServiceOptions(AbstractMap.SimpleEntry<FileDescriptorProto, Location> fileLocation) {
         return fileLocation
                 .getKey()
                 .getService(fileLocation.getValue().getPath(SERVICE_NUMBER_OF_PATHS - 1))
-                .getOptions()
-                .hasExtension(Blerpc.service) || fileLocation
-                .getKey()
-                .getService(fileLocation.getValue().getPath(SERVICE_NUMBER_OF_PATHS - 1))
-                .getOptions().getUnknownFields()
-                .hasField(Blerpc.SERVICE_FIELD_NUMBER);
+                .getOptions();
     }
 
     private boolean isProtoMethod(Location location, int serviceNumber) {

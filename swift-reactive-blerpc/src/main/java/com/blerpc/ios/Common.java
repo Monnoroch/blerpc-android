@@ -71,18 +71,18 @@ public class Common {
 
     /**
      * Generates class type in Swift format.
-     * @param protoFile - proto file in with which to operate.
+     * @param protoFile - proto file for template generation.
      * @param type - type which need to convert in Swift type.
      * @return string which represents proto type in Swift format.
      */
     static String generateSwiftProtoType(FileDescriptorProto protoFile, String type) {
-        return extractSwiftPackageName(protoFile)
-                + type.split(PROTO_PACKAGE_SEPARATOR)[type.split(PROTO_PACKAGE_SEPARATOR).length - 1];
+        String typeFile = type.split(PROTO_PACKAGE_SEPARATOR)[type.split(PROTO_PACKAGE_SEPARATOR).length - 1];
+        return extractSwiftPackageName(protoFile) + typeFile;
     }
 
     /**
      * Check if input request is empty and if not - throws error. Used for Read/Subscribe methods where requests must be empty.
-     * @param protoFile - proto file in with which to operate.
+     * @param protoFile - proto file for template generation.
      * @param inputType - request type.
      */
     static void checkIsEmptyRequest(FileDescriptorProto protoFile, String inputType) {

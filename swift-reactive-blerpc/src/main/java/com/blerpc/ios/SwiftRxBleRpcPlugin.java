@@ -42,26 +42,20 @@ public class SwiftRxBleRpcPlugin extends Generator {
 
   private File buildServiceOutputFile(ServiceContext context) {
     return File.newBuilder()
-        .setName(fullFileName(context))
+        .setName(fullFileName(context.packageName, context.fileName))
         .setContent(applyTemplate(TEMPLATE_FILE_SERVICE, context))
         .build();
   }
 
   private File buildMessageOutputFile(MessageContext context) {
     return File.newBuilder()
-            .setName(fullFileName(context))
+            .setName(fullFileName(context.packageName, context.fileName))
             .setContent(applyTemplate(TEMPLATE_FILE_MESSAGE_PARSER, context))
             .build();
   }
 
-  private String fullFileName(ServiceContext context) {
-    return Paths.get(context.packageName
-            .replace(".", java.io.File.separator), context.fileName).toString();
+  private String fullFileName(String packageName, String fileName) {
+    return Paths.get(packageName
+            .replace(".", java.io.File.separator), fileName).toString();
   }
-
-  private String fullFileName(MessageContext context) {
-    return Paths.get(context.packageName
-            .replace(".", java.io.File.separator), context.fileName).toString();
-  }
-
 }
