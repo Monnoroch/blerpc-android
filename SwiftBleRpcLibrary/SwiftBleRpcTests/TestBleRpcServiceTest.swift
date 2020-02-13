@@ -10,7 +10,7 @@ import RxSwift
 */
 class TestBleRpcServiceTest: XCTestCase {
 
-    let bleRpcDriverMock: MockBleServiceDriver = MockBleServiceDriver()
+    var bleRpcDriverMock: MockBleServiceDriver!
     let characteristicUUID: String = "A0000001-0000-0000-0000-000000000000"
     let readRequest = Device_GetValueRequest()
     var writeRequest = Device_SetValueRequest()
@@ -19,6 +19,7 @@ class TestBleRpcServiceTest: XCTestCase {
 
     override func setUp() {
         super.setUp()
+        bleRpcDriverMock = MockBleServiceDriver(peripheral: CentralManagerSwizzle.instance.peripheral()!, connected: true)
         service = TestService.init(bleRpcDriverMock)
     }
 

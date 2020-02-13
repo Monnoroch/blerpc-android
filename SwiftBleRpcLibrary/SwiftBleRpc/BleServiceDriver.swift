@@ -24,9 +24,9 @@ open class BleServiceDriver {
 
     // MARK: - Initializers
 
-    /// Init with connectedPeripheral false
-    public init() {
-        self.connectedPeripheral = false
+    /// Please use init(peripheral:) instead.
+    private init() {
+        fatalError("Please use init(peripheral:) instead.")
     }
 
     /// Initialize with connected peripheral.

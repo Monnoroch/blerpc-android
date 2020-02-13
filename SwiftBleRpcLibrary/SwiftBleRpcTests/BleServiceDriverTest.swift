@@ -86,24 +86,24 @@ class CBPeripheralMock: CBPeripheral {
 extension CBCentralManager {
     static let peripheral: [CBPeripheral] = [CBPeripheralMock(arrayString: [TestConstants.testText])]
     func swizzle(){
+        func setupSwizzlingMethod(method: Selector, swizzledMethod: Selector) {
+            let originalMethod = class_getInstanceMethod(CBCentralManager.self, method)
+            let swizzledMethod = class_getInstanceMethod(CBCentralManager.self, swizzledMethod)
+            method_exchangeImplementations(originalMethod!, swizzledMethod!)
+        }
         let swizzleClosure: () -> () = {
-            let originalRetrievePeripheralsSelector = #selector(CBCentralManager.retrievePeripherals(withIdentifiers:))
-            let swizzledRetrievePeripheralsSelector = #selector(CBCentralManager.retrievePeripheralsSwizzling(withIdentifiers:))
-            let originalRetrievePeripheralsMethod = class_getInstanceMethod(CBCentralManager.self, originalRetrievePeripheralsSelector)
-            let swizzledRetrievePeripheralsMethod = class_getInstanceMethod(CBCentralManager.self, swizzledRetrievePeripheralsSelector)
-            method_exchangeImplementations(originalRetrievePeripheralsMethod!, swizzledRetrievePeripheralsMethod!)
-            
-            let originalScanForPeripheralsSelector = #selector(CBCentralManager.scanForPeripherals(withServices:options:))
-            let swizzledScanForPeripheralsSelector = #selector(CBCentralManager.scanForPeripheralsSwizzling(withServices:options:))
-            let originalScanForPeripheralsMethod = class_getInstanceMethod(CBCentralManager.self, originalScanForPeripheralsSelector)
-            let swizzledScanForPeripheralsMethod = class_getInstanceMethod(CBCentralManager.self, swizzledScanForPeripheralsSelector)
-            method_exchangeImplementations(originalScanForPeripheralsMethod!, swizzledScanForPeripheralsMethod!)
-            
-            let originalConnectSelector = #selector(CBCentralManager.stopScan)
-            let swizzledConnectSelector = #selector(CBCentralManager.stopScanSwizzling)
-            let originalConnectMethod = class_getInstanceMethod(CBCentralManager.self, originalConnectSelector)
-            let swizzledConnectMethod = class_getInstanceMethod(CBCentralManager.self, swizzledConnectSelector)
-            method_exchangeImplementations(originalConnectMethod!, swizzledConnectMethod!)
+            setupSwizzlingMethod(
+                method: #selector(CBCentralManager.retrievePeripherals(withIdentifiers:)),
+                swizzledMethod: #selector(CBCentralManager.retrievePeripheralsSwizzling(withIdentifiers:))
+            )
+            setupSwizzlingMethod(
+                method: #selector(CBCentralManager.scanForPeripherals(withServices:options:)),
+                swizzledMethod: #selector(CBCentralManager.scanForPeripheralsSwizzling(withServices:options:))
+            )
+            setupSwizzlingMethod(
+                method: #selector(CBCentralManager.stopScan),
+                swizzledMethod: #selector(CBCentralManager.stopScanSwizzling)
+            )
         }
         swizzleClosure()
     }
@@ -125,57 +125,67 @@ extension CBCentralManager {
     }
 }
 
-class BleServiceDriverTest: XCTestCase {
+class CentralManagerSwizzle {
+    static let instance = CentralManagerSwizzle()
+    private var centralManager: CentralManager!
     
-    static var centralManager: CentralManager!
-    
-    override class func setUp() {
+    func centralManagerInstance() -> CentralManager {
+        if let centralManager = centralManager {
+            return centralManager
+        }
         centralManager = CentralManager(queue: .main)
         centralManager.manager.swizzle()
-        super.setUp()
+        return centralManager
     }
+    
+    func peripheral() -> Peripheral? {
+        return centralManagerInstance().retrievePeripherals(withIdentifiers: [TestConstants.uuid]).first
+    }
+}
+
+class BleServiceDriverTest: XCTestCase {
 
     func testRead() {
-        let result = try! BleServiceDriverTest.centralManager.scanForPeripherals(withServices: nil).toBlocking().first()
-        let uuid = result?.peripheral.identifier.uuidString
+        let peripheral = CentralManagerSwizzle.instance.peripheral()
+        let uuid = peripheral!.identifier.uuidString
         let driver = BleServiceDriver(
-            peripheral: result!.peripheral,
+            peripheral: peripheral!,
             connected: true
         )
         let resultRead = try! driver.read(
             request: Data(),
-            serviceUUID: uuid!,
-            characteristicUUID: uuid!
+            serviceUUID: uuid,
+            characteristicUUID: uuid
         ).toBlocking(timeout: 5).first()
         XCTAssertEqual(TestConstants.testText, String(data: resultRead!, encoding: .utf8))
     }
     
     func testWrite() {
-        let result = try! BleServiceDriverTest.centralManager.scanForPeripherals(withServices: nil).toBlocking().first()
-        let uuid = result?.peripheral.identifier.uuidString
+        let peripheral = CentralManagerSwizzle.instance.peripheral()
+        let uuid = peripheral!.identifier.uuidString
         let driver = BleServiceDriver(
-            peripheral: result!.peripheral,
+            peripheral: peripheral!,
             connected: true
         )
         let writeResponse = try! driver.write(
             request: Data(),
-            serviceUUID: uuid!,
-            characteristicUUID: uuid!
+            serviceUUID: uuid,
+            characteristicUUID: uuid
         ).toBlocking(timeout: 5).first()
         XCTAssertEqual(Data(), writeResponse!)
     }
     
     func testSubscribe() {
-        let result = try! BleServiceDriverTest.centralManager.scanForPeripherals(withServices: nil).toBlocking().first()
-        let uuid = result?.peripheral.identifier.uuidString
+        let peripheral = CentralManagerSwizzle.instance.peripheral()
+        let uuid = peripheral!.identifier.uuidString
         let driver = BleServiceDriver(
-            peripheral: result!.peripheral,
+            peripheral: peripheral!,
             connected: true
         )
         let subscribeResponse = try! driver.subscribe(
             request: Data(),
-            serviceUUID: uuid!,
-            characteristicUUID: uuid!
+            serviceUUID: uuid,
+            characteristicUUID: uuid
         ).toBlocking(timeout: 5).first()
         XCTAssertEqual(TestConstants.testText, String(data: subscribeResponse!, encoding: .utf8))
     }
