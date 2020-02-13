@@ -56,7 +56,7 @@ open class BleServiceDriver {
             characteristicUUID: characteristicUUID)
             .flatMap { characteristic in
                 characteristic.observeValueUpdateAndSetNotification()
-            }.asObservable().map { characteristic in
+            }.map { characteristic in
                 guard let data = characteristic.value else {
                     throw BluetoothError.characteristicReadFailed(
                         characteristic,
@@ -81,7 +81,7 @@ open class BleServiceDriver {
             characteristicUUID: characteristicUUID)
             .flatMap { characteristic in
                 characteristic.readValue()
-            }.asSingle().map { characteristic in
+            }.take(1).asSingle().map { characteristic in
                 guard let data = characteristic.value else {
                     throw BluetoothError.characteristicReadFailed(
                         characteristic,
@@ -102,7 +102,7 @@ open class BleServiceDriver {
             characteristicUUID: characteristicUUID)
             .flatMap { characteristic in
                 characteristic.writeValue(request, type: .withResponse)
-            }.asSingle().map { _ in
+            }.take(1).asSingle().map { _ in
                 return Data()
             }
     }
@@ -111,8 +111,8 @@ open class BleServiceDriver {
 
     /// Check current conenction state and if not connected - trying to connect to device.
     /// - returns: Peripheral as observable value.
-    private func getConnectedPeripheral() -> Single<Peripheral> {
-        return Single.just(peripheral!)
+    private func getConnectedPeripheral() -> Observable<Peripheral> {
+        return Observable.just(peripheral!)
     }
 
     /// Method which connects to device (if needed) and discover requested characteristic.
@@ -122,7 +122,7 @@ open class BleServiceDriver {
     private func connectToDeviceAndDiscoverCharacteristic(serviceUUID: String, characteristicUUID: String)
         -> Observable<Characteristic>
     {
-        return getConnectedPeripheral().asObservable().flatMap { peripheral -> Observable<Characteristic> in
+        return getConnectedPeripheral().flatMap { peripheral -> Observable<Characteristic> in
             peripheral.discoverServices([CBUUID(string: serviceUUID)]).asObservable().flatMap { services in
                 Observable.from(services)
             }.flatMap { service in

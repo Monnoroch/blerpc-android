@@ -9,7 +9,7 @@ import RxBluetoothKit
 
 class TestConstants {
     static let uuid = UUID()
-    static let testText = "A0000000-0000-0000-0000-000000000000"
+    static let testText = "test data"
 }
 
 class CBCharacteristicMock: CBCharacteristic {
@@ -145,14 +145,20 @@ class CentralManagerSwizzle {
 
 class BleServiceDriverTest: XCTestCase {
 
-    func testRead() {
+    var uuid: String = ""
+    var bleServiceDriver: BleServiceDriver!
+    
+    override func setUp() {
         let peripheral = CentralManagerSwizzle.instance.peripheral()
-        let uuid = peripheral!.identifier.uuidString
-        let driver = BleServiceDriver(
-            peripheral: peripheral!,
-            connected: true
+        uuid = peripheral!.identifier.uuidString
+        bleServiceDriver = BleServiceDriver(
+            peripheral: peripheral!
         )
-        let resultRead = try! driver.read(
+        super.setUp()
+    }
+    
+    func testRead() {
+        let resultRead = try! bleServiceDriver.read(
             request: Data(),
             serviceUUID: uuid,
             characteristicUUID: uuid
@@ -161,13 +167,7 @@ class BleServiceDriverTest: XCTestCase {
     }
 
     func testWrite() {
-        let peripheral = CentralManagerSwizzle.instance.peripheral()
-        let uuid = peripheral!.identifier.uuidString
-        let driver = BleServiceDriver(
-            peripheral: peripheral!,
-            connected: true
-        )
-        let writeResponse = try! driver.write(
+        let writeResponse = try! bleServiceDriver.write(
             request: Data(),
             serviceUUID: uuid,
             characteristicUUID: uuid
@@ -176,13 +176,7 @@ class BleServiceDriverTest: XCTestCase {
     }
 
     func testSubscribe() {
-        let peripheral = CentralManagerSwizzle.instance.peripheral()
-        let uuid = peripheral!.identifier.uuidString
-        let driver = BleServiceDriver(
-            peripheral: peripheral!,
-            connected: true
-        )
-        let subscribeResponse = try! driver.subscribe(
+        let subscribeResponse = try! bleServiceDriver.subscribe(
             request: Data(),
             serviceUUID: uuid,
             characteristicUUID: uuid
