@@ -17,10 +17,8 @@ open class BleServiceDriver {
     // MARK: - Variables
 
     /// Connected peripheral.
-    private var peripheral: Peripheral?
-
     // TODO(#70): remove support for connected peripherals.
-    private let connectedPeripheral: Bool
+    private var peripheral: Peripheral?
 
     // MARK: - Initializers
 
@@ -29,18 +27,11 @@ open class BleServiceDriver {
         fatalError("Please use init(peripheral:) instead.")
     }
 
-    /// Initialize with connected peripheral.
+    /// Initialize with a connected peripheral.
     /// - parameter device: peripheral to operate with.
     /// - returns: created *BleServiceDriver*.
     public init(peripheral: Peripheral) {
         self.peripheral = peripheral
-        self.connectedPeripheral = false
-    }
-
-    // TODO(#70): remove support for connected peripherals.
-    public init(peripheral: Peripheral, connected: Bool) {
-        self.peripheral = peripheral
-        self.connectedPeripheral = connected
     }
 
     // MARK: - Internal methods
@@ -120,22 +111,7 @@ open class BleServiceDriver {
     /// Check current conenction state and if not connected - trying to connect to device.
     /// - returns: Peripheral as observable value.
     private func getConnectedPeripheral() -> Single<Peripheral> {
-        return Observable<Peripheral?>.create { [weak self] observer -> Disposable in
-            guard let `self` = self else { return Disposables.create() }
-            // TODO(#70): remove support for connected peripherals.
-            if self.connectedPeripheral {
-                observer.onNext(self.peripheral)
-            }
-            observer.onNext(nil)
-            return Disposables.create()
-        }.flatMapLatest { [weak self] peripheral -> Observable<Peripheral> in
-            guard peripheral == nil else { return .just(peripheral!) }
-            guard let peripheral = self?.peripheral else { return .empty() }
-            return peripheral.establishConnection()
-        }
-        .retry(1)
-        .take(1)
-        .asSingle()
+        return Single.just(peripheral!)
     }
 
     /// Method which connects to device (if needed) and discover requested characteristic.

@@ -18,6 +18,6 @@ open class BleRpcService {
 
     /// Block default init.
     private init() {
-        fatalError("Please use init(bleWorker:) instead.")
+        fatalError("Please use init(bleServiceDriver:) instead.")
     }
 }
