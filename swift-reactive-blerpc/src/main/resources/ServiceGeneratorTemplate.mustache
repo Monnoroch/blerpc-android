@@ -1,0 +1,76 @@
+import CoreBluetooth
+import Foundation
+import RxBluetoothKit
+import RxSwift
+import SwiftBleRpcLibrary
+
+/// {{serviceName}} service.
+public class {{serviceName}}: BleRpcService {
+    /// UUID of service.
+    public static let {{serviceName}}UUID: String = "{{serviceUUID}}"
+{{#methods}}
+    {{#typeRead}}
+
+    /// Send read request of method {{methodName}} on device.
+    /// - parameter request: {{inputType}}.
+    /// - returns: *Single* that emit either a single element of {{outputType}} or an error.
+    public func {{methodName}}(request: {{inputType}}) -> Single<{{outputType}}> {
+        do {
+            let data = try {{inputType}}.bleRpcEncode(proto: request)
+
+            return try bleServiceDriver.read(
+                request: data,
+                serviceUUID: {{serviceName}}.{{serviceName}}UUID,
+                characteristicUUID: "{{characteristicUUID}}")
+            .map { response in
+                try {{outputType}}.bleRpcDecode(data: response)
+            }
+        } catch {
+            return Single.error(error)
+        }
+    }
+    {{/typeRead}}
+    {{#typeWrite}}
+
+    /// Send write request of method {{methodName}} on device.
+    /// - parameter request: {{inputType}}.
+    /// - returns: *Single* that emit either a single element of {{outputType}} or an error.
+    public func {{methodName}}(request: {{inputType}}) -> Single<{{outputType}}> {
+        do {
+            let data = try {{inputType}}.bleRpcEncode(proto: request)
+
+            return bleServiceDriver.write(
+                request: data,
+                serviceUUID: {{serviceName}}.{{serviceName}}UUID,
+                characteristicUUID: "{{characteristicUUID}}")
+            .map { response in
+                try {{outputType}}.bleRpcDecode(data: response)
+            }
+        } catch {
+            return Single.error(error)
+        }
+    }
+    {{/typeWrite}}
+    {{#typeSubscribe}}
+
+    /// Send subscribe request of method {{methodName}} on device.
+    /// - parameter request: {{inputType}}.
+    /// - returns: *Observable* with an infinite sequence of {{outputType}}-s.
+    public func {{methodName}}(request: {{inputType}}) -> Observable<{{outputType}}> {
+        do {
+            let data = try {{inputType}}.bleRpcEncode(proto: request)
+
+            return try bleServiceDriver.subscribe(
+                request: data,
+                serviceUUID: {{serviceName}}.{{serviceName}}UUID,
+                characteristicUUID: "{{characteristicUUID}}")
+            .map { response in
+                try {{outputType}}.bleRpcDecode(data: response)
+            }
+        } catch {
+            return Observable.error(error)
+        }
+    }
+    {{/typeSubscribe}}
+{{/methods}}
+}

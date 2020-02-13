@@ -1,0 +1,20 @@
+import Foundation
+
+/// Extension for Device_GetValueRequest which adds encode to Data and decode from Data methods.
+extension Device_GetValueRequest {
+    /// Convert data to Device_GetValueRequest proto object.
+    /// - parameter data: data which needs to be converted.
+    /// - returns: decoded Device_GetValueRequest proto.
+    static func bleRpcDecode(data: Data) throws -> Device_GetValueRequest {
+        var proto = Device_GetValueRequest()
+        return proto
+    }
+
+    /// Convert Device_GetValueRequest proto object to raw data.
+    /// - parameter proto: proto object which needs to be converted.
+    /// - returns: encoded Device_GetValueRequest.
+    static func bleRpcEncode(proto: Device_GetValueRequest) throws -> Data {
+        var data = Data()
+        return data
+    }
+}
