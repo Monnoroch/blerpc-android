@@ -128,7 +128,7 @@ extension CBCentralManager {
 class CentralManagerSwizzle {
     static let instance = CentralManagerSwizzle()
     private var centralManager: CentralManager!
-    
+
     func centralManagerInstance() -> CentralManager {
         if let centralManager = centralManager {
             return centralManager
@@ -137,7 +137,7 @@ class CentralManagerSwizzle {
         centralManager.manager.swizzle()
         return centralManager
     }
-    
+
     func peripheral() -> Peripheral? {
         return centralManagerInstance().retrievePeripherals(withIdentifiers: [TestConstants.uuid]).first
     }
@@ -159,7 +159,7 @@ class BleServiceDriverTest: XCTestCase {
         ).toBlocking(timeout: 5).first()
         XCTAssertEqual(TestConstants.testText, String(data: resultRead!, encoding: .utf8))
     }
-    
+
     func testWrite() {
         let peripheral = CentralManagerSwizzle.instance.peripheral()
         let uuid = peripheral!.identifier.uuidString
@@ -174,7 +174,7 @@ class BleServiceDriverTest: XCTestCase {
         ).toBlocking(timeout: 5).first()
         XCTAssertEqual(Data(), writeResponse!)
     }
-    
+
     func testSubscribe() {
         let peripheral = CentralManagerSwizzle.instance.peripheral()
         let uuid = peripheral!.identifier.uuidString
