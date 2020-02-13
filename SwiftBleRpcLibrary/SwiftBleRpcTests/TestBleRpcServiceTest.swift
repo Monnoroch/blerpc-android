@@ -8,6 +8,7 @@ import RxSwift
 /**
 *  A service for testing BleRpcService.
 */
+// swiftlint:disable all
 class TestBleRpcServiceTest: XCTestCase {
 
     var bleRpcDriverMock: MockBleServiceDriver!
@@ -62,8 +63,6 @@ class TestBleRpcServiceTest: XCTestCase {
                 )
             ).thenReturn(.just(Data()))
         }
-
-        var seenError = false
         XCTAssertThrowsError(try service?.readValue(request: testRequest).toBlocking().first())
     }
 
@@ -107,7 +106,6 @@ class TestBleRpcServiceTest: XCTestCase {
         let response = try service?.getValueUpdates(request: testRequest)
             .toBlocking()
             .first()
-
         XCTAssertEqual(response, testResponse)
     }
 

@@ -1,6 +1,6 @@
 import CryptoSwift
 import Foundation
-
+// swiftlint:disable all
 /// Type-aliases to "convert" protobuf types to Swift types.
 public typealias TYPE_INT32 = Int32
 public typealias TYPE_BOOL = Bool

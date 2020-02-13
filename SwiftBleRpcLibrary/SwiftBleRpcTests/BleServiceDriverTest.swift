@@ -80,18 +80,19 @@ class CBPeripheralMock: CBPeripheral {
 
     override func setNotifyValue(_ enabled: Bool, for characteristic: CBCharacteristic) {
         delegate?.peripheral?(self, didUpdateValueFor: characteristic, error: nil)
+        delegate?.peripheral?(self, didUpdateValueFor: characteristic, error: nil)
     }
 }
 
 extension CBCentralManager {
     static let peripheral: [CBPeripheral] = [CBPeripheralMock(arrayString: [TestConstants.testText])]
-    func swizzle(){
+    func swizzle() {
         func setupSwizzlingMethod(method: Selector, swizzledMethod: Selector) {
             let originalMethod = class_getInstanceMethod(CBCentralManager.self, method)
             let swizzledMethod = class_getInstanceMethod(CBCentralManager.self, swizzledMethod)
             method_exchangeImplementations(originalMethod!, swizzledMethod!)
         }
-        let swizzleClosure: () -> () = {
+        let swizzleClosure = {
             setupSwizzlingMethod(
                 method: #selector(CBCentralManager.retrievePeripherals(withIdentifiers:)),
                 swizzledMethod: #selector(CBCentralManager.retrievePeripheralsSwizzling(withIdentifiers:))
@@ -116,8 +117,16 @@ extension CBCentralManager {
         return CBCentralManager.peripheral
     }
 
-    @objc func scanForPeripheralsSwizzling(withServices serviceUUIDs: [CBUUID]?, options: [String : Any]? = nil) {
-        delegate?.centralManager?(self, didDiscover: CBCentralManager.peripheral.first!, advertisementData: [:], rssi: 1.0)
+    @objc func scanForPeripheralsSwizzling(
+        withServices serviceUUIDs: [CBUUID]?,
+        options: [String: Any]? = nil
+    ) {
+        delegate?.centralManager?(
+            self,
+            didDiscover: CBCentralManager.peripheral.first!,
+            advertisementData: [:],
+            rssi: 1.0
+        )
     }
 
     @objc func stopScanSwizzling() {
@@ -147,7 +156,7 @@ class BleServiceDriverTest: XCTestCase {
 
     var uuid: String = ""
     var bleServiceDriver: BleServiceDriver!
-    
+
     override func setUp() {
         let peripheral = CentralManagerSwizzle.instance.peripheral()
         uuid = peripheral!.identifier.uuidString
@@ -156,7 +165,7 @@ class BleServiceDriverTest: XCTestCase {
         )
         super.setUp()
     }
-    
+
     func testRead() {
         let resultRead = try! bleServiceDriver.read(
             request: Data(),
@@ -182,5 +191,15 @@ class BleServiceDriverTest: XCTestCase {
             characteristicUUID: uuid
         ).toBlocking(timeout: 5).first()
         XCTAssertEqual(TestConstants.testText, String(data: subscribeResponse!, encoding: .utf8))
+    }
+
+    func testSubscribeMultipleValues() {
+        let responseArray = [TestConstants.testText, TestConstants.testText]
+        let subscribeResponse = try! bleServiceDriver.subscribe(
+            request: Data(),
+            serviceUUID: uuid,
+            characteristicUUID: uuid
+            ).take(2).toBlocking(timeout: 5).toArray()
+        XCTAssertEqual(responseArray, subscribeResponse.map { String(data: $0, encoding: .utf8) })
     }
 }

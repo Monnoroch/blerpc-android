@@ -119,9 +119,10 @@ open class BleServiceDriver {
     /// - parameter serviceUUID: UUID of requested service.
     /// - parameter characteristicUUID: UUID of requested characteristic.
     /// - returns: Characteristic as observable value.
-    private func connectToDeviceAndDiscoverCharacteristic(serviceUUID: String, characteristicUUID: String)
-        -> Observable<Characteristic>
-    {
+    private func connectToDeviceAndDiscoverCharacteristic(
+        serviceUUID: String,
+        characteristicUUID: String
+    ) -> Observable<Characteristic> {
         return getConnectedPeripheral().flatMap { peripheral -> Observable<Characteristic> in
             peripheral.discoverServices([CBUUID(string: serviceUUID)]).asObservable().flatMap { services in
                 Observable.from(services)
