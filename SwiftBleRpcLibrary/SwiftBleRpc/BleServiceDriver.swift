@@ -13,6 +13,7 @@ public enum BleServiceDriverErrors: Error {
 }
 
 /// Class which holds all operation with data transfer between iOS and Ble Device.
+// TODO(#70): implement automatic connection, disconnection and remove support for connected peripherals.
 open class BleServiceDriver {
     // MARK: - Variables
 
