@@ -36,14 +36,14 @@ class ProtoParserTests: XCTestCase {
     }
 
     func testDecodePartBytes() throws {
-        let data = Data.init(hex: "3617254")
-        let decoded = try ProtoDecoder.decode(data: data, from: 0, to: 2, type: .byte) as? Data
+        let data = Data.init(hex: "003617254")
+        let decoded = try ProtoDecoder.decode(data: data, from: 1, to: 3, type: .byte) as? Data
         expect(decoded).to(equal(Data.init(hex: "3617")))
     }
 
     func testDecodeFullBytes() throws {
-        let data = Data.init(hex: "36172540")
-        let decoded = try ProtoDecoder.decode(data: data, from: 0, to: 4, type: .byte) as? Data
+        let data = Data.init(hex: "0036172540")
+        let decoded = try ProtoDecoder.decode(data: data, from: 1, to: 5, type: .byte) as? Data
         expect(decoded).to(equal(Data.init(hex: "36172540")))
     }
 
