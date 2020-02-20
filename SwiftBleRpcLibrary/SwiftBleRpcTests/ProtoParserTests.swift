@@ -108,6 +108,12 @@ class ProtoParserTests: XCTestCase {
         let encoded = try ProtoEncoder.encode(object: data, from: 0, to: 4, type: .byte)
         expect(encoded).to(equal(data))
     }
+    
+    func testEncodeFromNotZeroBytes() throws {
+        let data = Data.init(hex: "36172540")
+        let encoded = try ProtoEncoder.encode(object: data, from: 2, to: 4, type: .byte)
+        expect(encoded).to(equal(Data.init(hex: "2540")))
+    }
 
     func testEncodeIntWrongSize() {
         do {
