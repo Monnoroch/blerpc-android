@@ -96,20 +96,20 @@ public class ProtoDecoder {
                     return Int32(ProtoDecoder.decodeInt16(fromByte: from, data: data))
                 } else {
                     return Int32(ProtoDecoder.decodeInt32(fromByte: from, data: data))
+                } else {
+                    throw ProtoParserErrors.wrongData
                 }
             }
         case .byte:
             if to > data.count {
                 throw ProtoParserErrors.wrongData
-            } else {
-                return data.subdata(in: to..<from)
             }
+            return data.subdata(in: from..<to)
         case .bool:
             if to > data.count {
                 throw ProtoParserErrors.wrongData
-            } else {
-                return ProtoDecoder.decodeBool(fromByte: from, data: data)
             }
+            return ProtoDecoder.decodeBool(fromByte: from, data: data)
         default:
             throw ProtoParserErrors.notSupportedType
         }
