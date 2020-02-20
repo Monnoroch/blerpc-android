@@ -38,20 +38,6 @@ public class ProtoDecoder {
         return result
     }
 
-    /// Decode data to UInt16.
-    /// - parameter fromByte: starting byte.
-    /// - parameter data: data from which need to convert.
-    /// - returns: converted value IntUInt1632.
-    private class func decodeUInt16(fromByte _: Int, data: Data) -> UInt16 {
-        return data.bytes.withUnsafeBufferPointer { pointer in
-            (
-                pointer.baseAddress!.withMemoryRebound(to: UInt16.self, capacity: 1) { pointer in
-                    pointer
-                }
-            )
-        }.pointee
-    }
-
     /// Decode data to Int16.
     /// - parameter fromByte: starting byte.
     /// - parameter data: data from which need to convert.
@@ -61,20 +47,6 @@ public class ProtoDecoder {
         return subData.bytes.withUnsafeBufferPointer { pointer in
             (
                 pointer.baseAddress!.withMemoryRebound(to: Int16.self, capacity: 1) { pointer in
-                    pointer
-                }
-            )
-        }.pointee
-    }
-
-    /// Decode data to UInt32.
-    /// - parameter fromByte: starting byte.
-    /// - parameter data: data from which need to convert.
-    /// - returns: converted value UInt32.
-    private class func decodeUInt32(fromByte _: Int, data: Data) -> UInt32 {
-        return data.bytes.withUnsafeBufferPointer { pointer in
-            (
-                pointer.baseAddress!.withMemoryRebound(to: UInt32.self, capacity: 1) { pointer in
                     pointer
                 }
             )
@@ -93,16 +65,6 @@ public class ProtoDecoder {
                 }
             )
         }.pointee
-    }
-
-    /// Decode data to String.
-    /// - parameter fromByte: starting byte.
-    /// - parameter toByte: ending byte.
-    /// - parameter data: data from which need to convert.
-    /// - returns: converted value String.
-    private class func decodeString(fromByte: Int, toByte: Int, data: Data) -> String? {
-        let subData = data.subdata(in: Range<Int>.init(fromByte...toByte - fromByte))
-        return String(data: subData, encoding: String.Encoding.utf8)
     }
 
     /// Decode data to Bool.
