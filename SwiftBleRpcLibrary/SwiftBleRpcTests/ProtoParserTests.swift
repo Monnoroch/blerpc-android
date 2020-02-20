@@ -21,7 +21,7 @@ class ProtoParserTests: XCTestCase {
     }
 
     func testDecodeInt4Bytes() throws {
-        let decoded = try ProtoDecoder.decode(data: Data.init(hex: "007B45D4E6"), from: 2, to: 5, type: .int32) as? Int32
+        let decoded = try ProtoDecoder.decode(data: Data.init(hex: "007B45D4E6"), from: 1, to: 5, type: .int32) as? Int32
         expect(decoded).to(equal(-422296197))
     }
 
