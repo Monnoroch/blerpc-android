@@ -115,8 +115,4 @@ class ProtoParserTests: XCTestCase {
     func testEncodeWrongType() {
         expect { try ProtoEncoder.encode(object: 123, from: 0, to: 4, type: .unknown) }.to(throwError(ProtoParserErrors.notSupportedType))
     }
-
-    func failTest() {
-        expect(false).to(equal(true))
-    }
 }
