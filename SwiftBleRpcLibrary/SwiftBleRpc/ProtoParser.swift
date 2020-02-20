@@ -38,20 +38,6 @@ public class ProtoDecoder {
         return result
     }
 
-    /// Decode data to UInt16.
-    /// - parameter fromByte: starting byte.
-    /// - parameter data: data from which need to convert.
-    /// - returns: converted value IntUInt1632.
-    private class func decodeUInt16(fromByte _: Int, data: Data) -> UInt16 {
-        return data.bytes.withUnsafeBufferPointer { pointer in
-            (
-                pointer.baseAddress!.withMemoryRebound(to: UInt16.self, capacity: 1) { pointer in
-                    pointer
-                }
-            )
-        }.pointee
-    }
-
     /// Decode data to Int16.
     /// - parameter fromByte: starting byte.
     /// - parameter data: data from which need to convert.
@@ -61,20 +47,6 @@ public class ProtoDecoder {
         return subData.bytes.withUnsafeBufferPointer { pointer in
             (
                 pointer.baseAddress!.withMemoryRebound(to: Int16.self, capacity: 1) { pointer in
-                    pointer
-                }
-            )
-        }.pointee
-    }
-
-    /// Decode data to UInt32.
-    /// - parameter fromByte: starting byte.
-    /// - parameter data: data from which need to convert.
-    /// - returns: converted value UInt32.
-    private class func decodeUInt32(fromByte _: Int, data: Data) -> UInt32 {
-        return data.bytes.withUnsafeBufferPointer { pointer in
-            (
-                pointer.baseAddress!.withMemoryRebound(to: UInt32.self, capacity: 1) { pointer in
                     pointer
                 }
             )
@@ -93,16 +65,6 @@ public class ProtoDecoder {
                 }
             )
         }.pointee
-    }
-
-    /// Decode data to String.
-    /// - parameter fromByte: starting byte.
-    /// - parameter toByte: ending byte.
-    /// - parameter data: data from which need to convert.
-    /// - returns: converted value String.
-    private class func decodeString(fromByte: Int, toByte: Int, data: Data) -> String? {
-        let subData = data.subdata(in: Range<Int>.init(fromByte...toByte - fromByte))
-        return String(data: subData, encoding: String.Encoding.utf8)
     }
 
     /// Decode data to Bool.
@@ -156,34 +118,6 @@ public class ProtoDecoder {
 
 /// Encoder bytes helper.
 public class ProtoEncoder {
-    /// Encode Int to Data.
-    /// - parameter value: value to convert (Int32).
-    /// - returns: converted Data.
-    private class func encodeInt(value: Int32) -> Data? {
-        var valuePointer = value
-        let data = NSData(bytes: &valuePointer, length: 1)
-        return data as Data
-    }
-
-    /// Encode Int to Data.
-    /// - parameter value: value to convert (Int16).
-    /// - returns: converted Data.
-    private class func encodeInt(value: Int16) -> Data? {
-        var valuePointer = value
-        let data = NSData(bytes: &valuePointer, length: 2)
-        return data as Data
-    }
-
-    /// Encode Int to Data.
-    /// - parameter value: value to convert (Int32).
-    /// - parameter lenth: in how much bytes to encode.
-    /// - returns: converted Data.
-    private class func encodeInt(value: Int32, lenth: Int) -> Data? {
-        var valuePointer = value
-        let data = NSData(bytes: &valuePointer, length: lenth)
-        return data as Data
-    }
-
     /// Encode any object to data.
     /// - parameter object: any object to convert.
     /// - parameter from: from byte inside data.
@@ -196,17 +130,22 @@ public class ProtoEncoder {
         }
         switch type {
         case .int32:
+            if to - from > 4 {
+                throw ProtoParserErrors.wrongData
+            }
             var valuePointer = object
             let data = NSData(bytes: &valuePointer, length: to - from)
             return data as Data
         case .byte:
             let data = object as! Data
-            if to > data.count {
+            if to - from != data.count {
                 throw ProtoParserErrors.wrongData
-            } else {
-                return data.subdata(in: Range(NSRange(location: from, length: to - from))!)
             }
+            return data
         case .bool:
+            if to - from != 1 {
+                throw ProtoParserErrors.wrongData
+            }
             var valuePointer = object
             let data = NSData(bytes: &valuePointer, length: 1)
             return data as Data
