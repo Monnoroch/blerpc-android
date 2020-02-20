@@ -201,8 +201,7 @@ public class ProtoEncoder {
             return data as Data
         case .byte:
             let data = object as! Data
-            let length = to - from
-            if length > data.count {
+            if to > data.count {
                 throw ProtoParserErrors.wrongData
             } else {
                 return data.subdata(in: Range(NSRange(location: from, length: to - from))!)
