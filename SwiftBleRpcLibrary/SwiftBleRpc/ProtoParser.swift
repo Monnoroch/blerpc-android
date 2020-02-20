@@ -85,28 +85,24 @@ public class ProtoDecoder {
         guard let type = type else {
             throw ProtoParserErrors.notSupportedType
         }
+        if to > data.count {
+            throw ProtoParserErrors.wrongData
+        }
         switch type {
         case .int32:
-            if to > data.count {
-                throw ProtoParserErrors.wrongData
+            if to - from == 1 {
+                return Int32(ProtoDecoder.decodeUInt8(fromByte: from, data: data))
+            } else if to - from == 2 {
+                return Int32(ProtoDecoder.decodeInt16(fromByte: from, data: data))
+            } else if to - from == 4 {
+                return Int32(ProtoDecoder.decodeInt32(fromByte: from, data: data))
             } else {
-                if to - from == 1 {
-                    return Int32(ProtoDecoder.decodeUInt8(fromByte: from, data: data))
-                } else if to - from == 2 {
-                    return Int32(ProtoDecoder.decodeInt16(fromByte: from, data: data))
-                } else if to - from == 4 {
-                    return Int32(ProtoDecoder.decodeInt32(fromByte: from, data: data))
-                } else {
-                    throw ProtoParserErrors.wrongData
-                }
+                throw ProtoParserErrors.wrongData
             }
         case .byte:
-            if to > data.count {
-                throw ProtoParserErrors.wrongData
-            }
             return data.subdata(in: from..<to)
         case .bool:
-            if to > data.count {
+            if to - from != 1 {
                 throw ProtoParserErrors.wrongData
             }
             return ProtoDecoder.decodeBool(fromByte: from, data: data)
