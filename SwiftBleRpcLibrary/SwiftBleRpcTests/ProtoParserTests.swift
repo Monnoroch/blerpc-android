@@ -70,7 +70,7 @@ class ProtoParserTests: XCTestCase {
     }
 
     func testEncodeIntMoreThanFourBytesFails() throws {
-        expect { try ProtoEncoder.encode(object: 35278, from: 0, to: 5, type: .int32) }.to(throwError())
+        expect { try ProtoEncoder.encode(object: 35278, from: 0, to: 5, type: .int32) }.to(throwError(ProtoParserErrors.wrongData))
     }
 
     func testEncodeBoolTrue() throws {
@@ -84,7 +84,7 @@ class ProtoParserTests: XCTestCase {
     }
 
     func testEncodeBoolMoreThanOneBytesFails() throws {
-        expect { try ProtoEncoder.encode(object: true, from: 0, to: 2, type: .bool) }.to(throwError())
+        expect { try ProtoEncoder.encode(object: true, from: 0, to: 2, type: .bool) }.to(throwError(ProtoParserErrors.wrongData))
     }
 
     func testEncodeEmptyBytes() throws {
