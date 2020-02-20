@@ -156,34 +156,6 @@ public class ProtoDecoder {
 
 /// Encoder bytes helper.
 public class ProtoEncoder {
-    /// Encode Int to Data.
-    /// - parameter value: value to convert (Int32).
-    /// - returns: converted Data.
-    private class func encodeInt(value: Int32) -> Data? {
-        var valuePointer = value
-        let data = NSData(bytes: &valuePointer, length: 1)
-        return data as Data
-    }
-
-    /// Encode Int to Data.
-    /// - parameter value: value to convert (Int16).
-    /// - returns: converted Data.
-    private class func encodeInt(value: Int16) -> Data? {
-        var valuePointer = value
-        let data = NSData(bytes: &valuePointer, length: 2)
-        return data as Data
-    }
-
-    /// Encode Int to Data.
-    /// - parameter value: value to convert (Int32).
-    /// - parameter lenth: in how much bytes to encode.
-    /// - returns: converted Data.
-    private class func encodeInt(value: Int32, lenth: Int) -> Data? {
-        var valuePointer = value
-        let data = NSData(bytes: &valuePointer, length: lenth)
-        return data as Data
-    }
-
     /// Encode any object to data.
     /// - parameter object: any object to convert.
     /// - parameter from: from byte inside data.
@@ -196,17 +168,22 @@ public class ProtoEncoder {
         }
         switch type {
         case .int32:
+            if to - from > 4 {
+                throw ProtoParserErrors.wrongData
+            }
             var valuePointer = object
             let data = NSData(bytes: &valuePointer, length: to - from)
             return data as Data
         case .byte:
             let data = object as! Data
-            if to > data.count {
+            if to - from != data.count {
                 throw ProtoParserErrors.wrongData
-            } else {
-                return data.subdata(in: Range(NSRange(location: from, length: to - from))!)
             }
+            return data
         case .bool:
+            if to - from != 1 {
+                throw ProtoParserErrors.wrongData
+            }
             var valuePointer = object
             let data = NSData(bytes: &valuePointer, length: 1)
             return data as Data
