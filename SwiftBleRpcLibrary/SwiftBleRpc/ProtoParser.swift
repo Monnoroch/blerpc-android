@@ -94,7 +94,7 @@ public class ProtoDecoder {
                     return Int32(ProtoDecoder.decodeUInt8(fromByte: from, data: data))
                 } else if to - from == 2 {
                     return Int32(ProtoDecoder.decodeInt16(fromByte: from, data: data))
-                } else {
+                } else if to - from == 4 {
                     return Int32(ProtoDecoder.decodeInt32(fromByte: from, data: data))
                 } else {
                     throw ProtoParserErrors.wrongData
