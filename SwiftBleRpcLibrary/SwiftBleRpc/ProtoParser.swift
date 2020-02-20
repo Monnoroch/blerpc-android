@@ -58,7 +58,7 @@ public class ProtoDecoder {
     /// - parameter data: data from which need to convert.
     /// - returns: converted value Int32.
     private class func decodeInt32(fromByte: Int, data: Data) -> Int32 {
-        return data.subdata(in: fromByte..<4).bytes.withUnsafeBufferPointer { pointer in
+        return data.subdata(in: fromByte..<fromByte + 4).bytes.withUnsafeBufferPointer { pointer in
             (
                 pointer.baseAddress!.withMemoryRebound(to: Int32.self, capacity: 1) { pointer in
                     pointer

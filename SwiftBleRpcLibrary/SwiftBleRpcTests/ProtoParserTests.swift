@@ -6,32 +6,32 @@ import Nimble
 class ProtoParserTests: XCTestCase {
 
     func testDecodeInt1Byte() throws {
-        let decoded = try ProtoDecoder.decode(data: Data.init(hex: "7B"), from: 0, to: 1, type: .int32) as? Int32
+        let decoded = try ProtoDecoder.decode(data: Data.init(hex: "007B"), from: 1, to: 2, type: .int32) as? Int32
         expect(decoded).to(equal(123))
     }
 
     func testDecodeInt2Bytes() throws {
-        let decoded = try ProtoDecoder.decode(data: Data.init(hex: "7B45"), from: 0, to: 2, type: .int32) as? Int32
+        let decoded = try ProtoDecoder.decode(data: Data.init(hex: "007B45"), from: 1, to: 3, type: .int32) as? Int32
         expect(decoded).to(equal(17787))
     }
 
     func testDecodeInt2BytesFromLongData() throws {
-        let decoded = try ProtoDecoder.decode(data: Data.init(hex: "7B45D4E6"), from: 0, to: 2, type: .int32) as? Int32
+        let decoded = try ProtoDecoder.decode(data: Data.init(hex: "007B45D4E6"), from: 1, to: 3, type: .int32) as? Int32
         expect(decoded).to(equal(17787))
     }
 
     func testDecodeInt4Bytes() throws {
-        let decoded = try ProtoDecoder.decode(data: Data.init(hex: "7B45D4E6"), from: 0, to: 4, type: .int32) as? Int32
+        let decoded = try ProtoDecoder.decode(data: Data.init(hex: "007B45D4E6"), from: 2, to: 5, type: .int32) as? Int32
         expect(decoded).to(equal(-422296197))
     }
 
     func testDecodeBoolFalse() throws {
-        let decoded = try ProtoDecoder.decode(data: Data.init(hex: "0"), from: 0, to: 1, type: .bool) as? Bool
+        let decoded = try ProtoDecoder.decode(data: Data.init(hex: "0000"), from: 1, to: 2, type: .bool) as? Bool
         expect(decoded).to(equal(false))
     }
 
     func testDecodeBoolTrue() throws {
-        let decoded = try ProtoDecoder.decode(data: Data.init(hex: "1"), from: 0, to: 1, type: .bool) as? Bool
+        let decoded = try ProtoDecoder.decode(data: Data.init(hex: "0001"), from: 1, to: 2, type: .bool) as? Bool
         expect(decoded).to(equal(true))
     }
 
