@@ -58,7 +58,7 @@ public class ProtoDecoder {
     /// - parameter data: data from which need to convert.
     /// - returns: converted value Int32.
     private class func decodeInt32(fromByte: Int, data: Data) -> Int32 {
-        return data.subdata(in: fromByte..<4).bytes.withUnsafeBufferPointer { pointer in
+        return data.subdata(in: fromByte..<fromByte + 4).bytes.withUnsafeBufferPointer { pointer in
             (
                 pointer.baseAddress!.withMemoryRebound(to: Int32.self, capacity: 1) { pointer in
                     pointer
@@ -85,31 +85,27 @@ public class ProtoDecoder {
         guard let type = type else {
             throw ProtoParserErrors.notSupportedType
         }
+        if to > data.count {
+            throw ProtoParserErrors.wrongData
+        }
         switch type {
         case .int32:
-            if to > data.count {
-                throw ProtoParserErrors.wrongData
+            if to - from == 1 {
+                return Int32(ProtoDecoder.decodeUInt8(fromByte: from, data: data))
+            } else if to - from == 2 {
+                return Int32(ProtoDecoder.decodeInt16(fromByte: from, data: data))
+            } else if to - from == 4 {
+                return Int32(ProtoDecoder.decodeInt32(fromByte: from, data: data))
             } else {
-                if to - from == 1 {
-                    return Int32(ProtoDecoder.decodeUInt8(fromByte: from, data: data))
-                } else if to - from == 2 {
-                    return Int32(ProtoDecoder.decodeInt16(fromByte: from, data: data))
-                } else {
-                    return Int32(ProtoDecoder.decodeInt32(fromByte: from, data: data))
-                }
+                throw ProtoParserErrors.wrongData
             }
         case .byte:
-            if to > data.count {
-                throw ProtoParserErrors.wrongData
-            } else {
-                return data.subdata(in: Range(NSRange(location: from, length: to - from))!)
-            }
+            return data.subdata(in: from..<to)
         case .bool:
-            if to > data.count {
+            if to - from != 1 {
                 throw ProtoParserErrors.wrongData
-            } else {
-                return ProtoDecoder.decodeBool(fromByte: from, data: data)
             }
+            return ProtoDecoder.decodeBool(fromByte: from, data: data)
         default:
             throw ProtoParserErrors.notSupportedType
         }

@@ -8,7 +8,7 @@ extension Device_SetValueRequest {
     static func bleRpcDecode(data: Data) throws -> Device_SetValueRequest {
         var proto = Device_SetValueRequest()
         proto.intValue = try ProtoDecoder.decode(data: data, from: 0, to: 4, type: ProtoType.int32) as! TYPE_INT32
-        proto.nestedMessageValue = try Device_NestedMessage.bleRpcDecode(data: data.subdata(in: Range.init(NSRange.init(location: 4, length: 8 - 4))!))
+        proto.nestedMessageValue = try Device_NestedMessage.bleRpcDecode(data: data.subdata(in: 4..<8))
         return proto
     }
 
