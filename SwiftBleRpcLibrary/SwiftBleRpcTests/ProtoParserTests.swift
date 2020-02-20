@@ -48,30 +48,15 @@ class ProtoParserTests: XCTestCase {
     }
 
     func testDecodeIntWrongSize() {
-        do {
-            _ = try ProtoDecoder.decode(data: Data.init(hex: "7B"), from: 0, to: 4, type: .int32) as? Int32
-            failTest()
-        } catch {
-            expect(String(reflecting: error)).to(equal(String(reflecting: ProtoParserErrors.wrongData)))
-        }
+        expect { try ProtoDecoder.decode(data: Data.init(hex: "7B"), from: 0, to: 4, type: .int32) as? Int32 }.to(throwError())
     }
 
     func testDecodeWrongType() {
-        do {
-            _ = try ProtoDecoder.decode(data: Data.init(hex: "7B"), from: 0, to: 4, type: .unknown) as? Int32
-            failTest()
-        } catch {
-            expect(String(reflecting: error)).to(equal(String(reflecting: ProtoParserErrors.notSupportedType)))
-        }
+        expect { try ProtoDecoder.decode(data: Data.init(hex: "7B"), from: 0, to: 4, type: .unknown) as? Int32 }.to(throwError())
     }
 
     func testDecodeBytesWrongSize() throws {
-        do {
-            _ = try ProtoDecoder.decode(data: Data.init(hex: "36172540"), from: 0, to: 10, type: .byte) as? Data
-            failTest()
-        } catch {
-            expect(String(reflecting: error)).to(equal(String(reflecting: ProtoParserErrors.wrongData)))
-        }
+        expect { try ProtoDecoder.decode(data: Data.init(hex: "36172540"), from: 0, to: 10, type: .byte) as? Data }.to(throwError())
     }
 
     func testEncodeInt1Byte() throws {
@@ -85,12 +70,7 @@ class ProtoParserTests: XCTestCase {
     }
 
     func testEncodeIntMoreThanFourBytesFails() throws {
-        do {
-            _ = try ProtoEncoder.encode(object: 35278, from: 0, to: 5, type: .int32)
-            failTest()
-        } catch {
-            expect(String(reflecting: error)).to(equal(String(reflecting: ProtoParserErrors.wrongData)))
-        }
+        expect { try ProtoEncoder.encode(object: 35278, from: 0, to: 5, type: .int32) }.to(throwError())
     }
 
     func testEncodeBoolTrue() throws {
@@ -104,12 +84,7 @@ class ProtoParserTests: XCTestCase {
     }
 
     func testEncodeBoolMoreThanOneBytesFails() throws {
-        do {
-            _ = try ProtoEncoder.encode(object: true, from: 0, to: 2, type: .bool)
-            failTest()
-        } catch {
-            expect(String(reflecting: error)).to(equal(String(reflecting: ProtoParserErrors.wrongData)))
-        }
+        expect { try ProtoEncoder.encode(object: true, from: 0, to: 2, type: .bool) }.to(throwError())
     }
 
     func testEncodeEmptyBytes() throws {
@@ -118,10 +93,7 @@ class ProtoParserTests: XCTestCase {
     }
 
     func testEncodePartBytes() throws {
-        let data = Data.init(hex: "36172540")
-        let encoded = try ProtoEncoder.encode(object: data, from: 0, to: 1, type: .byte)
-        print(encoded.bytes)
-        expect(encoded).to(equal(Data.init(hex: "36")))
+        expect { try ProtoEncoder.encode(object: Data(hex: "36172540"), from: 0, to: 1, type: .byte) }.to(throwError())
     }
 
     func testEncodeFullBytes() throws {
@@ -131,27 +103,17 @@ class ProtoParserTests: XCTestCase {
     }
 
     func testEncodeFromNotZeroBytes() throws {
-        let data = Data.init(hex: "36172540")
+        let data = Data.init(hex: "2540")
         let encoded = try ProtoEncoder.encode(object: data, from: 2, to: 4, type: .byte)
         expect(encoded).to(equal(Data.init(hex: "2540")))
     }
 
     func testEncodeBytesWrongSize() throws {
-        do {
-            _ = try ProtoEncoder.encode(object: Data.init(hex: "36172540"), from: 0, to: 15, type: .byte)
-            failTest()
-        } catch {
-            expect(String(reflecting: error)).to(equal(String(reflecting: ProtoParserErrors.wrongData)))
-        }
+        expect { try ProtoEncoder.encode(object: Data(hex: "36172540"), from: 0, to: 15, type: .byte) }.to(throwError())
     }
 
     func testEncodeWrongType() {
-        do {
-            _ = try ProtoEncoder.encode(object: 123, from: 0, to: 4, type: .unknown)
-            failTest()
-        } catch {
-            expect(String(reflecting: error)).to(equal(String(reflecting: ProtoParserErrors.notSupportedType)))
-        }
+        expect { try ProtoEncoder.encode(object: 123, from: 0, to: 4, type: .unknown) }.to(throwError())
     }
 
     func failTest() {
