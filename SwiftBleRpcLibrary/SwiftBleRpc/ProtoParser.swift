@@ -102,7 +102,7 @@ public class ProtoDecoder {
             if to > data.count {
                 throw ProtoParserErrors.wrongData
             } else {
-                return data.subdata(in: Range(NSRange(location: from, length: to - from))!)
+                return data.subdata(in: to..<from)
             }
         case .bool:
             if to > data.count {
