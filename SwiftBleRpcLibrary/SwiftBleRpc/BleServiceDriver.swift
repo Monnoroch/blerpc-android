@@ -20,6 +20,9 @@ open class BleServiceDriver {
     /// Connected peripheral.
     // TODO(#70): remove support for connected peripherals.
     private var peripheral: Peripheral?
+    
+    /// Cancelable for flow.
+    private var cancelable: [Cancelable] = []
 
     // MARK: - Initializers
 
@@ -36,6 +39,14 @@ open class BleServiceDriver {
     }
 
     // MARK: - Internal methods
+
+    /// Disconnect all flow.
+    public func disconnect() {
+        cancelable.forEach {
+            $0.dispose()
+        }
+        cancelable.removeAll()
+    }
 
     /// Call subscribe request over Ble.
     /// - parameter request: proto request encoded to Data. Must be empty message.
@@ -112,7 +123,18 @@ open class BleServiceDriver {
     /// Check current conenction state and if not connected - trying to connect to device.
     /// - returns: Peripheral as observable value.
     private func getConnectedPeripheral() -> Observable<Peripheral> {
-        return Observable.just(peripheral!)
+        return Observable<Peripheral>.create { [weak self] observer -> Disposable in
+            guard let `self` = self else { return Disposables.create() }
+            observer.onNext(self.peripheral!)
+            let disposables = Disposables.create {
+                observer.onCompleted()
+            }
+            self.cancelable.append(disposables)
+            return disposables
+        }.flatMapLatest { peripheral -> Observable<Peripheral> in
+            guard !peripheral.isConnected else { return .just(peripheral) }
+            return peripheral.establishConnection()
+        }
     }
 
     /// Method which connects to device (if needed) and discover requested characteristic.
