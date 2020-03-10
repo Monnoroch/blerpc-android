@@ -44,6 +44,11 @@ open class BleServiceDriver {
         disconnectAll.onNext(())
     }
 
+    /// Event when all subscription disposed.
+    public func disconnectEvent() -> Observable<Void> {
+        return disconnectAll.asObservable()
+    }
+
     /// Call subscribe request over Ble.
     /// - parameter request: proto request encoded to Data. Must be empty message.
     /// - parameter serviceUUID: *UUID* of a service.
