@@ -20,10 +20,9 @@ open class BleServiceDriver {
     /// Connected peripheral.
     // TODO(#70): remove support for connected peripherals.
     private var peripheral: Peripheral?
-    
-    /// Cancelable for flow.
-    private var cancelable: [Cancelable] = []
 
+    /// Event for disconnect all subscription.
+    private var disconnectAll = PublishSubject<Void>()
     // MARK: - Initializers
 
     /// Please use init(peripheral:) instead.
@@ -42,10 +41,7 @@ open class BleServiceDriver {
 
     /// Disconnect all flow.
     public func disconnect() {
-        cancelable.forEach {
-            $0.dispose()
-        }
-        cancelable.removeAll()
+        disconnectAll.onNext(())
     }
 
     /// Call subscribe request over Ble.
@@ -75,6 +71,7 @@ open class BleServiceDriver {
                 }
                 return data
             }
+            .takeUntil(disconnectAll)
     }
 
     /// Call read request over Ble.
@@ -123,15 +120,9 @@ open class BleServiceDriver {
     /// Check current conenction state and if not connected - trying to connect to device.
     /// - returns: Peripheral as observable value.
     private func getConnectedPeripheral() -> Observable<Peripheral> {
-        return Observable<Peripheral>.create { [weak self] observer -> Disposable in
-            guard let `self` = self else { return Disposables.create() }
-            observer.onNext(self.peripheral!)
-            let disposables = Disposables.create {
-                observer.onCompleted()
-            }
-            self.cancelable.append(disposables)
-            return disposables
-        }.flatMapLatest { peripheral -> Observable<Peripheral> in
+        return Observable<Peripheral>.just(
+            peripheral!
+        ).flatMapLatest { peripheral -> Observable<Peripheral> in
             guard !peripheral.isConnected else { return .just(peripheral) }
             return peripheral.establishConnection()
         }
