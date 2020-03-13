@@ -130,6 +130,21 @@ open class BleServiceDriver {
         ).flatMapLatest { peripheral -> Observable<Peripheral> in
             guard !peripheral.isConnected else { return .just(peripheral) }
             return peripheral.establishConnection()
+        }.retryWhenAttemptCount(2) { error -> Observable<Bool> in
+            if let error = error as? RxBluetoothKit.BluetoothError, case let RxBluetoothKit.BluetoothError.peripheralIsAlreadyObservingConnection(peripheral) = error {
+                if peripheral.state == .connecting {
+                    return Observable<Int>.interval(
+                        1.0,
+                        scheduler: ConcurrentDispatchQueueScheduler(qos: .background)
+                    ).filter { _ in
+                        peripheral.state != .connecting
+                    }.map { _ -> Bool in
+                        true
+                    }.take(1)
+                }
+                return .just(true)
+            }
+            return .error(error)
         }
     }
 
@@ -148,6 +163,30 @@ open class BleServiceDriver {
                 service.discoverCharacteristics([CBUUID(string: characteristicUUID)])
             }.flatMap { characteristics in
                 Observable.from(characteristics)
+            }
+        }
+    }
+}
+
+private extension ObservableType {
+
+    /// Retries the source observable sequence on error.
+    /// - parameter maxAttemptCount: Maximum number of times to repeat the sequence.
+    /// - parameter shouldRetry: Always retruns `true` by default.
+    func retryWhenAttemptCount(
+        _ maxAttemptCount: Int = 1,
+        shouldRetry: @escaping (Error) -> Observable<Bool> = { _ in
+            .just(true)
+        }
+    ) -> Observable<E> {
+        return retryWhen { (errors: Observable<Error>) in
+            errors.enumerated().flatMap { attempt, error -> Observable<Void> in
+                shouldRetry(error).flatMap { isRetry -> Observable<Void> in
+                    guard isRetry, maxAttemptCount > attempt else {
+                        return .error(error)
+                    }
+                    return .just(())
+                }
             }
         }
     }
