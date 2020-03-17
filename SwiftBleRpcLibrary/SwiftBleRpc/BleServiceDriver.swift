@@ -18,7 +18,6 @@ open class BleServiceDriver {
     // MARK: - Variables
 
     /// Connected peripheral.
-    // TODO(#70): remove support for connected peripherals.
     private var peripheral: Peripheral?
 
     /// Event for disconnect all subscription.
