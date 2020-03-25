@@ -22,8 +22,8 @@ open class BleServiceDriver {
     /// Event for disconnect all subscription.
     private var disconnectAll = PublishSubject<Void>()
     
-    /// Semaphore for establish connection.
-    private let semaphore = DispatchSemaphore(value: 1)
+    /// Lock for establish connection.
+    private let lock = NSLock()
 
     /// DisposeBag for establish connection.
     private var disposeBag = DisposeBag()
@@ -51,11 +51,6 @@ open class BleServiceDriver {
     public func disconnect() {
         disposeBag = DisposeBag()
         disconnectAll.onNext(())
-    }
-
-    /// Event when all subscription disposed.
-    public func disconnectEvent() -> Observable<Void> {
-        return disconnectAll.asObservable()
     }
 
     /// Call subscribe request over Ble.
@@ -131,10 +126,11 @@ open class BleServiceDriver {
 
     // MARK: - Private methods
 
-    /// Check current conenction state and if not connected - trying to connect to device.
+    /// Check current conenction state if connection or disconnect wait, when send event to peripheralEvent.
+    /// If connected then send event from peripheralEvent.
     /// - returns: Peripheral as observable value.
     private func getConnectedPeripheral() -> Observable<Peripheral> {
-        semaphore.wait()
+        lock.lock()
         if let peripheralValue = try? peripheralEvent.value() {
             if peripheralValue.state != .connecting && !peripheralValue.isConnected {
                 disposeBag = DisposeBag()
@@ -143,7 +139,7 @@ open class BleServiceDriver {
                     .disposed(by: disposeBag)
             }
         }
-        semaphore.signal()
+        lock.unlock()
         return peripheralEvent.asObservable().filter { $0.isConnected }
     }
 
