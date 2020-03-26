@@ -98,7 +98,7 @@ open class BleServiceDriver {
             characteristicUUID: characteristicUUID)
             .flatMap { characteristic in
                 characteristic.readValue()
-            }.take(1).asSingle().map { characteristic in
+            }.takeUntil(disconnectAll).take(1).asSingle().map { characteristic in
                 guard let data = characteristic.value else {
                     throw BluetoothError.characteristicReadFailed(
                         characteristic,
@@ -119,18 +119,24 @@ open class BleServiceDriver {
             characteristicUUID: characteristicUUID)
             .flatMap { characteristic in
                 characteristic.writeValue(request, type: .withResponse)
-            }.take(1).asSingle().map { _ in
+            }.takeUntil(disconnectAll).take(1).asSingle().map { _ in
                 return Data()
             }
     }
 
     // MARK: - Private methods
 
-    /// Check current conenction state if connection or disconnect wait, when send event to peripheralEvent.
-    /// If connected then send event from peripheralEvent.
+    /// We block flows, we receive peripheral which at us is installed in behaviorsubject.
+    /// If the peripheral state is in online mode and has not yet received a connection,
+    /// then reset all previous connection attempts and try to establish a new connection.
+    /// Unlock threads. And we pass from the function an element with an established connection.
+    /// If we have a connection established, simply transfer the element with the connection established.
     /// - returns: Peripheral as observable value.
     private func getConnectedPeripheral() -> Observable<Peripheral> {
         lock.lock()
+        defer {
+            lock.unlock()
+        }
         if let peripheralValue = try? peripheralEvent.value() {
             if peripheralValue.state != .connecting && !peripheralValue.isConnected {
                 disposeBag = DisposeBag()
@@ -139,7 +145,6 @@ open class BleServiceDriver {
                     .disposed(by: disposeBag)
             }
         }
-        lock.unlock()
         return peripheralEvent.asObservable().filter { $0.isConnected }
     }
 
