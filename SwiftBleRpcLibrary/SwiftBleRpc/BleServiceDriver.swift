@@ -23,10 +23,10 @@ open class BleServiceDriver {
     private var disconnectAll = PublishSubject<Void>()
     
     /// Lock for establish connection.
-    private let lock = NSLock()
+    private let establishConnectionLock = NSLock()
 
     /// DisposeBag for establish connection.
-    private var disposeBag = DisposeBag()
+    private var establishConnectionDisposeBag = DisposeBag()
 
     /// Peripheral event for connection.
     private let peripheralEvent: BehaviorSubject<Peripheral>
@@ -49,7 +49,7 @@ open class BleServiceDriver {
 
     /// Disconnect all flow.
     public func disconnect() {
-        disposeBag = DisposeBag()
+        establishConnectionDisposeBag = DisposeBag()
         disconnectAll.onNext(())
     }
 
@@ -133,16 +133,20 @@ open class BleServiceDriver {
     /// If we have a connection established, simply transfer the element with the connection established.
     /// - returns: Peripheral as observable value.
     private func getConnectedPeripheral() -> Observable<Peripheral> {
-        lock.lock()
-        defer {
-            lock.unlock()
-        }
+        establishConnectionLock.lock()
         if let peripheralValue = try? peripheralEvent.value() {
+            defer {
+                establishConnectionLock.unlock()
+            }
             if peripheralValue.state != .connecting && !peripheralValue.isConnected {
-                disposeBag = DisposeBag()
+                establishConnectionDisposeBag = DisposeBag()
                 peripheralValue.establishConnection()
                     .subscribe(onNext: peripheralEvent.onNext)
-                    .disposed(by: disposeBag)
+                    .disposed(by: establishConnectionDisposeBag)
+            }
+        } else {
+            defer {
+                establishConnectionLock.unlock()
             }
         }
         return peripheralEvent.asObservable().filter { $0.isConnected }
