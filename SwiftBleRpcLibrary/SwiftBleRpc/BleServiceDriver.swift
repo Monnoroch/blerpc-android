@@ -145,9 +145,7 @@ open class BleServiceDriver {
                     .disposed(by: establishConnectionDisposeBag)
             }
         } else {
-            defer {
-                establishConnectionLock.unlock()
-            }
+            establishConnectionLock.unlock()
         }
         return peripheralEvent.asObservable().filter { $0.isConnected }
     }
