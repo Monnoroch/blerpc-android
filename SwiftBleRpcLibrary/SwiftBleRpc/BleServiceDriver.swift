@@ -133,18 +133,16 @@ open class BleServiceDriver {
     /// If we have a connection established, simply transfer the element with the connection established.
     /// - returns: Peripheral as observable value.
     private func getConnectedPeripheral() -> Observable<Peripheral> {
-        establishConnectionLock.lock()
-        if let peripheralValue = try? peripheralEvent.value() {
-            defer {
-                establishConnectionLock.unlock()
-            }
-            if peripheralValue.state != .connecting && !peripheralValue.isConnected {
-                establishConnectionDisposeBag = DisposeBag()
-                peripheralValue.establishConnection()
-                    .subscribe(onNext: peripheralEvent.onNext)
-                    .disposed(by: establishConnectionDisposeBag)
-            }
-        } else {
+        do {
+            establishConnectionLock.lock()
+            let peripheral = try peripheralEvent.value()
+            try ConnectionHelper.establishConnection(
+                peripheral: peripheral,
+                disposeBag: &establishConnectionDisposeBag,
+                peripheralEvent: peripheralEvent
+            )
+            establishConnectionLock.unlock()
+        } catch {
             establishConnectionLock.unlock()
         }
         return peripheralEvent.asObservable().filter { $0.isConnected }
@@ -166,6 +164,23 @@ open class BleServiceDriver {
             }.flatMap { characteristics in
                 Observable.from(characteristics)
             }
+        }
+    }
+}
+
+class ConnectionHelper {
+    /// Establish connection and emit from peripheralEvent.
+    fileprivate static func establishConnection(
+        peripheral: Peripheral,
+        disposeBag: inout DisposeBag,
+        peripheralEvent: BehaviorSubject<Peripheral>
+    ) throws {
+        if peripheral.state != .connecting && !peripheral.isConnected {
+            disposeBag = DisposeBag()
+            /// When state disconnecting, then func establishConnection from RxBluetoothKit wait when finish disconect and after start connecting
+            peripheral.establishConnection()
+                .subscribe(onNext: peripheralEvent.onNext)
+                .disposed(by: disposeBag)
         }
     }
 }
