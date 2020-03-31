@@ -202,4 +202,55 @@ class BleServiceDriverTest: XCTestCase {
             ).take(2).toBlocking(timeout: 5).toArray()
         XCTAssertEqual(responseArray, subscribeResponse.map { String(data: $0, encoding: .utf8) })
     }
+
+    func testDisconnectOneConnection() {
+        let disposeBag = DisposeBag()
+        var disposedAll = false
+        let expectationEvent = expectation(description: "disposedAll")
+        try! bleServiceDriver.subscribe(
+            request: Data(),
+            serviceUUID: uuid,
+            characteristicUUID: uuid
+        ).subscribe(
+            onDisposed: {
+                disposedAll = true
+                expectationEvent.fulfill()
+            }
+        ).disposed(by: disposeBag)
+        bleServiceDriver.disconnect()
+        waitForExpectations(timeout: 5, handler: nil)
+        XCTAssertTrue(disposedAll, "Not disconnect")
+    }
+
+    func testDisconnectMultipleConnection() {
+        let disposeBag = DisposeBag()
+        var disposedFirst = false
+        var disposedSecond = false
+        let expectationEventFirst = expectation(description: "Expect first dispose connection")
+        let expectationEventSecond = expectation(description: "Expect second dispose connection")
+        try! bleServiceDriver.subscribe(
+            request: Data(),
+            serviceUUID: uuid,
+            characteristicUUID: uuid
+        ).subscribe(
+            onDisposed: {
+                disposedFirst = true
+                expectationEventFirst.fulfill()
+            }
+        ).disposed(by: disposeBag)
+        try! bleServiceDriver.subscribe(
+            request: Data(),
+            serviceUUID: uuid,
+            characteristicUUID: uuid
+        ).subscribe(
+            onDisposed: {
+                disposedSecond = true
+                expectationEventSecond.fulfill()
+            }
+        ).disposed(by: disposeBag)
+        bleServiceDriver.disconnect()
+        waitForExpectations(timeout: 5, handler: nil)
+        XCTAssertTrue(disposedFirst, "Not disconnect first connection")
+        XCTAssertTrue(disposedSecond, "Not disconnect second connection")
+    }
 }

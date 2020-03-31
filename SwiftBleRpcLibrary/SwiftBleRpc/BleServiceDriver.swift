@@ -20,13 +20,13 @@ open class BleServiceDriver {
     private var peripheral: Peripheral?
 
     /// Event for disconnect all subscription.
-    private var disconnectAll = PublishSubject<Void>()
+    private var disconnectAll: PublishSubject<Void> = PublishSubject<Void>()
     
     /// Lock for establish connection.
     private let establishConnectionLock = NSLock()
 
     /// DisposeBag for establish connection.
-    private var establishConnectionDisposeBag = DisposeBag()
+    private var establishConnectionDisposeBag: DisposeBag = DisposeBag()
 
     /// Peripheral event for connection.
     private let peripheralEvent: BehaviorSubject<Peripheral>
