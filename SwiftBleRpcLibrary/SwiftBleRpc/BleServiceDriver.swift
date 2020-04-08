@@ -132,7 +132,7 @@ open class BleServiceDriver {
     /// Unlock threads. And we pass from the function an element with an established connection.
     /// If we have a connection established, simply transfer the element with the connection established.
     /// - returns: Peripheral as observable value.
-    func getConnectedPeripheral() -> Observable<Peripheral> {
+    private func getConnectedPeripheral() -> Observable<Peripheral> {
         establishConnection()
         return peripheralEvent.asObservable().filter { $0.isConnected }
     }
