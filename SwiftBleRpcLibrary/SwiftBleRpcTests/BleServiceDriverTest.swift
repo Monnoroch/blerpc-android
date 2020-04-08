@@ -674,7 +674,7 @@ class BleServiceDriverTest: XCTestCase {
         bleServiceDriver.disconnect()
         waitForExpectations(timeout: 5, handler: nil)
         if let errorDisconnect = errorDisconnect as? BleServiceDriverErrors {
-            XCTAssertEqual(errorDisconnect, BleServiceDriverErrors.notCanceledOperation, "Canceled operation")
+            XCTAssertEqual(errorDisconnect, BleServiceDriverErrors.disconnected, "Canceled operation")
         } else {
             XCTFail("Not return error")
         }
@@ -697,7 +697,7 @@ class BleServiceDriverTest: XCTestCase {
         bleServiceDriver.disconnect()
         waitForExpectations(timeout: 5, handler: nil)
         if let errorDisconnect = errorDisconnect as? BleServiceDriverErrors {
-            XCTAssertEqual(errorDisconnect, BleServiceDriverErrors.notCanceledOperation, "Canceled operation")
+            XCTAssertEqual(errorDisconnect, BleServiceDriverErrors.disconnected, "Canceled operation")
         } else {
             XCTFail("Not return error")
         }
@@ -732,12 +732,12 @@ class BleServiceDriverTest: XCTestCase {
         bleServiceDriver.disconnect()
         waitForExpectations(timeout: 5, handler: nil)
         if let errorDisconnect = errorDisconnectRead as? BleServiceDriverErrors {
-            XCTAssertEqual(errorDisconnect, BleServiceDriverErrors.notCanceledOperation, "Canceled operation")
+            XCTAssertEqual(errorDisconnect, BleServiceDriverErrors.disconnected, "Canceled operation")
         } else {
             XCTFail("Not return error")
         }
         if let errorDisconnect = errorDisconnectWrite as? BleServiceDriverErrors {
-            XCTAssertEqual(errorDisconnect, BleServiceDriverErrors.notCanceledOperation, "Canceled operation")
+            XCTAssertEqual(errorDisconnect, BleServiceDriverErrors.disconnected, "Canceled operation")
         } else {
             XCTFail("Not return error")
         }

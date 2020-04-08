@@ -12,7 +12,7 @@ public enum BleServiceDriverErrors: Error {
     case nonEmptyRequest
 
     /// Called when disconnect read/write and not end operation
-    case notCanceledOperation
+    case disconnected
 }
 
 /// Class which holds all operation with data transfer between iOS and Ble Device.
@@ -57,7 +57,7 @@ open class BleServiceDriver {
     public func disconnect() {
         establishConnectionDisposeBag = DisposeBag()
         disconnectSubscription.onNext(())
-        disconnectReadWrite.onError(BleServiceDriverErrors.notCanceledOperation)
+        disconnectReadWrite.onError(BleServiceDriverErrors.disconnected)
     }
 
     /// Call subscribe request over Ble.
