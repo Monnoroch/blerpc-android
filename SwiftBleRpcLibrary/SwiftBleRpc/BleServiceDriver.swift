@@ -10,6 +10,9 @@ public enum BleServiceDriverErrors: Error {
 
     /// Called when client sends non empty request for read or subscribe methods.
     case nonEmptyRequest
+
+    /// Called when disconnect read/write and not end operation
+    case notCanceledOperation
 }
 
 /// Class which holds all operation with data transfer between iOS and Ble Device.
@@ -20,8 +23,11 @@ open class BleServiceDriver {
     private var peripheral: Peripheral?
 
     /// Event for disconnect all subscription.
-    private var disconnectAll: PublishSubject<Void> = PublishSubject<Void>()
-    
+    private var disconnectSubscription: PublishSubject<Void> = PublishSubject<Void>()
+
+    /// Event for disconnect all read/write.
+    private var disconnectReadWrite: PublishSubject<Characteristic> = PublishSubject<Characteristic>()
+
     /// Lock for establish connection.
     private let establishConnectionLock = NSLock()
 
@@ -50,7 +56,8 @@ open class BleServiceDriver {
     /// Disconnect all flow.
     public func disconnect() {
         establishConnectionDisposeBag = DisposeBag()
-        disconnectAll.onNext(())
+        disconnectSubscription.onNext(())
+        disconnectReadWrite.onError(BleServiceDriverErrors.notCanceledOperation)
     }
 
     /// Call subscribe request over Ble.
@@ -80,7 +87,7 @@ open class BleServiceDriver {
                 }
                 return data
             }
-            .takeUntil(disconnectAll)
+            .takeUntil(disconnectSubscription)
     }
 
     /// Call read request over Ble.
@@ -95,17 +102,20 @@ open class BleServiceDriver {
         }
         return connectToDeviceAndDiscoverCharacteristic(
             serviceUUID: serviceUUID,
-            characteristicUUID: characteristicUUID)
-            .flatMap { characteristic in
-                characteristic.readValue()
-            }.takeUntil(disconnectAll).take(1).asSingle().map { characteristic in
-                guard let data = characteristic.value else {
-                    throw BluetoothError.characteristicReadFailed(
-                        characteristic,
-                        BleServiceDriverErrors.emptyResponse)
-                }
-                return data
+            characteristicUUID: characteristicUUID
+        ).flatMap { [weak self] characteristic -> Observable<Characteristic> in
+            guard let `self` = self else { return .just(characteristic) }
+            return Observable.merge(.just(characteristic), self.disconnectReadWrite.asObservable())
+        }.flatMap { characteristic in
+            characteristic.readValue()
+        }.take(1).asSingle().map { characteristic in
+            guard let data = characteristic.value else {
+                throw BluetoothError.characteristicReadFailed(
+                    characteristic,
+                    BleServiceDriverErrors.emptyResponse)
             }
+            return data
+        }
     }
 
     /// Call write request over Ble.
@@ -116,12 +126,15 @@ open class BleServiceDriver {
     public func write(request: Data, serviceUUID: String, characteristicUUID: String) -> Single<Data> {
         return connectToDeviceAndDiscoverCharacteristic(
             serviceUUID: serviceUUID,
-            characteristicUUID: characteristicUUID)
-            .flatMap { characteristic in
-                characteristic.writeValue(request, type: .withResponse)
-            }.takeUntil(disconnectAll).take(1).asSingle().map { _ in
-                return Data()
-            }
+            characteristicUUID: characteristicUUID
+        ).flatMap { [weak self] characteristic -> Observable<Characteristic> in
+            guard let `self` = self else { return .just(characteristic) }
+            return Observable.merge(.just(characteristic), self.disconnectReadWrite.asObservable())
+        }.flatMap { characteristic in
+            characteristic.writeValue(request, type: .withResponse)
+        }.take(1).asSingle().map { _ in
+            return Data()
+        }
     }
 
     // MARK: - Private methods
