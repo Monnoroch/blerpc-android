@@ -191,6 +191,7 @@ class BleServiceDriverTest: XCTestCase {
     var bleServiceDriver: BleServiceDriver!
     var peripheral: Peripheral!
 
+    // TODO(#101): Creating disconnect tests while read / write / subscription is running
     override func setUp() {
         peripheral = CentralManagerSwizzle.instance.peripheral()
         uuid = peripheral!.identifier.uuidString
@@ -249,119 +250,26 @@ class BleServiceDriverTest: XCTestCase {
             onDisposed: {
                 disposedAll = true
                 expectationEvent.fulfill()
-            }
+        }
         ).disposed(by: disposeBag)
         bleServiceDriver.disconnect()
         waitForExpectations(timeout: 5, handler: nil)
         XCTAssertTrue(disposedAll, "Not disconnect")
-    }
-
-    func testDisconnectMultipleSubscriptionConnection() {
-        let firstDisposeBag = DisposeBag()
-        let secondDisposeBag = DisposeBag()
-        var disposedFirst = false
-        var disposedSecond = false
-        let expectationEventFirst = expectation(description: "Expect first dispose connection")
-        let expectationEventSecond = expectation(description: "Expect second dispose connection")
-        try! bleServiceDriver.subscribe(
-            request: Data(),
-            serviceUUID: uuid,
-            characteristicUUID: uuid
-        ).subscribe(
-            onDisposed: {
-                disposedFirst = true
-                expectationEventFirst.fulfill()
-            }
-        ).disposed(by: firstDisposeBag)
-        try! bleServiceDriver.subscribe(
-            request: Data(),
-            serviceUUID: uuid,
-            characteristicUUID: uuid
-        ).subscribe(
-            onDisposed: {
-                disposedSecond = true
-                expectationEventSecond.fulfill()
-            }
-        ).disposed(by: secondDisposeBag)
-        bleServiceDriver.disconnect()
-        waitForExpectations(timeout: 5, handler: nil)
-        XCTAssertTrue(disposedFirst, "Not disconnect first connection")
-        XCTAssertTrue(disposedSecond, "Not disconnect second connection")
-    }
-    
-    func testDisconnectReadConnection() {
-        let disposeBag = DisposeBag()
-        var disposedAll = false
-        let expectationEvent = expectation(description: "Expect dispose connection")
-        try! bleServiceDriver.read(
-            request: Data(),
-            serviceUUID: uuid,
-            characteristicUUID: uuid
-        ).do(onDispose: {
-            disposedAll = true
-            expectationEvent.fulfill()
-        }).subscribe().disposed(by: disposeBag)
-        bleServiceDriver.disconnect()
-        waitForExpectations(timeout: 5, handler: nil)
-        XCTAssertTrue(disposedAll, "Not disconnect")
-    }
-    
-    func testDisconnectWriteConnection() {
-        let disposeBag = DisposeBag()
-        var disposedAll = false
-        let expectationEvent = expectation(description: "Expect dispose connection")
-        try! bleServiceDriver.write(
-            request: Data(),
-            serviceUUID: uuid,
-            characteristicUUID: uuid
-        ).do(onDispose: {
-            disposedAll = true
-            expectationEvent.fulfill()
-        }).subscribe().disposed(by: disposeBag)
-        bleServiceDriver.disconnect()
-        waitForExpectations(timeout: 5, handler: nil)
-        XCTAssertTrue(disposedAll, "Not disconnect")
-    }
-
-    func testDisconnectReadWriteConnection() {
-        let disposeBagFirst = DisposeBag()
-        let disposeBagSecond = DisposeBag()
-        var disposedFirst = false
-        var disposedSecond = false
-        let expectationEventFirst = expectation(description: "Expect dispose connection")
-        let expectationEventSecond = expectation(description: "Expect dispose connection")
-        bleServiceDriver.write(
-            request: Data(),
-            serviceUUID: uuid,
-            characteristicUUID: uuid
-        ).do(onDispose: {
-            disposedFirst = true
-            expectationEventFirst.fulfill()
-        }).subscribe().disposed(by: disposeBagFirst)
-        try! bleServiceDriver.read(
-            request: Data(),
-            serviceUUID: uuid,
-            characteristicUUID: uuid
-        ).do(onDispose: {
-            disposedSecond = true
-            expectationEventSecond.fulfill()
-        }).subscribe().disposed(by: disposeBagSecond)
-        bleServiceDriver.disconnect()
-        waitForExpectations(timeout: 5, handler: nil)
-        XCTAssertTrue(disposedFirst, "Not first disconnect")
-        XCTAssertTrue(disposedSecond, "Not second disconnect")
     }
     
     func testDisconnectReadWriteSubscriptionConnection() {
         let disposeBagFirst = DisposeBag()
         let disposeBagSecond = DisposeBag()
         let disposeBagThird = DisposeBag()
+        let disposeBagFourth = DisposeBag()
         var disposedFirst = false
         var disposedSecond = false
         var disposedThird = false
+        var disposedFourth = false
         let expectationEventFirst = expectation(description: "Expect dispose connection")
         let expectationEventSecond = expectation(description: "Expect dispose connection")
         let expectationEventThird = expectation(description: "Expect dispose connection")
+        let expectationEventFourth = expectation(description: "Expect dispose connection")
         bleServiceDriver.write(
             request: Data(),
             serviceUUID: uuid,
@@ -386,65 +294,24 @@ class BleServiceDriverTest: XCTestCase {
             onDisposed: {
                 disposedThird = true
                 expectationEventThird.fulfill()
-            }
+        }
         ).disposed(by: disposeBagThird)
-        bleServiceDriver.disconnect()
-        waitForExpectations(timeout: 5, handler: nil)
-        XCTAssertTrue(disposedFirst, "Not first disconnect")
-        XCTAssertTrue(disposedSecond, "Not second disconnect")
-        XCTAssertTrue(disposedThird, "Not third disconnect")
-    }
-
-    func testDisconnectAfterDisposeReadConnection() {
-        var disposedAll = false
-        let expectationEvent = expectation(description: "Expect dispose connection")
-        _ = try! bleServiceDriver.read(
-            request: Data(),
-            serviceUUID: uuid,
-            characteristicUUID: uuid
-        ).do(onDispose: {
-            disposedAll = true
-            expectationEvent.fulfill()
-            }).toBlocking().first()!
-        bleServiceDriver.disconnect()
-        waitForExpectations(timeout: 5, handler: nil)
-        XCTAssertTrue(disposedAll, "Not disconnect")
-    }
-
-    func testDisconnectAfterDisposeWriteConnection() {
-        var disposedAll = false
-        let expectationEvent = expectation(description: "Expect dispose connection")
-        _ = try! bleServiceDriver.write(
-            request: Data(),
-            serviceUUID: uuid,
-            characteristicUUID: uuid
-        ).do(onDispose: {
-            disposedAll = true
-            expectationEvent.fulfill()
-            }).toBlocking().first()!
-        bleServiceDriver.disconnect()
-        waitForExpectations(timeout: 5, handler: nil)
-        XCTAssertTrue(disposedAll, "Not disconnect")
-    }
-
-    func testDisconnectAfterSubscriptionDisposeConnection() {
-        var disposeBag = DisposeBag()
-        var disposedAll = false
-        let expectationEvent = expectation(description: "disposedAll")
         try! bleServiceDriver.subscribe(
             request: Data(),
             serviceUUID: uuid,
             characteristicUUID: uuid
         ).subscribe(
             onDisposed: {
-                disposedAll = true
-                expectationEvent.fulfill()
-            }
-        ).disposed(by: disposeBag)
-        disposeBag = DisposeBag()
+                disposedFourth = true
+                expectationEventFourth.fulfill()
+        }
+        ).disposed(by: disposeBagFourth)
         bleServiceDriver.disconnect()
         waitForExpectations(timeout: 5, handler: nil)
-        XCTAssertTrue(disposedAll, "Not disconnect")
+        XCTAssertTrue(disposedFirst, "Not first disconnect")
+        XCTAssertTrue(disposedSecond, "Not second disconnect")
+        XCTAssertTrue(disposedThird, "Not third disconnect")
+        XCTAssertTrue(disposedFourth, "Not fourth disconnect")
     }
 
     func testEstablishConnection() {
@@ -452,7 +319,7 @@ class BleServiceDriverTest: XCTestCase {
             request: Data(),
             serviceUUID: uuid,
             characteristicUUID: uuid
-            ).toBlocking(timeout: 5).first()
+        ).toBlocking(timeout: 5).first()
         XCTAssertTrue(peripheral.isConnected, "Peripheral disconnected")
     }
 
@@ -463,7 +330,7 @@ class BleServiceDriverTest: XCTestCase {
             request: Data(),
             serviceUUID: uuid,
             characteristicUUID: uuid
-            ).toBlocking(timeout: 5).first()
+        ).toBlocking(timeout: 5).first()
         XCTAssertTrue(peripheral.isConnected, "Peripheral disconnected")
     }
 
@@ -474,7 +341,7 @@ class BleServiceDriverTest: XCTestCase {
             request: Data(),
             serviceUUID: uuid,
             characteristicUUID: uuid
-            ).toBlocking(timeout: 5).first()
+        ).toBlocking(timeout: 5).first()
         XCTAssertTrue(peripheral.isConnected, "Peripheral disconnected")
     }
 
@@ -485,7 +352,7 @@ class BleServiceDriverTest: XCTestCase {
             request: Data(),
             serviceUUID: uuid,
             characteristicUUID: uuid
-            ).toBlocking(timeout: 5).first()
+        ).toBlocking(timeout: 5).first()
         (peripheral.peripheral as? CBPeripheralMock)?.peripheralState = .disconnected
         XCTAssertFalse(peripheral.isConnected, "Peripheral connected")
         _ = try! bleServiceDriver.write(
@@ -530,7 +397,7 @@ class BleServiceDriverTest: XCTestCase {
             onDisposed: {
                 disposedAll = true
                 expectationEvent.fulfill()
-            }
+        }
         ).disposed(by: disposeBag)
         disposeBag = DisposeBag()
         bleServiceDriver.disconnect()
@@ -550,7 +417,7 @@ class BleServiceDriverTest: XCTestCase {
             onDisposed: {
                 disposedAll = true
                 expectationEvent.fulfill()
-            }
+        }
         ).disposed(by: disposeBag)
         bleServiceDriver.disconnect()
         disposeBag = DisposeBag()
@@ -569,7 +436,7 @@ class BleServiceDriverTest: XCTestCase {
         ).do(onDispose: {
             disposedAll = true
             expectationEvent.fulfill()
-            }).subscribe().disposed(by: disposeBag)
+        }).subscribe().disposed(by: disposeBag)
         disposeBag = DisposeBag()
         bleServiceDriver.disconnect()
         waitForExpectations(timeout: 5, handler: nil)
@@ -587,7 +454,7 @@ class BleServiceDriverTest: XCTestCase {
         ).do(onDispose: {
             disposedAll = true
             expectationEvent.fulfill()
-            }).subscribe().disposed(by: disposeBag)
+        }).subscribe().disposed(by: disposeBag)
         bleServiceDriver.disconnect()
         disposeBag = DisposeBag()
         waitForExpectations(timeout: 5, handler: nil)
@@ -605,7 +472,7 @@ class BleServiceDriverTest: XCTestCase {
         ).do(onDispose: {
             disposedAll = true
             expectationEvent.fulfill()
-            }).subscribe().disposed(by: disposeBag)
+        }).subscribe().disposed(by: disposeBag)
         disposeBag = DisposeBag()
         bleServiceDriver.disconnect()
         waitForExpectations(timeout: 5, handler: nil)
@@ -623,7 +490,7 @@ class BleServiceDriverTest: XCTestCase {
         ).do(onDispose: {
             disposedAll = true
             expectationEvent.fulfill()
-            }).subscribe().disposed(by: disposeBag)
+        }).subscribe().disposed(by: disposeBag)
         bleServiceDriver.disconnect()
         disposeBag = DisposeBag()
         waitForExpectations(timeout: 5, handler: nil)
@@ -657,19 +524,26 @@ class BleServiceDriverTest: XCTestCase {
         ).toBlocking().first()!
         XCTAssertTrue(peripheral.isConnected, "Peripheral disconnected")
     }
-
+    
     func testDisconnectRead() {
         var errorDisconnect: Error? = nil
         let disposeBag = DisposeBag()
+        var disposeRead = false
         let expectationEvent = expectation(description: "Expect dispose connection")
+        let expectationDisposeEvent = expectation(description: "Expect dispose connection")
         (peripheral.peripheral as? CBPeripheralMock)?.waitReadOperation = true
         try! bleServiceDriver.read(
             request: Data(),
             serviceUUID: uuid,
             characteristicUUID: uuid
-            ).do(onError: { error in
-            errorDisconnect = error
-            expectationEvent.fulfill()
+        ).do(
+            onError: { error in
+                errorDisconnect = error
+                expectationEvent.fulfill()
+        },
+            onDispose: {
+                disposeRead = true
+                expectationDisposeEvent.fulfill()
         }).subscribe().disposed(by: disposeBag)
         bleServiceDriver.disconnect()
         waitForExpectations(timeout: 5, handler: nil)
@@ -678,21 +552,29 @@ class BleServiceDriverTest: XCTestCase {
         } else {
             XCTFail("Not return error")
         }
+        XCTAssertTrue(disposeRead, "Not desposed")
         (peripheral.peripheral as? CBPeripheralMock)?.waitReadOperation = false
     }
-
+    
     func testDisconnectWrite() {
         var errorDisconnect: Error? = nil
         let disposeBag = DisposeBag()
+        var disposeWrite = false
         let expectationEvent = expectation(description: "Expect dispose connection")
+        let expectationDisposeEvent = expectation(description: "Expect dispose connection")
         (peripheral.peripheral as? CBPeripheralMock)?.waitWriteOperation = true
         bleServiceDriver.write(
             request: Data(),
             serviceUUID: uuid,
             characteristicUUID: uuid
-            ).do(onError: { error in
-            errorDisconnect = error
-            expectationEvent.fulfill()
+        ).do(
+            onError: { error in
+                errorDisconnect = error
+                expectationEvent.fulfill()
+        },
+            onDispose: {
+                disposeWrite = true
+                expectationDisposeEvent.fulfill()
         }).subscribe().disposed(by: disposeBag)
         bleServiceDriver.disconnect()
         waitForExpectations(timeout: 5, handler: nil)
@@ -701,6 +583,7 @@ class BleServiceDriverTest: XCTestCase {
         } else {
             XCTFail("Not return error")
         }
+        XCTAssertTrue(disposeWrite, "Not desposed")
         (peripheral.peripheral as? CBPeripheralMock)?.waitWriteOperation = false
     }
     
@@ -717,7 +600,7 @@ class BleServiceDriverTest: XCTestCase {
             request: Data(),
             serviceUUID: uuid,
             characteristicUUID: uuid
-            ).do(onError: { error in
+        ).do(onError: { error in
             errorDisconnectRead = error
             expectationEventRead.fulfill()
         }).subscribe().disposed(by: disposeBagRead)
@@ -725,7 +608,7 @@ class BleServiceDriverTest: XCTestCase {
             request: Data(),
             serviceUUID: uuid,
             characteristicUUID: uuid
-            ).do(onError: { error in
+        ).do(onError: { error in
             errorDisconnectWrite = error
             expectationEventWrite.fulfill()
         }).subscribe().disposed(by: disposeBagWrite)
