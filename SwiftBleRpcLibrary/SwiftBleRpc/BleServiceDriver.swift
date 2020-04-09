@@ -10,17 +10,32 @@ public enum BleServiceDriverErrors: Error {
 
     /// Called when client sends non empty request for read or subscribe methods.
     case nonEmptyRequest
+
+    /// Called when disconnect read/write and not end operation
+    case disconnected
 }
 
 /// Class which holds all operation with data transfer between iOS and Ble Device.
-// TODO(#70): implement automatic connection, disconnection and remove support for connected peripherals.
 open class BleServiceDriver {
     // MARK: - Variables
 
     /// Connected peripheral.
-    // TODO(#70): remove support for connected peripherals.
     private var peripheral: Peripheral?
 
+    /// Event for disconnect all subscription.
+    private var disconnectSubscription: PublishSubject<Void> = PublishSubject<Void>()
+
+    /// Event for disconnect all read/write.
+    private var disconnectReadWrite: PublishSubject<Characteristic> = PublishSubject<Characteristic>()
+
+    /// Lock for establish connection.
+    private let establishConnectionLock = NSLock()
+
+    /// DisposeBag for establish connection.
+    private var establishConnectionDisposeBag: DisposeBag = DisposeBag()
+
+    /// Peripheral event for connection.
+    private let peripheralEvent: BehaviorSubject<Peripheral>
     // MARK: - Initializers
 
     /// Please use init(peripheral:) instead.
@@ -33,9 +48,18 @@ open class BleServiceDriver {
     /// - returns: created *BleServiceDriver*.
     public init(peripheral: Peripheral) {
         self.peripheral = peripheral
+        self.peripheralEvent = BehaviorSubject<Peripheral>(value: peripheral)
     }
 
     // MARK: - Internal methods
+
+    /// Disconnect all flow.
+    public func disconnect() {
+        establishConnectionDisposeBag = DisposeBag()
+        disconnectSubscription.onNext(())
+        disconnectReadWrite.onError(BleServiceDriverErrors.disconnected)
+        peripheral?.manager.manager.cancelPeripheralConnection(peripheral!.peripheral)
+    }
 
     /// Call subscribe request over Ble.
     /// - parameter request: proto request encoded to Data. Must be empty message.
@@ -64,6 +88,7 @@ open class BleServiceDriver {
                 }
                 return data
             }
+            .takeUntil(disconnectSubscription)
     }
 
     /// Call read request over Ble.
@@ -78,17 +103,20 @@ open class BleServiceDriver {
         }
         return connectToDeviceAndDiscoverCharacteristic(
             serviceUUID: serviceUUID,
-            characteristicUUID: characteristicUUID)
-            .flatMap { characteristic in
-                characteristic.readValue()
-            }.take(1).asSingle().map { characteristic in
-                guard let data = characteristic.value else {
-                    throw BluetoothError.characteristicReadFailed(
-                        characteristic,
-                        BleServiceDriverErrors.emptyResponse)
-                }
-                return data
+            characteristicUUID: characteristicUUID
+        ).flatMap { [weak self] characteristic -> Observable<Characteristic> in
+            guard let `self` = self else { return .just(characteristic) }
+            return Observable.merge(.just(characteristic), self.disconnectReadWrite.asObservable())
+        }.flatMap { characteristic in
+            characteristic.readValue()
+        }.take(1).asSingle().map { characteristic in
+            guard let data = characteristic.value else {
+                throw BluetoothError.characteristicReadFailed(
+                    characteristic,
+                    BleServiceDriverErrors.emptyResponse)
             }
+            return data
+        }
     }
 
     /// Call write request over Ble.
@@ -99,20 +127,44 @@ open class BleServiceDriver {
     public func write(request: Data, serviceUUID: String, characteristicUUID: String) -> Single<Data> {
         return connectToDeviceAndDiscoverCharacteristic(
             serviceUUID: serviceUUID,
-            characteristicUUID: characteristicUUID)
-            .flatMap { characteristic in
-                characteristic.writeValue(request, type: .withResponse)
-            }.take(1).asSingle().map { _ in
-                return Data()
-            }
+            characteristicUUID: characteristicUUID
+        ).flatMap { [weak self] characteristic -> Observable<Characteristic> in
+            guard let `self` = self else { return .just(characteristic) }
+            return Observable.merge(.just(characteristic), self.disconnectReadWrite.asObservable())
+        }.flatMap { characteristic in
+            characteristic.writeValue(request, type: .withResponse)
+        }.take(1).asSingle().map { _ in
+            return Data()
+        }
     }
 
     // MARK: - Private methods
 
-    /// Check current conenction state and if not connected - trying to connect to device.
+    /// We block flows, we receive peripheral which at us is installed in behaviorsubject.
+    /// If the peripheral state is in online mode and has not yet received a connection,
+    /// then reset all previous connection attempts and try to establish a new connection.
+    /// Unlock threads. And we pass from the function an element with an established connection.
+    /// If we have a connection established, simply transfer the element with the connection established.
     /// - returns: Peripheral as observable value.
     private func getConnectedPeripheral() -> Observable<Peripheral> {
-        return Observable.just(peripheral!)
+        establishConnection()
+        return peripheralEvent.asObservable().filter { $0.isConnected }
+    }
+
+    /// Establish connection and emit from peripheralEvent.
+    private func establishConnection() {
+        establishConnectionLock.lock()
+        defer {
+            establishConnectionLock.unlock()
+        }
+        if let peripheralValue = try? peripheralEvent.value() {
+            if peripheralValue.state != .connecting && !peripheralValue.isConnected {
+                establishConnectionDisposeBag = DisposeBag()
+                peripheralValue.establishConnection()
+                    .subscribe(onNext: peripheralEvent.onNext)
+                    .disposed(by: establishConnectionDisposeBag)
+            }
+        }
     }
 
     /// Method which connects to device (if needed) and discover requested characteristic.
