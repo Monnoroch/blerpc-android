@@ -448,21 +448,21 @@ class BleServiceDriverTest: XCTestCase {
         testRead()
         XCTAssertTrue(peripheral.isConnected, "Peripheral disconnected")
         testDisconnectRead()
-        XCTAssertFalse(peripheral.isConnected, "Peripheral disconnected")
+        XCTAssertFalse(peripheral.isConnected, "Peripheral connected")
     }
     
     func testReconnectWrite() {
         testWrite()
         XCTAssertTrue(peripheral.isConnected, "Peripheral disconnected")
         testDisconnectRead()
-        XCTAssertFalse(peripheral.isConnected, "Peripheral disconnected")
+        XCTAssertFalse(peripheral.isConnected, "Peripheral connected")
     }
 
     func testReconnectSubscribe() {
         testSubscribe()
         XCTAssertTrue(peripheral.isConnected, "Peripheral disconnected")
         testDisconnectOneSubscriptionConnection()
-        XCTAssertFalse(peripheral.isConnected, "Peripheral disconnected")
+        XCTAssertFalse(peripheral.isConnected, "Peripheral connected")
     }
 
     func testReconnectMultiple() {
@@ -471,6 +471,6 @@ class BleServiceDriverTest: XCTestCase {
         testSubscribe()
         XCTAssertTrue(peripheral.isConnected, "Peripheral disconnected")
         testDisconnectReadWriteSubscriptionConnection()
-        XCTAssertFalse(peripheral.isConnected, "Peripheral disconnected")
+        XCTAssertFalse(peripheral.isConnected, "Peripheral connected")
     }
 }
