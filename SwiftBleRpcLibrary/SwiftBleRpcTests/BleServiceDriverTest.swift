@@ -52,6 +52,7 @@ class CBPeripheralMock: CBPeripheral {
     var peripheralState: CBPeripheralState = .connected
     var waitReadOperation = false
     var waitWriteOperation = false
+    var sendMultipleValue = false
 
     override var services: [CBService]? {
         return [service]
@@ -88,13 +89,19 @@ class CBPeripheralMock: CBPeripheral {
     }
 
     override func setNotifyValue(_ enabled: Bool, for characteristic: CBCharacteristic) {
-        delegate?.peripheral?(self, didUpdateValueFor: characteristic, error: nil)
-        delegate?.peripheral?(self, didUpdateValueFor: characteristic, error: nil)
+        if !waitReadOperation {
+            if sendMultipleValue {
+                delegate?.peripheral?(self, didUpdateValueFor: characteristic, error: nil)
+            }
+            delegate?.peripheral?(self, didUpdateValueFor: characteristic, error: nil)
+        }
     }
 }
 
 extension CBCentralManager {
-    static let peripheral: [CBPeripheral] = [CBPeripheralMock(arrayString: [TestConstants.testText])]
+    static var peripheral: [CBPeripheral] {
+        return [CBPeripheralMock(arrayString: [TestConstants.testText])]
+    }
     static let error: Error? = nil
     func swizzle() {
         func setupSwizzlingMethod(method: Selector, swizzledMethod: Selector) {
@@ -232,6 +239,7 @@ class BleServiceDriverTest: XCTestCase {
 
     func testSubscribeMultipleValues() {
         let responseArray = [TestConstants.testText, TestConstants.testText]
+        (peripheral.peripheral as? CBPeripheralMock)?.sendMultipleValue = true
         let subscribeResponse = try! bleServiceDriver.subscribe(
             request: Data(),
             serviceUUID: uuid,
@@ -332,81 +340,65 @@ class BleServiceDriverTest: XCTestCase {
         var disposedSecond = false
         var disposedThird = false
         var disposedFourth = false
+        (peripheral.peripheral as? CBPeripheralMock)?.waitWriteOperation = true
+        (peripheral.peripheral as? CBPeripheralMock)?.waitReadOperation = true
+        var errorDisconnectRead: Error? = nil
+        var errorDisconnectWrite: Error? = nil
         let expectationEventFirst = expectation(description: "Expect dispose connection")
         let expectationEventSecond = expectation(description: "Expect dispose connection")
+        [expectationEventFirst, expectationEventSecond].forEach { $0.expectedFulfillmentCount = 2 }
         let expectationEventThird = expectation(description: "Expect dispose connection")
         let expectationEventFourth = expectation(description: "Expect dispose connection")
+        (peripheral.peripheral as? CBPeripheralMock)?.waitWriteOperation = true
+        (peripheral.peripheral as? CBPeripheralMock)?.waitReadOperation = true
+        try! bleServiceDriver.subscribe(
+            request: Data(),
+            serviceUUID: uuid,
+            characteristicUUID: uuid
+        ).subscribe(onDisposed: {
+            disposedThird = true
+            expectationEventThird.fulfill()
+        }).disposed(by: disposeBagThird)
+        try! bleServiceDriver.subscribe(
+            request: Data(),
+            serviceUUID: uuid,
+            characteristicUUID: uuid
+        ).subscribe(onDisposed: {
+            disposedFourth = true
+            expectationEventFourth.fulfill()
+        }).disposed(by: disposeBagFourth)
         bleServiceDriver.write(
             request: Data(),
             serviceUUID: uuid,
             characteristicUUID: uuid
-        ).do(onDispose: {
-            disposedFirst = true
-            expectationEventFirst.fulfill()
+        ).do(
+            onError: { error in
+                errorDisconnectWrite = error
+                expectationEventFirst.fulfill()
+        },
+            onDispose: {
+                disposedFirst = true
+                expectationEventFirst.fulfill()
         }).subscribe().disposed(by: disposeBagFirst)
         try! bleServiceDriver.read(
             request: Data(),
             serviceUUID: uuid,
             characteristicUUID: uuid
-        ).do(onDispose: {
-            disposedSecond = true
-            expectationEventSecond.fulfill()
+        ).do(
+            onError: { error in
+                errorDisconnectRead = error
+                expectationEventSecond.fulfill()
+        },
+            onDispose: {
+                disposedSecond = true
+                expectationEventSecond.fulfill()
         }).subscribe().disposed(by: disposeBagSecond)
-        try! bleServiceDriver.subscribe(
-            request: Data(),
-            serviceUUID: uuid,
-            characteristicUUID: uuid
-        ).subscribe(
-            onDisposed: {
-                disposedThird = true
-                expectationEventThird.fulfill()
-        }
-        ).disposed(by: disposeBagThird)
-        try! bleServiceDriver.subscribe(
-            request: Data(),
-            serviceUUID: uuid,
-            characteristicUUID: uuid
-        ).subscribe(
-            onDisposed: {
-                disposedFourth = true
-                expectationEventFourth.fulfill()
-        }
-        ).disposed(by: disposeBagFourth)
         bleServiceDriver.disconnect()
         waitForExpectations(timeout: 5, handler: nil)
         XCTAssertTrue(disposedFirst, "Not first disconnect")
         XCTAssertTrue(disposedSecond, "Not second disconnect")
         XCTAssertTrue(disposedThird, "Not third disconnect")
         XCTAssertTrue(disposedFourth, "Not fourth disconnect")
-    }
-    
-    func testDisconnectReadWriteOperationWithError() {
-        var errorDisconnectRead: Error? = nil
-        var errorDisconnectWrite: Error? = nil
-        let disposeBagRead = DisposeBag()
-        let disposeBagWrite = DisposeBag()
-        let expectationEventRead = expectation(description: "Expect disconnect")
-        let expectationEventWrite = expectation(description: "Expect disconnect")
-        (peripheral.peripheral as? CBPeripheralMock)?.waitWriteOperation = true
-        (peripheral.peripheral as? CBPeripheralMock)?.waitReadOperation = true
-        try? bleServiceDriver.read(
-            request: Data(),
-            serviceUUID: uuid,
-            characteristicUUID: uuid
-        ).do(onError: { error in
-            errorDisconnectRead = error
-            expectationEventRead.fulfill()
-        }).subscribe().disposed(by: disposeBagRead)
-        bleServiceDriver.write(
-            request: Data(),
-            serviceUUID: uuid,
-            characteristicUUID: uuid
-        ).do(onError: { error in
-            errorDisconnectWrite = error
-            expectationEventWrite.fulfill()
-        }).subscribe().disposed(by: disposeBagWrite)
-        bleServiceDriver.disconnect()
-        waitForExpectations(timeout: 5, handler: nil)
         if let errorDisconnect = errorDisconnectRead as? BleServiceDriverErrors {
             XCTAssertEqual(errorDisconnect, BleServiceDriverErrors.disconnected, "Canceled operation")
         } else {
@@ -417,8 +409,6 @@ class BleServiceDriverTest: XCTestCase {
         } else {
             XCTFail("Not return error")
         }
-        (peripheral.peripheral as? CBPeripheralMock)?.waitWriteOperation = false
-        (peripheral.peripheral as? CBPeripheralMock)?.waitReadOperation = false
     }
 
     // MARK: Establish connection tests
@@ -443,15 +433,6 @@ class BleServiceDriverTest: XCTestCase {
         XCTAssertTrue(peripheral.isConnected, "Peripheral disconnected")
     }
 
-    func testEstablishOneConnection() {
-        _ = try! bleServiceDriver.subscribe(
-            request: Data(),
-            serviceUUID: uuid,
-            characteristicUUID: uuid
-        ).toBlocking(timeout: 5).first()
-        XCTAssertTrue(peripheral.isConnected, "Peripheral disconnected")
-    }
-
     func testEstablishConnectionMultipleConnection() {
         _ = try! bleServiceDriver.subscribe(
             request: Data(),
@@ -468,35 +449,6 @@ class BleServiceDriverTest: XCTestCase {
             serviceUUID: uuid,
             characteristicUUID: uuid
         ).toBlocking().first()!
-        XCTAssertTrue(peripheral.isConnected, "Peripheral disconnected")
-    }
-
-    func testEstablishConnectionAfterDisconnected() {
-        (peripheral.peripheral as? CBPeripheralMock)?.peripheralState = .disconnected
-        XCTAssertFalse(peripheral.isConnected, "Peripheral connected")
-        _ = try! bleServiceDriver.subscribe(
-            request: Data(),
-            serviceUUID: uuid,
-            characteristicUUID: uuid
-        ).toBlocking(timeout: 5).first()
-        XCTAssertTrue(peripheral.isConnected, "Peripheral disconnected")
-    }
-
-    func testEstablishConnectionAfterMultipleDisconnect() {
-        (peripheral.peripheral as? CBPeripheralMock)?.peripheralState = .disconnected
-        XCTAssertFalse(peripheral.isConnected, "Peripheral connected")
-        _ = try! bleServiceDriver.subscribe(
-            request: Data(),
-            serviceUUID: uuid,
-            characteristicUUID: uuid
-        ).toBlocking(timeout: 5).first()
-        (peripheral.peripheral as? CBPeripheralMock)?.peripheralState = .disconnected
-        XCTAssertFalse(peripheral.isConnected, "Peripheral connected")
-        _ = try! bleServiceDriver.write(
-            request: Data(),
-            serviceUUID: uuid,
-            characteristicUUID: uuid
-        ).toBlocking(timeout: 5).first()
         XCTAssertTrue(peripheral.isConnected, "Peripheral disconnected")
     }
     
