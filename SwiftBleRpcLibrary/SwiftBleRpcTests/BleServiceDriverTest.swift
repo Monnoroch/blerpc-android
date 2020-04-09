@@ -448,14 +448,20 @@ class BleServiceDriverTest: XCTestCase {
         testRead()
         XCTAssertTrue(peripheral.isConnected, "Peripheral disconnected")
         testDisconnectRead()
+        (peripheral.peripheral as? CBPeripheralMock)?.waitReadOperation = false
         XCTAssertFalse(peripheral.isConnected, "Peripheral connected")
+        testRead()
+        XCTAssertTrue(peripheral.isConnected, "Peripheral disconnected")
     }
     
     func testReconnectWrite() {
         testWrite()
         XCTAssertTrue(peripheral.isConnected, "Peripheral disconnected")
-        testDisconnectRead()
+        testDisconnectWrite()
+        (peripheral.peripheral as? CBPeripheralMock)?.waitWriteOperation = false
         XCTAssertFalse(peripheral.isConnected, "Peripheral connected")
+        testWrite()
+        XCTAssertTrue(peripheral.isConnected, "Peripheral disconnected")
     }
 
     func testReconnectSubscribe() {
@@ -463,6 +469,8 @@ class BleServiceDriverTest: XCTestCase {
         XCTAssertTrue(peripheral.isConnected, "Peripheral disconnected")
         testDisconnectOneSubscriptionConnection()
         XCTAssertFalse(peripheral.isConnected, "Peripheral connected")
+        testSubscribe()
+        XCTAssertTrue(peripheral.isConnected, "Peripheral disconnected")
     }
 
     func testReconnectMultiple() {
@@ -471,6 +479,10 @@ class BleServiceDriverTest: XCTestCase {
         testSubscribe()
         XCTAssertTrue(peripheral.isConnected, "Peripheral disconnected")
         testDisconnectReadWriteSubscriptionConnection()
+        (peripheral.peripheral as? CBPeripheralMock)?.waitReadOperation = false
+        (peripheral.peripheral as? CBPeripheralMock)?.waitWriteOperation = false
         XCTAssertFalse(peripheral.isConnected, "Peripheral connected")
+        testEstablishConnection()
+        XCTAssertTrue(peripheral.isConnected, "Peripheral disconnected")
     }
 }
