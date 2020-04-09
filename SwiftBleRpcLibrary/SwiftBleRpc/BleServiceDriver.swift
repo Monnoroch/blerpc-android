@@ -58,6 +58,7 @@ open class BleServiceDriver {
         establishConnectionDisposeBag = DisposeBag()
         disconnectSubscription.onNext(())
         disconnectReadWrite.onError(BleServiceDriverErrors.disconnected)
+        peripheral?.manager.manager.cancelPeripheralConnection(peripheral!.peripheral)
     }
 
     /// Call subscribe request over Ble.

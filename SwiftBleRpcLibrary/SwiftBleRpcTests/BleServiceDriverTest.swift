@@ -170,6 +170,7 @@ extension CBCentralManager {
     }
 
     @objc func cancelPeripheralConnectionSwizzling(_ peripheral: CBPeripheral) {
+        (peripheral as? CBPeripheralMock)?.peripheralState = .disconnected
         delegate?.centralManager?(self, didDisconnectPeripheral: peripheral, error: CBCentralManager.error)
     }
 }
@@ -439,5 +440,105 @@ class BleServiceDriverTest: XCTestCase {
             characteristicUUID: uuid
         ).toBlocking(timeout: 5).first()
         XCTAssertTrue(peripheral.isConnected, "Peripheral disconnected")
+    }
+    
+    // MARK: Reconnect test
+    func testReconnect() {
+        let disposeBagFirst = DisposeBag()
+        let disposeBagSecond = DisposeBag()
+        let disposeBagThird = DisposeBag()
+        let disposeBagFourth = DisposeBag()
+        (peripheral.peripheral as? CBPeripheralMock)?.waitWriteOperation = true
+        (peripheral.peripheral as? CBPeripheralMock)?.waitReadOperation = true
+        let expectationEventFirst = expectation(description: "Expect dispose connection")
+        let expectationEventSecond = expectation(description: "Expect dispose connection")
+        [expectationEventFirst, expectationEventSecond].forEach { $0.expectedFulfillmentCount = 2 }
+        let expectationEventThird = expectation(description: "Expect dispose connection")
+        let expectationEventFourth = expectation(description: "Expect dispose connection")
+        try! bleServiceDriver.subscribe(
+            request: Data(),
+            serviceUUID: uuid,
+            characteristicUUID: uuid
+        ).subscribe(onDisposed: {
+            expectationEventThird.fulfill()
+        }).disposed(by: disposeBagThird)
+        try! bleServiceDriver.subscribe(
+            request: Data(),
+            serviceUUID: uuid,
+            characteristicUUID: uuid
+        ).subscribe(onDisposed: {
+            expectationEventFourth.fulfill()
+        }).disposed(by: disposeBagFourth)
+        bleServiceDriver.write(
+            request: Data(),
+            serviceUUID: uuid,
+            characteristicUUID: uuid
+        ).do(
+            onError: { error in
+                expectationEventFirst.fulfill()
+        },
+            onDispose: {
+                expectationEventFirst.fulfill()
+        }).subscribe().disposed(by: disposeBagFirst)
+        try! bleServiceDriver.read(
+            request: Data(),
+            serviceUUID: uuid,
+            characteristicUUID: uuid
+        ).do(
+            onError: { error in
+                expectationEventSecond.fulfill()
+        },
+            onDispose: {
+                expectationEventSecond.fulfill()
+        }).subscribe().disposed(by: disposeBagSecond)
+        XCTAssertTrue(peripheral.isConnected, "Peripheral disconnected")
+        bleServiceDriver.disconnect()
+        XCTAssertFalse(peripheral.isConnected, "Peripheral connected")
+        waitForExpectations(timeout: 5, handler: nil)
+        let expectationEventFirst1 = expectation(description: "Expect dispose connection")
+        let expectationEventSecond1 = expectation(description: "Expect dispose connection")
+        [expectationEventFirst1, expectationEventSecond1].forEach { $0.expectedFulfillmentCount = 2 }
+        let expectationEventThird1 = expectation(description: "Expect dispose connection")
+        let expectationEventFourth1 = expectation(description: "Expect dispose connection")
+        try! bleServiceDriver.subscribe(
+            request: Data(),
+            serviceUUID: uuid,
+            characteristicUUID: uuid
+        ).subscribe(onDisposed: {
+            expectationEventThird1.fulfill()
+        }).disposed(by: disposeBagThird)
+        try! bleServiceDriver.subscribe(
+            request: Data(),
+            serviceUUID: uuid,
+            characteristicUUID: uuid
+        ).subscribe(onDisposed: {
+            expectationEventFourth1.fulfill()
+        }).disposed(by: disposeBagFourth)
+        bleServiceDriver.write(
+            request: Data(),
+            serviceUUID: uuid,
+            characteristicUUID: uuid
+        ).do(
+            onError: { error in
+                expectationEventFirst1.fulfill()
+        },
+            onDispose: {
+                expectationEventFirst1.fulfill()
+        }).subscribe().disposed(by: disposeBagFirst)
+        try! bleServiceDriver.read(
+            request: Data(),
+            serviceUUID: uuid,
+            characteristicUUID: uuid
+        ).do(
+            onError: { error in
+                expectationEventSecond1.fulfill()
+        },
+            onDispose: {
+                expectationEventSecond1.fulfill()
+        }).subscribe().disposed(by: disposeBagSecond)
+        XCTAssertTrue(peripheral.isConnected, "Peripheral disconnected")
+        bleServiceDriver.disconnect()
+        waitForExpectations(timeout: 5, handler: nil)
+        XCTAssertFalse(peripheral.isConnected, "Peripheral connected")
     }
 }
