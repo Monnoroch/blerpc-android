@@ -445,8 +445,9 @@ class BleServiceDriverTest: XCTestCase {
     // MARK: Reconnect test
     
     func testReconnectRead() {
-        testRead()
-        XCTAssertTrue(peripheral.isConnected, "Peripheral disconnected")
+        testDisconnectRead()
+        (peripheral.peripheral as? CBPeripheralMock)?.waitReadOperation = false
+        XCTAssertFalse(peripheral.isConnected, "Peripheral connected")
         testDisconnectRead()
         (peripheral.peripheral as? CBPeripheralMock)?.waitReadOperation = false
         XCTAssertFalse(peripheral.isConnected, "Peripheral connected")
@@ -455,8 +456,9 @@ class BleServiceDriverTest: XCTestCase {
     }
     
     func testReconnectWrite() {
-        testWrite()
-        XCTAssertTrue(peripheral.isConnected, "Peripheral disconnected")
+        testDisconnectWrite()
+        (peripheral.peripheral as? CBPeripheralMock)?.waitWriteOperation = false
+        XCTAssertFalse(peripheral.isConnected, "Peripheral connected")
         testDisconnectWrite()
         (peripheral.peripheral as? CBPeripheralMock)?.waitWriteOperation = false
         XCTAssertFalse(peripheral.isConnected, "Peripheral connected")
@@ -465,24 +467,11 @@ class BleServiceDriverTest: XCTestCase {
     }
 
     func testReconnectSubscribe() {
-        testSubscribe()
-        XCTAssertTrue(peripheral.isConnected, "Peripheral disconnected")
+        testDisconnectOneSubscriptionConnection()
+        XCTAssertFalse(peripheral.isConnected, "Peripheral connected")
         testDisconnectOneSubscriptionConnection()
         XCTAssertFalse(peripheral.isConnected, "Peripheral connected")
         testSubscribe()
-        XCTAssertTrue(peripheral.isConnected, "Peripheral disconnected")
-    }
-
-    func testReconnectMultiple() {
-        testRead()
-        testWrite()
-        testSubscribe()
-        XCTAssertTrue(peripheral.isConnected, "Peripheral disconnected")
-        testDisconnectReadWriteSubscriptionConnection()
-        (peripheral.peripheral as? CBPeripheralMock)?.waitReadOperation = false
-        (peripheral.peripheral as? CBPeripheralMock)?.waitWriteOperation = false
-        XCTAssertFalse(peripheral.isConnected, "Peripheral connected")
-        testEstablishConnection()
         XCTAssertTrue(peripheral.isConnected, "Peripheral disconnected")
     }
 }
