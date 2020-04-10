@@ -212,20 +212,36 @@ class BleServiceDriverTest: XCTestCase {
     // MARK: Tests for data from read / write / subscribe
 
     func testRead() {
-        let resultRead = try! bleServiceDriver.read(
+        let disposeBag = DisposeBag()
+        var resultRead: Data? = nil
+        let expectationEvent = expectation(description: "Expect receiving data")
+        try! bleServiceDriver.read(
             request: Data(),
             serviceUUID: uuid,
             characteristicUUID: uuid
-        ).toBlocking(timeout: 5).first()
+        ).subscribe(
+            onSuccess: { data in
+                resultRead = data
+                expectationEvent.fulfill()
+        }).disposed(by: disposeBag)
+        waitForExpectations(timeout: 5, handler: nil)
         XCTAssertEqual(TestConstants.testText, String(data: resultRead!, encoding: .utf8))
     }
 
     func testWrite() {
-        let writeResponse = try! bleServiceDriver.write(
+        let disposeBag = DisposeBag()
+        var writeResponse: Data? = nil
+        let expectationEvent = expectation(description: "Expect receiving data")
+        try! bleServiceDriver.write(
             request: Data(),
             serviceUUID: uuid,
             characteristicUUID: uuid
-        ).toBlocking(timeout: 5).first()
+        ).subscribe(
+            onSuccess: { data in
+                writeResponse = data
+                expectationEvent.fulfill()
+        }).disposed(by: disposeBag)
+        waitForExpectations(timeout: 5, handler: nil)
         XCTAssertEqual(Data(), writeResponse!)
     }
 
