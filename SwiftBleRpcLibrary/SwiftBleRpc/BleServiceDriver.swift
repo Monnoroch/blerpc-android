@@ -26,7 +26,7 @@ open class BleServiceDriver {
     private var disconnectSubscription: PublishSubject<Void> = PublishSubject<Void>()
 
     /// Event for disconnect all read/write.
-    private var disconnectReadWrite: PublishSubject<Characteristic> = PublishSubject<Characteristic>()
+    private var disconnectReadWrite: PublishSubject<Void> = PublishSubject<Void>()
 
     /// Lock for establish connection.
     private let establishConnectionLock = NSLock()
@@ -57,7 +57,7 @@ open class BleServiceDriver {
     public func disconnect() {
         establishConnectionDisposeBag = DisposeBag()
         disconnectSubscription.onNext(())
-        disconnectReadWrite.onError(BleServiceDriverErrors.disconnected)
+        disconnectReadWrite.onNext(())
         peripheral?.manager.manager.cancelPeripheralConnection(peripheral!.peripheral)
     }
 
@@ -106,7 +106,10 @@ open class BleServiceDriver {
             characteristicUUID: characteristicUUID
         ).flatMap { [weak self] characteristic -> Observable<Characteristic> in
             guard let `self` = self else { return .just(characteristic) }
-            return Observable.merge(.just(characteristic), self.disconnectReadWrite.asObservable())
+            return Observable.merge(
+                .just(characteristic),
+                self.disconnectReadWrite.asObservable().map { _ in throw BleServiceDriverErrors.disconnected }
+            )
         }.flatMap { characteristic in
             characteristic.readValue()
         }.take(1).asSingle().map { characteristic in
@@ -130,7 +133,10 @@ open class BleServiceDriver {
             characteristicUUID: characteristicUUID
         ).flatMap { [weak self] characteristic -> Observable<Characteristic> in
             guard let `self` = self else { return .just(characteristic) }
-            return Observable.merge(.just(characteristic), self.disconnectReadWrite.asObservable())
+            return Observable.merge(
+                .just(characteristic),
+                self.disconnectReadWrite.asObservable().map { _ in throw BleServiceDriverErrors.disconnected }
+            )
         }.flatMap { characteristic in
             characteristic.writeValue(request, type: .withResponse)
         }.take(1).asSingle().map { _ in
