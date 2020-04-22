@@ -441,9 +441,23 @@ public class AnnotationMessageConverterTest {
   }
 
   @Test
-  public void deserializeResponse_responseByteSizeLessThatExpected() throws Exception {
-    assertError(() -> converter.deserializeResponse(null, TestIntegerMessage.getDefaultInstance(), new byte[3]),
-        "Declared size 4 of message TestIntegerMessage is bigger, than device response size 3");
+  public void deserializeResponse_responseByteSizeLessThatExpected_primitiveAtTheEnd() throws Exception {
+    assertThat(converterLittleEndian.deserializeResponse(null, TestOverrideMessageOrderMessage.getDefaultInstance(),
+        TEST_INT_BYTE_ARRAY))
+        .isEqualTo(TestOverrideMessageOrderMessage.newBuilder()
+            .setIntValue(littleEndianIntFrom(TEST_INT_BYTE_ARRAY))
+            .build());
+  }
+
+
+  @Test
+  public void deserializeResponse_responseByteSizeLessThatExpected_messageAtTheEnd() throws Exception {
+    assertThat(converterLittleEndian.deserializeResponse(null, TestNonPrimitiveFieldMessage.getDefaultInstance(),
+        TEST_INT_BYTE_ARRAY))
+        .isEqualTo(TestNonPrimitiveFieldMessage.newBuilder()
+            .setIntValue(littleEndianIntFrom(TEST_INT_BYTE_ARRAY))
+            .setEmbeddedMessage(TestLongMessage.getDefaultInstance())
+            .build());
   }
 
   @Test
