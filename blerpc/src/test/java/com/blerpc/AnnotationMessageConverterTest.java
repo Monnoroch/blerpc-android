@@ -11,6 +11,8 @@ import com.blerpc.device.test.proto.TestDoubleValueMessage;
 import com.blerpc.device.test.proto.TestEmptyMessage;
 import com.blerpc.device.test.proto.TestEnum;
 import com.blerpc.device.test.proto.TestEnumMessage;
+import com.blerpc.device.test.proto.TestExcessiveMessageAtTheEndMessage;
+import com.blerpc.device.test.proto.TestExcessivePrimitiveAtTheEndMessage;
 import com.blerpc.device.test.proto.TestFloatValueMessage;
 import com.blerpc.device.test.proto.TestIntegerMessage;
 import com.blerpc.device.test.proto.TestLongMessage;
@@ -442,20 +444,20 @@ public class AnnotationMessageConverterTest {
 
   @Test
   public void deserializeResponse_responseByteSizeLessThatExpected_primitiveAtTheEnd() throws Exception {
-    assertThat(converterLittleEndian.deserializeResponse(null, TestOverrideMessageOrderMessage.getDefaultInstance(),
+    assertThat(converter.deserializeResponse(null, TestExcessivePrimitiveAtTheEndMessage.getDefaultInstance(),
         TEST_INT_BYTE_ARRAY))
-        .isEqualTo(TestOverrideMessageOrderMessage.newBuilder()
-            .setIntValue(littleEndianIntFrom(TEST_INT_BYTE_ARRAY))
+        .isEqualTo(TestExcessivePrimitiveAtTheEndMessage.newBuilder()
+            .setIntValue(intFrom(TEST_INT_BYTE_ARRAY))
             .build());
   }
 
 
   @Test
   public void deserializeResponse_responseByteSizeLessThatExpected_messageAtTheEnd() throws Exception {
-    assertThat(converterLittleEndian.deserializeResponse(null, TestNonPrimitiveFieldMessage.getDefaultInstance(),
+    assertThat(converter.deserializeResponse(null, TestExcessiveMessageAtTheEndMessage.getDefaultInstance(),
         TEST_INT_BYTE_ARRAY))
-        .isEqualTo(TestNonPrimitiveFieldMessage.newBuilder()
-            .setIntValue(littleEndianIntFrom(TEST_INT_BYTE_ARRAY))
+        .isEqualTo(TestExcessiveMessageAtTheEndMessage.newBuilder()
+            .setIntValue(intFrom(TEST_INT_BYTE_ARRAY))
             .build());
   }
 

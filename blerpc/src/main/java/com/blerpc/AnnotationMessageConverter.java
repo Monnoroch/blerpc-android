@@ -60,7 +60,6 @@ public class AnnotationMessageConverter implements MessageConverter {
     return requestBytes;
   }
 
-  @SuppressWarnings("OptionalGetWithoutIsPresent") // absent value is impossible here
   private void serializeMessage(byte[] requestBytes,
                                 Message message,
                                 FieldExtension messageFieldExtension,
@@ -70,33 +69,35 @@ public class AnnotationMessageConverter implements MessageConverter {
       FieldDescriptor fieldDescriptor = entry.getKey();
       Object fieldValue = entry.getValue();
       String fieldName = fieldDescriptor.getName();
-      Optional<FieldExtension> relativeBytesRangeFieldExtension =
+      @SuppressWarnings("OptionalGetWithoutIsPresent") // absent value is impossible here
+      FieldExtension relativeBytesRangeFieldExtension =
           getRelativeBytesRangeFieldExtension(
-              messageFieldExtension,
-              Optional.absent(),
-              fieldDescriptor,
-              message,
-              useFieldByteOrder);
+                  messageFieldExtension,
+                  Optional.absent(),
+                  fieldDescriptor,
+                  message,
+                  useFieldByteOrder)
+              .get();
 
       JavaType fieldType = fieldDescriptor.getType().getJavaType();
       switch (fieldType) {
         case MESSAGE:
-          serializeMessage(requestBytes, (Message) fieldValue, relativeBytesRangeFieldExtension.get(), hasByteOrder(fieldDescriptor));
+          serializeMessage(requestBytes, (Message) fieldValue, relativeBytesRangeFieldExtension, hasByteOrder(fieldDescriptor));
           break;
         case INT:
-          serializeInt(requestBytes, (Integer) fieldValue, relativeBytesRangeFieldExtension.get(), fieldName);
+          serializeInt(requestBytes, (Integer) fieldValue, relativeBytesRangeFieldExtension, fieldName);
           break;
         case LONG:
-          serializeLong(requestBytes, (Long) fieldValue, relativeBytesRangeFieldExtension.get(), fieldName);
+          serializeLong(requestBytes, (Long) fieldValue, relativeBytesRangeFieldExtension, fieldName);
           break;
         case ENUM:
-          serializeEnum(requestBytes, (EnumValueDescriptor) fieldValue, relativeBytesRangeFieldExtension.get(), fieldName);
+          serializeEnum(requestBytes, (EnumValueDescriptor) fieldValue, relativeBytesRangeFieldExtension, fieldName);
           break;
         case BOOLEAN:
-          serializeBoolean(requestBytes, (Boolean) fieldValue, relativeBytesRangeFieldExtension.get(), fieldName);
+          serializeBoolean(requestBytes, (Boolean) fieldValue, relativeBytesRangeFieldExtension, fieldName);
           break;
         case BYTE_STRING:
-          serializeByteString(requestBytes, (ByteString) fieldValue, relativeBytesRangeFieldExtension.get(), fieldName);
+          serializeByteString(requestBytes, (ByteString) fieldValue, relativeBytesRangeFieldExtension, fieldName);
           break;
         // TODO(#5): Add support of String, Float and Double.
         default:
