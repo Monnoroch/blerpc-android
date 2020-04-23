@@ -60,6 +60,7 @@ public class AnnotationMessageConverter implements MessageConverter {
     return requestBytes;
   }
 
+  @SuppressWarnings("OptionalGetWithoutIsPresent") // absent value is impossible here
   private void serializeMessage(byte[] requestBytes,
                                 Message message,
                                 FieldExtension messageFieldExtension,
@@ -69,38 +70,33 @@ public class AnnotationMessageConverter implements MessageConverter {
       FieldDescriptor fieldDescriptor = entry.getKey();
       Object fieldValue = entry.getValue();
       String fieldName = fieldDescriptor.getName();
-      Optional<FieldExtension> relativeBytesRangeFieldExtensionOptional =
+      Optional<FieldExtension> relativeBytesRangeFieldExtension =
           getRelativeBytesRangeFieldExtension(
               messageFieldExtension,
               Optional.absent(),
               fieldDescriptor,
               message,
               useFieldByteOrder);
-      if (!relativeBytesRangeFieldExtensionOptional.isPresent()) {
-        continue;
-      }
 
-      FieldExtension relativeBytesRangeFieldExtension =
-          relativeBytesRangeFieldExtensionOptional.get();
       JavaType fieldType = fieldDescriptor.getType().getJavaType();
       switch (fieldType) {
         case MESSAGE:
-          serializeMessage(requestBytes, (Message) fieldValue, relativeBytesRangeFieldExtension, hasByteOrder(fieldDescriptor));
+          serializeMessage(requestBytes, (Message) fieldValue, relativeBytesRangeFieldExtension.get(), hasByteOrder(fieldDescriptor));
           break;
         case INT:
-          serializeInt(requestBytes, (Integer) fieldValue, relativeBytesRangeFieldExtension, fieldName);
+          serializeInt(requestBytes, (Integer) fieldValue, relativeBytesRangeFieldExtension.get(), fieldName);
           break;
         case LONG:
-          serializeLong(requestBytes, (Long) fieldValue, relativeBytesRangeFieldExtension, fieldName);
+          serializeLong(requestBytes, (Long) fieldValue, relativeBytesRangeFieldExtension.get(), fieldName);
           break;
         case ENUM:
-          serializeEnum(requestBytes, (EnumValueDescriptor) fieldValue, relativeBytesRangeFieldExtension, fieldName);
+          serializeEnum(requestBytes, (EnumValueDescriptor) fieldValue, relativeBytesRangeFieldExtension.get(), fieldName);
           break;
         case BOOLEAN:
-          serializeBoolean(requestBytes, (Boolean) fieldValue, relativeBytesRangeFieldExtension, fieldName);
+          serializeBoolean(requestBytes, (Boolean) fieldValue, relativeBytesRangeFieldExtension.get(), fieldName);
           break;
         case BYTE_STRING:
-          serializeByteString(requestBytes, (ByteString) fieldValue, relativeBytesRangeFieldExtension, fieldName);
+          serializeByteString(requestBytes, (ByteString) fieldValue, relativeBytesRangeFieldExtension.get(), fieldName);
           break;
         // TODO(#5): Add support of String, Float and Double.
         default:
@@ -193,7 +189,6 @@ public class AnnotationMessageConverter implements MessageConverter {
               message,
               useFieldByteOrder);
       if (!relativeBytesRangeFieldExtensionOptional.isPresent()) {
-        messageBuilder.setField(fieldDescriptor, message.getField(fieldDescriptor));
         continue;
       }
 
@@ -396,21 +391,21 @@ public class AnnotationMessageConverter implements MessageConverter {
   }
 
   private Optional<FieldExtension> getRelativeBytesRangeFieldExtension(FieldExtension messageFieldExtension,
-                                                                       Optional<Integer> valueLengthToCheck,
+                                                                       Optional<Integer> valueSizeToCheck,
                                                                        FieldDescriptor fieldDescriptor,
                                                                        Message message,
                                                                        boolean useFieldByteOrder) {
     int firstByte = messageFieldExtension.getFromByte();
     FieldExtension embeddedFieldExtension = getFieldExtension(fieldDescriptor);
-    if (valueLengthToCheck.isPresent() &&
-        embeddedFieldExtension.getToByte() + firstByte > valueLengthToCheck.get()) {
+    int lastByte = embeddedFieldExtension.getToByte() + firstByte;
+    if (valueSizeToCheck.isPresent() && lastByte > valueSizeToCheck.get()) {
       return Optional.absent();
     }
 
     ByteOrder messageFieldOrder = messageFieldExtension.getByteOrder();
     return Optional.of(FieldExtension.newBuilder()
         .setFromByte(embeddedFieldExtension.getFromByte() + firstByte)
-        .setToByte(embeddedFieldExtension.getToByte() + firstByte)
+        .setToByte(lastByte)
         .setByteOrder(useFieldByteOrder ? messageFieldOrder :
             getByteOrderOrDefault(embeddedFieldExtension.getByteOrder(),
                 getByteOrderOrDefault(getMessageExtension(message).getByteOrder(), messageFieldOrder)))

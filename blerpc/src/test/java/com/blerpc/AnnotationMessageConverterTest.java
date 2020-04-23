@@ -456,7 +456,6 @@ public class AnnotationMessageConverterTest {
         TEST_INT_BYTE_ARRAY))
         .isEqualTo(TestNonPrimitiveFieldMessage.newBuilder()
             .setIntValue(littleEndianIntFrom(TEST_INT_BYTE_ARRAY))
-            .setEmbeddedMessage(TestLongMessage.getDefaultInstance())
             .build());
   }
 
