@@ -1,6 +1,5 @@
 package com.blerpc;
 
-import static com.blerpc.Assert.assertError;
 import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -212,13 +211,6 @@ public class TestServiceTest {
     connectAndRun();
     assertCallSucceeded(controller);
     verify(callbackRead).run(TEST_READ_RESPONSE);
-  }
-
-  @Test
-  public void testRead_invalidDeviceResponse() throws Exception {
-    when(characteristic.getValue()).thenReturn(TEST_READ_INVALID_RESPONSE_BYTES);
-    testService.testReadChar(controller, TEST_READ_REQUEST, callbackRead);
-    assertError(this::connectAndRun, "Declared size 4 of message TestBleReadResponse is bigger, than device response size 3");
   }
 
   @Test

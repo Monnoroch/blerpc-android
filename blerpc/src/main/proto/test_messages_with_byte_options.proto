@@ -393,3 +393,35 @@ enum TestBigValueEnum {
   UNKNOWN_ENUM_VALUE = 0;
   ENUM_VALUE_1 = 222222222;
 }
+
+message TestExcessivePrimitiveAtTheEndMessage {
+  option (com.blerpc.message) = {
+        size_bytes: 12
+    };
+
+  int32 int_value = 1 [(com.blerpc.field) = {
+        from_byte: 0
+        to_byte: 4
+    }];
+
+  int64 long_value = 2 [(com.blerpc.field) = {
+        from_byte: 4
+        to_byte: 12
+    }];
+}
+
+message TestExcessiveMessageAtTheEndMessage {
+  option (com.blerpc.message) = {
+        size_bytes: 12
+    };
+
+  int32 int_value = 1 [(com.blerpc.field) = {
+        from_byte: 0
+        to_byte: 4
+    }];
+
+  TestLongMessage embedded_message = 2 [(com.blerpc.field) = {
+        from_byte: 4
+        to_byte: 12
+    }];
+}

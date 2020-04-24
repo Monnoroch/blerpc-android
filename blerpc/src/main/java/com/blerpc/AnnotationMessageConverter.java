@@ -6,6 +6,7 @@ import com.blerpc.proto.Blerpc;
 import com.blerpc.proto.ByteOrder;
 import com.blerpc.proto.FieldExtension;
 import com.blerpc.proto.MessageExtension;
+import com.google.common.base.Optional;
 import com.google.common.math.LongMath;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Descriptors.Descriptor;
@@ -68,11 +69,16 @@ public class AnnotationMessageConverter implements MessageConverter {
       FieldDescriptor fieldDescriptor = entry.getKey();
       Object fieldValue = entry.getValue();
       String fieldName = fieldDescriptor.getName();
+      @SuppressWarnings("OptionalGetWithoutIsPresent") // absent value is impossible here
       FieldExtension relativeBytesRangeFieldExtension =
-          getRelativeBytesRangeFieldExtension(messageFieldExtension,
-              fieldDescriptor,
-              message,
-              useFieldByteOrder);
+          getRelativeBytesRangeFieldExtension(
+                  messageFieldExtension,
+                  Optional.absent(),
+                  fieldDescriptor,
+                  message,
+                  useFieldByteOrder)
+              .get();
+
       JavaType fieldType = fieldDescriptor.getType().getJavaType();
       switch (fieldType) {
         case MESSAGE:
@@ -162,11 +168,6 @@ public class AnnotationMessageConverter implements MessageConverter {
     }
     checkHasExtension(message);
     int messageBytesSize = getMessageExtension(message).getSizeBytes();
-    checkArgument(value.length >= messageBytesSize,
-        "Declared size %s of message %s is bigger, than device response size %s",
-        messageBytesSize,
-        message.getDescriptorForType().getName(),
-        value.length);
     return deserializeMessage(message, value, FieldExtension.newBuilder()
         .setFromByte(0)
         .setToByte(messageBytesSize)
@@ -181,10 +182,19 @@ public class AnnotationMessageConverter implements MessageConverter {
     validateMessageSchema(message, messageFieldExtension);
     Message.Builder messageBuilder = message.toBuilder();
     for (FieldDescriptor fieldDescriptor : message.getDescriptorForType().getFields()) {
-      FieldExtension relativeBytesRangeFieldExtension = getRelativeBytesRangeFieldExtension(messageFieldExtension,
-          fieldDescriptor,
-          message,
-          useFieldByteOrder);
+      Optional<FieldExtension> relativeBytesRangeFieldExtensionOptional =
+          getRelativeBytesRangeFieldExtension(
+              messageFieldExtension,
+              Optional.of(value.length),
+              fieldDescriptor,
+              message,
+              useFieldByteOrder);
+      if (!relativeBytesRangeFieldExtensionOptional.isPresent()) {
+        continue;
+      }
+
+      FieldExtension relativeBytesRangeFieldExtension =
+          relativeBytesRangeFieldExtensionOptional.get();
       String fieldName = fieldDescriptor.getName();
       JavaType fieldType = fieldDescriptor.getType().getJavaType();
       switch (fieldType) {
@@ -381,20 +391,26 @@ public class AnnotationMessageConverter implements MessageConverter {
         bytesSize);
   }
 
-  private FieldExtension getRelativeBytesRangeFieldExtension(FieldExtension messageFieldExtension,
-                                                             FieldDescriptor fieldDescriptor,
-                                                             Message message,
-                                                             boolean useFieldByteOrder) {
+  private Optional<FieldExtension> getRelativeBytesRangeFieldExtension(FieldExtension messageFieldExtension,
+                                                                       Optional<Integer> valueSizeToCheck,
+                                                                       FieldDescriptor fieldDescriptor,
+                                                                       Message message,
+                                                                       boolean useFieldByteOrder) {
     int firstByte = messageFieldExtension.getFromByte();
-    ByteOrder messageFieldOrder = messageFieldExtension.getByteOrder();
     FieldExtension embeddedFieldExtension = getFieldExtension(fieldDescriptor);
-    return FieldExtension.newBuilder()
+    int lastByte = embeddedFieldExtension.getToByte() + firstByte;
+    if (valueSizeToCheck.isPresent() && lastByte > valueSizeToCheck.get()) {
+      return Optional.absent();
+    }
+
+    ByteOrder messageFieldOrder = messageFieldExtension.getByteOrder();
+    return Optional.of(FieldExtension.newBuilder()
         .setFromByte(embeddedFieldExtension.getFromByte() + firstByte)
-        .setToByte(embeddedFieldExtension.getToByte() + firstByte)
+        .setToByte(lastByte)
         .setByteOrder(useFieldByteOrder ? messageFieldOrder :
             getByteOrderOrDefault(embeddedFieldExtension.getByteOrder(),
                 getByteOrderOrDefault(getMessageExtension(message).getByteOrder(), messageFieldOrder)))
-        .build();
+        .build());
   }
 
   private static ByteOrder getByteOrderOrDefault(ByteOrder currentByteOrder, ByteOrder defaultByteOrder) {
