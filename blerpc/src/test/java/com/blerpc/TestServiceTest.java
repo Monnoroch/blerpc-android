@@ -215,13 +215,6 @@ public class TestServiceTest {
   }
 
   @Test
-  public void testRead_invalidDeviceResponse() throws Exception {
-    when(characteristic.getValue()).thenReturn(TEST_READ_INVALID_RESPONSE_BYTES);
-    testService.testReadChar(controller, TEST_READ_REQUEST, callbackRead);
-    assertError(this::connectAndRun, "Declared size 4 of message TestBleReadResponse is bigger, than device response size 3");
-  }
-
-  @Test
   public void testWrite() throws Exception {
     when(characteristic.getValue()).thenReturn(TEST_WRITE_RESPONSE_BYTES);
     testService.testWriteChar(controller, TEST_WRITE_REQUEST, callbackWrite);
