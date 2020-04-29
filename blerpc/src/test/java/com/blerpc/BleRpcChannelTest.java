@@ -170,6 +170,7 @@ public class BleRpcChannelTest {
   private MethodDescriptor methodSubscribeChar = TestBleService.getDescriptor().findMethodByName("TestSubscribeChar");
   private MethodDescriptor methodSubscribeCharCopy =
       TestBleService.getDescriptor().findMethodByName("TestSubscribeCharCopy");
+  private MethodDescriptor methodReadChar2 = TestBleService.getDescriptor().findMethodByName("TestReadChar2");
   private MethodDescriptor methodWriteChar2 = TestBleService.getDescriptor().findMethodByName("TestWriteChar2");
   private MethodDescriptor methodSubscribeChar2 =
       TestBleService.getDescriptor().findMethodByName("TestSubscribeChar2");
@@ -536,6 +537,65 @@ public class BleRpcChannelTest {
     verifyNoWrite(characteristic2);
     onCharacteristicWrite(characteristic);
     verify(bluetoothGatt).writeCharacteristic(characteristic2);
+  }
+
+  @Test
+  public void testWriteCallsAreSequential_whenCalledFromCallback() throws Exception {
+    doAnswer(
+            unused -> {
+              callWriteMethod(methodWriteChar2, controller, callback2);
+              return null;
+            })
+        .when(callback)
+        .run(any());
+
+    callWriteMethod(methodWriteChar, controller, callback);
+    finishConnecting();
+
+    verify(bluetoothGatt).writeCharacteristic(characteristic);
+    verifyNoWrite(characteristic2);
+    onCharacteristicWrite(characteristic);
+    verify(bluetoothGatt).writeCharacteristic(characteristic2);
+  }
+
+  @Test
+  public void testReadCallsAreSequential_whenCalledFromCallback() throws Exception {
+    doAnswer(
+            unused -> {
+              callReadMethod(methodReadChar2, controller, callback2);
+              return null;
+            })
+        .when(callback)
+        .run(any());
+
+    callReadMethod(methodReadChar, controller, callback);
+    finishConnecting();
+
+    verify(bluetoothGatt).readCharacteristic(characteristic);
+    verifyNoRead(characteristic2);
+    onCharacteristicRead(characteristic);
+    verify(bluetoothGatt).readCharacteristic(characteristic2);
+  }
+
+  @Test
+  public void testSubscribeCallsAreSequential_whenCalledFromCallback() throws Exception {
+    doAnswer(
+            unused -> {
+              callSubscribeMethod(methodSubscribeChar2, controller, callback2);
+              onSubscribe(descriptor2);
+              return null;
+            })
+        .when(callback)
+        .run(any());
+
+    callSubscribeMethod(methodSubscribeChar, controller, callback);
+    finishConnecting();
+
+    verifyNoSubscribe(descriptor2);
+    onSubscribe(descriptor);
+    onCharacteristicChanged(characteristic);
+    verifySubscribe(descriptor);
+    verifySubscribe(descriptor2);
   }
 
   @Test
@@ -1016,6 +1076,10 @@ public class BleRpcChannelTest {
     verify(bluetoothGatt, never()).readCharacteristic(any());
   }
 
+  void verifyNoRead(BluetoothGattCharacteristic characteristic) {
+    verify(bluetoothGatt, never()).readCharacteristic(characteristic);
+  }
+
   void verifyNoWrite() {
     verify(bluetoothGatt, never()).writeCharacteristic(any());
   }
@@ -1031,6 +1095,10 @@ public class BleRpcChannelTest {
 
   void verifyNoSubscribe() {
     verify(bluetoothGatt, never()).writeDescriptor(any());
+  }
+
+  void verifyNoSubscribe(BluetoothGattDescriptor descriptor) {
+    verify(bluetoothGatt, never()).writeDescriptor(descriptor);
   }
 
   void verifyNoCalls(RpcCallback<Message> callback) {
@@ -1083,14 +1151,18 @@ public class BleRpcChannelTest {
   }
 
   void onCharacteristicReadFail() {
-    onCharacteristicRead(TEST_STATUS_NOT_SUCCESS);
+    onCharacteristicRead(characteristic, TEST_STATUS_NOT_SUCCESS);
   }
 
   void onCharacteristicRead() {
-    onCharacteristicRead(BluetoothGatt.GATT_SUCCESS);
+    onCharacteristicRead(characteristic, BluetoothGatt.GATT_SUCCESS);
   }
 
-  void onCharacteristicRead(int status) {
+  void onCharacteristicRead(BluetoothGattCharacteristic characteristic) {
+    onCharacteristicRead(characteristic, BluetoothGatt.GATT_SUCCESS);
+  }
+
+  void onCharacteristicRead(BluetoothGattCharacteristic characteristic, int status) {
     verify(bluetoothGatt).readCharacteristic(characteristic);
     bluetoothCallback.getValue().onCharacteristicRead(bluetoothGatt, characteristic, status);
   }

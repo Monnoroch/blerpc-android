@@ -195,6 +195,13 @@ service TestBleService {
         };
   }
 
+  rpc TestReadChar2 (TestBleReadRequest) returns (TestBleReadResponse) {
+    option (com.blerpc.characteristic) = {
+            uuid: "F0CDBA74-0451-4000-B000-000000000000"
+            type: READ
+        };
+  }
+
   rpc TestWriteChar2 (TestBleReadRequest) returns (TestBleReadResponse) {
     option (com.blerpc.characteristic) = {
             uuid: "F0CDBA74-0451-4000-B000-000000000000"
