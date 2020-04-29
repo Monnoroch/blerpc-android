@@ -301,13 +301,13 @@ public class BleRpcChannel implements RpcChannel {
     } catch (CouldNotConvertMessageException exception) {
       notifyCallFailed(currentCall, exception.getMessage());
     }
-    startNextCall();
+    startNextCallIfNotInProgress();
   }
 
   private void handleError(String format, Object... args) {
     RpcCall currentCall = finishRpcCall();
     notifyCallFailed(currentCall, format, args);
-    startNextCall();
+    startNextCallIfNotInProgress();
   }
 
   private boolean startNextSubscribeCall(BluetoothGatt bluetoothGatt, RpcCall rpcCall) {
@@ -350,7 +350,7 @@ public class BleRpcChannel implements RpcChannel {
     SubscriptionCallsGroup subscription = getSubscribingSubscription(rpcCall.getCharacteristic());
     subscription.status = SubscriptionStatus.SUBSCRIBED;
     rpcCall.controller.onSubscribeSuccess();
-    startNextCall();
+    startNextCallIfNotInProgress();
   }
 
   private void handleSubscribedError(int status) {
@@ -360,7 +360,7 @@ public class BleRpcChannel implements RpcChannel {
     failAllSubscribersAndClear(subscription,
         "Failed to subscribe to descriptor %s in characteristic %s in service %s with status %d.",
         rpcCall.getDescriptor(), characteristicUuid, rpcCall.getService(), status);
-    startNextCall();
+    startNextCallIfNotInProgress();
   }
 
   private void startUnsubscribing(SubscriptionCallsGroup subscription) {
