@@ -75,6 +75,7 @@ public class MessageGenerator {
         fieldContext.isPrimitiveType = !fieldContext.isEnum && !fieldContext.isProtoObject;
 
         switch (fieldContext.type) {
+            case TYPE_ENUM:
             case PROTO_TYPE_INT32:
                 fieldContext.swiftType = SWIFT_TYPE_INT32;
                 break;
