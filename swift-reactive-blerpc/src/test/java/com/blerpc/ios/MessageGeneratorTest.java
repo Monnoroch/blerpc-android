@@ -31,6 +31,7 @@ public class MessageGeneratorTest {
     static final String METHOD_OUTPUT_TYPE = "TestOutputValue";
     static final String METHOD_OUTPUT_TYPE_FULL_PATH = ".com.test.TestOutputValue";
     static final String MESSAGE_INT_NAME = "int_value";
+    static final String MESSAGE_ENUM_NAME = "enum_value";
     static final String MESSAGE_FLOAT_NAME = "float_value";
     static final String SWIFT_TYPE_INT32 = "ProtoType.int32";
     private static final String SWIFT_TYPE_UNKNOWN = "ProtoType.unknown";
@@ -46,11 +47,16 @@ public class MessageGeneratorTest {
     static final DescriptorProtos.FieldDescriptorProto FIELD_INT = DescriptorProtos.FieldDescriptorProto.newBuilder()
             .setType(DescriptorProtos.FieldDescriptorProto.Type.TYPE_INT32)
             .setJsonName(MESSAGE_INT_NAME).setOptions(FIELD_OPTIONS).build();
+    static final DescriptorProtos.FieldDescriptorProto FIELD_ENUM = DescriptorProtos.FieldDescriptorProto.newBuilder()
+            .setType(DescriptorProtos.FieldDescriptorProto.Type.TYPE_ENUM)
+            .setJsonName(MESSAGE_ENUM_NAME).setOptions(FIELD_OPTIONS).build();
     static final DescriptorProtos.FieldDescriptorProto FIELD_FLOAT = DescriptorProtos.FieldDescriptorProto.newBuilder()
             .setType(DescriptorProtos.FieldDescriptorProto.Type.TYPE_FLOAT)
             .setJsonName(MESSAGE_FLOAT_NAME).setOptions(FIELD_OPTIONS).build();
     static final DescriptorProtos.DescriptorProto INPUT_MESSAGE_TYPE =
-            DescriptorProtos.DescriptorProto.newBuilder().setName(METHOD_INPUT_TYPE).addField(0, FIELD_INT).addField(1, FIELD_FLOAT).build();
+            DescriptorProtos.DescriptorProto.newBuilder()
+                    .setName(METHOD_INPUT_TYPE).addField(0, FIELD_INT)
+                    .addField(1, FIELD_ENUM).addField(2, FIELD_FLOAT).build();
     static final DescriptorProtos.DescriptorProto OUTPUT_MESSAGE_TYPE =
             DescriptorProtos.DescriptorProto.newBuilder().setName(METHOD_OUTPUT_TYPE).build();
     static final DescriptorProtos.FileOptions FILE_OPTIONS =
@@ -154,9 +160,20 @@ public class MessageGeneratorTest {
                 .collect(toImmutableList());
         assertThat(messageList).hasSize(2);
         MessageGenerator.MessageContext message = messageList.get(0);
-        assertThat(message.fields).hasSize(2);
-        MessageGenerator.FieldContext unknownField = message.fields.get(1);
+        assertThat(message.fields).hasSize(3);
+        MessageGenerator.FieldContext unknownField = message.fields.get(2);
         assertThat(unknownField.swiftType).isEqualTo(SWIFT_TYPE_UNKNOWN);
+    }
+
+    @Test
+    public void buildServiceContexts_EnumType() throws Exception {
+        ImmutableList<MessageGenerator.MessageContext> messageList = generator.buildMessageContexts(REQUEST)
+                .collect(toImmutableList());
+        assertThat(messageList).hasSize(2);
+        MessageGenerator.MessageContext message = messageList.get(0);
+        assertThat(message.fields).hasSize(3);
+        MessageGenerator.FieldContext enumField = message.fields.get(1);
+        assertThat(enumField.swiftType).isEqualTo(SWIFT_TYPE_INT32);
     }
 
     private MessageGenerator.MessageContext createMessageContext() {
@@ -175,13 +192,19 @@ public class MessageGeneratorTest {
         field.swiftType = SWIFT_TYPE_INT32;
         field.isPrimitiveType = true;
 
+        MessageGenerator.FieldContext fieldEnum = new MessageGenerator.FieldContext();
+        fieldEnum.name = MESSAGE_ENUM_NAME;
+        fieldEnum.type = DescriptorProtos.FieldDescriptorProto.Type.TYPE_ENUM.name();
+        fieldEnum.swiftType = SWIFT_TYPE_INT32;
+        fieldEnum.isPrimitiveType = true;
+
         MessageGenerator.FieldContext unknownField = new MessageGenerator.FieldContext();
         unknownField.name = MESSAGE_FLOAT_NAME;
         unknownField.type = DescriptorProtos.FieldDescriptorProto.Type.TYPE_FLOAT.name();
         unknownField.swiftType = SWIFT_TYPE_UNKNOWN;
         unknownField.isPrimitiveType = true;
 
-        messageContext.fields = ImmutableList.of(field, unknownField);
+        messageContext.fields = ImmutableList.of(field, fieldEnum, unknownField);
         return messageContext;
     }
 
@@ -207,8 +230,8 @@ public class MessageGeneratorTest {
     private void assertEquals(
             ImmutableList<MessageGenerator.FieldContext> firstFieldList,
             ImmutableList<MessageGenerator.FieldContext> secondFieldList) {
-        assertThat(firstFieldList).hasSize(2);
-        assertThat(secondFieldList).hasSize(2);
+        assertThat(firstFieldList).hasSize(3);
+        assertThat(secondFieldList).hasSize(3);
         assertEquals(firstFieldList.get(0), secondFieldList.get(0));
     }
 
