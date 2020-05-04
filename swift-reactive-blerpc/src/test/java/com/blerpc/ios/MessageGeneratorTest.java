@@ -54,7 +54,9 @@ public class MessageGeneratorTest {
             .setType(DescriptorProtos.FieldDescriptorProto.Type.TYPE_FLOAT)
             .setJsonName(MESSAGE_FLOAT_NAME).setOptions(FIELD_OPTIONS).build();
     static final DescriptorProtos.DescriptorProto INPUT_MESSAGE_TYPE =
-            DescriptorProtos.DescriptorProto.newBuilder().setName(METHOD_INPUT_TYPE).addField(0, FIELD_INT).addField(1, FIELD_ENUM).addField(2, FIELD_FLOAT).build();
+            DescriptorProtos.DescriptorProto.newBuilder()
+                    .setName(METHOD_INPUT_TYPE).addField(0, FIELD_INT)
+                    .addField(1, FIELD_ENUM).addField(2, FIELD_FLOAT).build();
     static final DescriptorProtos.DescriptorProto OUTPUT_MESSAGE_TYPE =
             DescriptorProtos.DescriptorProto.newBuilder().setName(METHOD_OUTPUT_TYPE).build();
     static final DescriptorProtos.FileOptions FILE_OPTIONS =
