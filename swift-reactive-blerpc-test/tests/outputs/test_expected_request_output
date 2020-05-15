@@ -1,4 +1,5 @@
 import Foundation
+import SwiftBleRpcLibrary
 
 /// Extension for Device_GetValueRequest which adds encode to Data and decode from Data methods.
 extension Device_GetValueRequest {

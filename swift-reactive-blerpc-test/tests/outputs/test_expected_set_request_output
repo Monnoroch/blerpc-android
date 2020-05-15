@@ -1,4 +1,5 @@
 import Foundation
+import SwiftBleRpcLibrary
 
 /// Extension for Device_SetValueRequest which adds encode to Data and decode from Data methods.
 extension Device_SetValueRequest {
@@ -7,8 +8,14 @@ extension Device_SetValueRequest {
     /// - returns: decoded Device_SetValueRequest proto.
     static func bleRpcDecode(data: Data) throws -> Device_SetValueRequest {
         var proto = Device_SetValueRequest()
-        proto.intValue = try ProtoDecoder.decode(data: data, from: 0, to: 4, type: ProtoType.int32) as! TYPE_INT32
-        proto.nestedMessageValue = try Device_NestedMessage.bleRpcDecode(data: data.subdata(in: 4..<8))
+        if data.count > 0 {
+            if data.count >= 4 {
+                proto.intValue = try SwiftBleRpcLibrary.ProtoDecoder.decode(data: data, from: 0, to: 4, type: ProtoType.int32) as! TYPE_INT32
+            }
+        }
+        if data.count > 4 {
+            proto.nestedMessageValue = try Device_NestedMessage.bleRpcDecode(data: data.subdata(in: 4..<min(8, data.count)))
+        }
         return proto
     }
 
@@ -17,7 +24,7 @@ extension Device_SetValueRequest {
     /// - returns: encoded Device_SetValueRequest.
     static func bleRpcEncode(proto: Device_SetValueRequest) throws -> Data {
         var data = Data()
-        data.append(try ProtoEncoder.encode(object: proto.intValue, from: 0, to: 4, type: ProtoType.int32))
+        data.append(try SwiftBleRpcLibrary.ProtoEncoder.encode(object: proto.intValue, from: 0, to: 4, type: ProtoType.int32))
         data.append(try Device_NestedMessage.bleRpcEncode(proto: proto.nestedMessageValue))
         return data
     }
