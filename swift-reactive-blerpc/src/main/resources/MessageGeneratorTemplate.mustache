@@ -11,7 +11,7 @@ extension {{swiftPackageName}}{{messageName}} {
 {{#fields}}
         if data.count > {{fromByte}} && data.count - {{fromByte}} >= {{toByte}} - {{fromByte}} {
         {{#isEnum}}
-                proto.{{name}} = try {{swiftPackageName}}{{protoType}}.init(rawValue: Int(SwiftBleRpcLibrary.ProtoDecoder.decode(data: data, from: {{fromByte}}, to: {{toByte}}, type: ProtoType.int32) as! Int32))!
+            proto.{{name}} = try {{swiftPackageName}}{{protoType}}.init(rawValue: Int(SwiftBleRpcLibrary.ProtoDecoder.decode(data: data, from: {{fromByte}}, to: {{toByte}}, type: ProtoType.int32) as! Int32))!
         {{/isEnum}}
         {{#isPrimitiveType}}
             proto.{{name}} = try SwiftBleRpcLibrary.ProtoDecoder.decode(data: data, from: {{fromByte}}, to: {{toByte}}, type: {{swiftType}}) as! {{type}}
