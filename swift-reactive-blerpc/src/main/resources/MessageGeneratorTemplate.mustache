@@ -10,13 +10,17 @@ extension {{swiftPackageName}}{{messageName}} {
         var proto = {{swiftPackageName}}{{messageName}}()
 {{#fields}}
     {{#isEnum}}
-        proto.{{name}} = try {{swiftPackageName}}{{protoType}}.init(rawValue: Int(SwiftBleRpcLibrary.ProtoDecoder.decode(data: data, from: {{fromByte}}, to: {{toByte}}, type: ProtoType.int32) as! Int32))!
+        if data.count > {{fromByte}} {
+            proto.{{name}} = try {{swiftPackageName}}{{protoType}}.init(rawValue: Int(SwiftBleRpcLibrary.ProtoDecoder.decode(data: data, from: {{fromByte}}, to: {{toByte}}, type: ProtoType.int32) as! Int32))!
+        }
     {{/isEnum}}
     {{#isProtoObject}}
-        proto.{{name}} = try {{swiftPackageName}}{{protoType}}.bleRpcDecode(data: data.subdata(in: {{fromByte}}..<{{toByte}}))
+        proto.{{name}} = try {{swiftPackageName}}{{protoType}}.bleRpcDecode(data: data.subdata(in: {{fromByte}}..<min({{toByte}}, data.count)))
     {{/isProtoObject}}
     {{#isPrimitiveType}}
-        proto.{{name}} = try SwiftBleRpcLibrary.ProtoDecoder.decode(data: data, from: {{fromByte}}, to: {{toByte}}, type: {{swiftType}}) as! {{type}}
+        if data.count > {{fromByte}} {
+            proto.{{name}} = try SwiftBleRpcLibrary.ProtoDecoder.decode(data: data, from: {{fromByte}}, to: {{toByte}}, type: {{swiftType}}) as! {{type}}
+        }
     {{/isPrimitiveType}}
 {{/fields}}
         return proto
