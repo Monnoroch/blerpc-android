@@ -13,17 +13,11 @@ class TestBleRpcServiceTest: XCTestCase {
 
     var bleRpcDriverMock: MockBleServiceDriver!
     let characteristicUUID: String = "A0000001-0000-0000-0000-000000000000"
-    var testResponseLongData: Data = Data()
-    var testResponseLong = Device_GetValueResponse.with { response in
-        response.intValue = 94
-    }
     var service: TestService?
     var dispose: Disposable?
 
     override func setUp() {
         super.setUp()
-        testResponseLongData = try! Device_GetValueResponse.bleRpcEncode(proto: testResponseLong)
-        testResponseLongData.append(Data(hex: "longData"))
         bleRpcDriverMock = MockBleServiceDriver(peripheral: CentralManagerSwizzle.instance.peripheral()!)
         service = TestService.init(bleRpcDriverMock)
     }
@@ -134,6 +128,11 @@ class TestBleRpcServiceTest: XCTestCase {
 
     func testReadLongData() throws {
         let testRequest = Device_GetValueRequest()
+        let testResponse = Device_GetValueResponse.with({ (response) in
+            response.intValue = 94
+        })
+        var dataResponse = try! Device_GetValueResponse.bleRpcEncode(proto: testResponse)
+        dataResponse.append(Data(hex: "0000"))
         stub(bleRpcDriverMock) { stub in
             when(
                 stub.read(
@@ -141,15 +140,14 @@ class TestBleRpcServiceTest: XCTestCase {
                     serviceUUID: TestService.TestServiceUUID,
                     characteristicUUID: characteristicUUID
                 )
-            )
-                .thenReturn(.just(testResponseLongData))
+            ).thenReturn(.just(dataResponse))
         }
 
         let response = try service?.readValue(request: testRequest)
             .toBlocking()
             .first()
 
-        XCTAssertEqual(response, testResponseLong)
+        XCTAssertEqual(response, testResponse)
     }
 
     func testWriteLongData() throws {
@@ -157,8 +155,8 @@ class TestBleRpcServiceTest: XCTestCase {
             request.intValue = 45
         }
         let testResponse = Device_SetValueResponse()
-        var longDataResponse = try! Device_SetValueResponse.bleRpcEncode(proto: testResponse)
-        longDataResponse.append(Data(hex: "longData"))
+        var dataResponse = try! Device_SetValueResponse.bleRpcEncode(proto: testResponse)
+        dataResponse.append(Data(hex: "0000"))
         stub(bleRpcDriverMock) { stub in
             when(
                 stub.write(
@@ -166,8 +164,7 @@ class TestBleRpcServiceTest: XCTestCase {
                     serviceUUID: TestService.TestServiceUUID,
                     characteristicUUID: characteristicUUID
                 )
-            )
-                .thenReturn(.just(longDataResponse))
+            ).thenReturn(.just(dataResponse))
         }
 
         let response = try service?.writeValue(request: testRequest)
@@ -178,6 +175,11 @@ class TestBleRpcServiceTest: XCTestCase {
 
     func testSubscribeLongData() throws {
         let testRequest = Device_GetValueRequest()
+        let testResponse = Device_GetValueResponse.with({ (response) in
+            response.intValue = 94
+        })
+        var dataResponse = try! Device_GetValueResponse.bleRpcEncode(proto: testResponse)
+        dataResponse.append(Data(hex: "0000"))
         stub(bleRpcDriverMock) { stub in
             when(
                 stub.subscribe(
@@ -185,18 +187,27 @@ class TestBleRpcServiceTest: XCTestCase {
                     serviceUUID: TestService.TestServiceUUID,
                     characteristicUUID: characteristicUUID
                 )
-            )
-                .thenReturn(.just(testResponseLongData))
+            ).thenReturn(.just(dataResponse))
         }
         let response = try service?.getValueUpdates(request: testRequest)
             .toBlocking()
             .first()
-        XCTAssertEqual(response, testResponseLong)
+        XCTAssertEqual(response, testResponse)
     }
 
     func testSubscribeMultipleValuesLongData() throws {
         let testRequest = Device_GetValueRequest()
-        let responseArray = [testResponseLong, testResponseLong]
+        let testResponse = Device_GetValueResponse.with { (response) in
+            response.intValue = 94
+        }
+        let testResponseSecond = Device_GetValueResponse.with { (response) in
+            response.intValue = 95
+        }
+        var dataResponse = try! Device_GetValueResponse.bleRpcEncode(proto: testResponse)
+        dataResponse.append(Data(hex: "0000"))
+        var dataResponseSecond = try! Device_GetValueResponse.bleRpcEncode(proto: testResponseSecond)
+        dataResponseSecond.append(Data(hex: "0000"))
+        let responseArray = [testResponse, testResponseSecond]
         stub(bleRpcDriverMock) { stub in
             when(
                 stub.subscribe(
@@ -204,12 +215,87 @@ class TestBleRpcServiceTest: XCTestCase {
                     serviceUUID: TestService.TestServiceUUID,
                     characteristicUUID: characteristicUUID
                 )
-            )
-                .thenReturn(.from([testResponseLongData, testResponseLongData]))
+            ).thenReturn(Observable.from([dataResponse, dataResponseSecond]))
         }
         let response = try service?.getValueUpdates(request: testRequest)
             .toBlocking()
             .toArray()
         XCTAssertEqual(response, responseArray)
+    }
+
+    func testReadShortData() throws {
+        let testRequest = Device_GetValueRequest()
+        let testResponse = Device_GetValueResponse.with({ (response) in
+            response.intValue = 94
+        })
+        var dataResponse = try! Device_GetValueResponse.bleRpcEncode(proto: testResponse)
+        dataResponse.removeSubrange(2...dataResponse.count - 1)
+        stub(bleRpcDriverMock) { stub in
+            when(
+                stub.read(
+                    request: equal(to: try! Device_GetValueRequest.bleRpcEncode(proto: testRequest)),
+                    serviceUUID: TestService.TestServiceUUID,
+                    characteristicUUID: characteristicUUID
+                )
+            ).thenReturn(.just(dataResponse))
+        }
+
+        let response = try service?.readValue(request: testRequest)
+            .toBlocking()
+            .first()
+
+        XCTAssertEqual(try! response!.serializedData(), Data())
+    }
+
+    func testSubscribeShortData() throws {
+        let testRequest = Device_GetValueRequest()
+        let testResponse = Device_GetValueResponse.with({ (response) in
+            response.intValue = 94
+        })
+        var dataResponse = try! Device_GetValueResponse.bleRpcEncode(proto: testResponse)
+        dataResponse.removeSubrange(2...dataResponse.count - 1)
+        stub(bleRpcDriverMock) { stub in
+            when(
+                stub.subscribe(
+                    request: equal(to: try! Device_GetValueRequest.bleRpcEncode(proto: testRequest)),
+                    serviceUUID: TestService.TestServiceUUID,
+                    characteristicUUID: characteristicUUID
+                )
+            ).thenReturn(.just(dataResponse))
+        }
+        let response = try service?.getValueUpdates(request: testRequest)
+            .toBlocking()
+            .first()
+        XCTAssertEqual(try! response!.serializedData(), Data())
+    }
+
+    func testSubscribeMultipleValuesShortData() throws {
+        let testRequest = Device_GetValueRequest()
+        let testResponse = Device_GetValueResponse.with { (response) in
+            response.intValue = 94
+        }
+        let testResponseSecond = Device_GetValueResponse.with { (response) in
+            response.intValue = 95
+        }
+        var dataResponse = try! Device_GetValueResponse.bleRpcEncode(proto: testResponse)
+        dataResponse.removeSubrange(2...dataResponse.count - 1)
+        var dataResponseSecond = try! Device_GetValueResponse.bleRpcEncode(proto: testResponseSecond)
+        dataResponseSecond.removeSubrange(2...dataResponseSecond.count - 1)
+        stub(bleRpcDriverMock) { stub in
+            when(
+                stub.subscribe(
+                    request: equal(to: try! Device_GetValueRequest.bleRpcEncode(proto: testRequest)),
+                    serviceUUID: TestService.TestServiceUUID,
+                    characteristicUUID: characteristicUUID
+                )
+            ).thenReturn(Observable.from([dataResponse, dataResponseSecond]))
+        }
+        let response = try service?.getValueUpdates(request: testRequest)
+            .toBlocking()
+            .toArray()
+        XCTAssertEqual(
+            response!.map { try! $0.serializedData() },
+            [Data(), Data()]
+        )
     }
 }
