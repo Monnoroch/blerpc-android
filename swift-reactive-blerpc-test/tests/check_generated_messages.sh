@@ -3,7 +3,7 @@
 echo "Running $0 $*..."
 
 export TERM=dumb
-/usr/local/bin/protoc \
+/tmp/proto/protoc \
   --plugin=protoc-gen-rx='generated/swift-reactive-blerpc' \
   --proto_path='.' \
   -I 'reactive-blerpc-test/build/extracted-include-protos/debug/' \
