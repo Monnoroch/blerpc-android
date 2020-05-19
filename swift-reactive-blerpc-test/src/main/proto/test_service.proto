@@ -1,0 +1,96 @@
+syntax = "proto3";
+
+option java_package = "com.device.proto";
+option java_multiple_files = true;
+option optimize_for = CODE_SIZE;
+option java_generic_services = true;
+
+package device;
+
+import "blerpc.proto";
+
+// A service for testing reactive-blerpc.
+service TestService {
+    option (com.blerpc.service) = {
+        uuid: "A0000000-0000-0000-0000-000000000000"
+    };
+
+    // Read value test method.
+    rpc ReadValue (GetValueRequest) returns (GetValueResponse) {
+        option (com.blerpc.characteristic) = {
+            uuid: "A0000001-0000-0000-0000-000000000000"
+            type: READ
+        };
+    }
+
+    // Write value test method.
+    rpc WriteValue (SetValueRequest) returns (SetValueResponse) {
+        option (com.blerpc.characteristic) = {
+            uuid: "A0000001-0000-0000-0000-000000000000"
+            type: WRITE
+        };
+    }
+    
+    // Subscribe for receiving test value updates.
+    rpc GetValueUpdates (GetValueRequest) returns (stream GetValueResponse) {
+        option (com.blerpc.characteristic) = {
+            uuid: "A0000001-0000-0000-0000-000000000000"
+            descriptor_uuid: "00000000-0000-0000-0000-000000000000"
+            type: SUBSCRIBE
+        };
+    }
+}
+
+// Request message for the ReadValue and GetValueUpdates methods.
+message GetValueRequest {
+}
+
+// Response message for the ReadValue and GetValueUpdates methods.
+message GetValueResponse {
+    option (com.blerpc.message) = {
+        size_bytes: 8
+    };
+    // Integer value.
+    int32 int_value = 1 [(com.blerpc.field) = {
+        from_byte: 0
+        to_byte: 4
+    }];
+    // Integer second value.
+    int32 int_value_second = 2 [(com.blerpc.field) = {
+        from_byte: 4
+        to_byte: 8
+    }];
+}
+
+// Request message for the WriteValue method.
+message SetValueRequest {
+    option (com.blerpc.message) = {
+        size_bytes: 8
+    };
+    // Integer value.
+    int32 int_value = 1 [(com.blerpc.field) = {
+                            from_byte: 0
+                            to_byte: 4
+                         }];
+    // Nested message type.
+    NestedMessage nested_message_value = 2 [(com.blerpc.field) = {
+                                                from_byte: 4
+                                                to_byte: 8
+                                            }];
+}
+
+// Response message for the WriteValue.
+message SetValueResponse {
+}
+
+// Nested message.
+message NestedMessage {
+    option (com.blerpc.message) = {
+        size_bytes: 4
+    };
+    // Integer value.
+    int32 nested_int_value = 1 [(com.blerpc.field) = {
+                                    from_byte: 0
+                                    to_byte: 4
+                                }];
+}

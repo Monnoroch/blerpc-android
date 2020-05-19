@@ -2,6 +2,7 @@ import CoreBluetooth
 import Foundation
 import RxBluetoothKit
 import RxSwift
+import SwiftBleRpcLibrary
 
 /// TestService service.
 public class TestService: BleRpcService {

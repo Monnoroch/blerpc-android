@@ -1,4 +1,5 @@
 import Foundation
+import SwiftBleRpcLibrary
 
 /// Extension for Device_GetValueResponse which adds encode to Data and decode from Data methods.
 extension Device_GetValueResponse {
@@ -7,7 +8,11 @@ extension Device_GetValueResponse {
     /// - returns: decoded Device_GetValueResponse proto.
     static func bleRpcDecode(data: Data) throws -> Device_GetValueResponse {
         var proto = Device_GetValueResponse()
-        proto.intValue = try ProtoDecoder.decode(data: data, from: 0, to: 4, type: ProtoType.int32) as! TYPE_INT32
+        if data.count > 0 {
+            if data.count >= 4 {
+                proto.intValue = try SwiftBleRpcLibrary.ProtoDecoder.decode(data: data, from: 0, to: 4, type: ProtoType.int32) as! TYPE_INT32
+            }
+        }
         return proto
     }
 
@@ -16,7 +21,7 @@ extension Device_GetValueResponse {
     /// - returns: encoded Device_GetValueResponse.
     static func bleRpcEncode(proto: Device_GetValueResponse) throws -> Data {
         var data = Data()
-        data.append(try ProtoEncoder.encode(object: proto.intValue, from: 0, to: 4, type: ProtoType.int32))
+        data.append(try SwiftBleRpcLibrary.ProtoEncoder.encode(object: proto.intValue, from: 0, to: 4, type: ProtoType.int32))
         return data
     }
 }
