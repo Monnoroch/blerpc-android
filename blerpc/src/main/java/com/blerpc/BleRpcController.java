@@ -1,24 +1,26 @@
 package com.blerpc;
 
+import com.google.common.base.Optional;
 import com.google.protobuf.RpcCallback;
 import com.google.protobuf.RpcController;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Implementation of the {@link RpcController}.
  */
 public class BleRpcController implements RpcController {
 
-  private AtomicBoolean canceled = new AtomicBoolean(false);
+  private boolean canceled;
   private boolean failed = false;
   private String failMassage = null;
+  private Optional<RpcCallback<Void>> cancelCallback = Optional.absent();
 
   @Override
   public void reset() {
-    canceled.set(false);
     synchronized (this) {
+      canceled = false;
       failed = false;
       failMassage = null;
+      cancelCallback = Optional.absent();
     }
   }
 
@@ -38,7 +40,14 @@ public class BleRpcController implements RpcController {
 
   @Override
   public void startCancel() {
-    canceled.set(true);
+    synchronized (this) {
+      canceled = true;
+    }
+
+    Optional<RpcCallback<Void>> callback = getAndClearCallback();
+    if (callback.isPresent()) {
+      callback.get().run(null);
+    }
   }
 
   @Override
@@ -51,12 +60,45 @@ public class BleRpcController implements RpcController {
 
   @Override
   public boolean isCanceled() {
-    return canceled.get();
+    synchronized (this) {
+      return canceled;
+    }
   }
 
   @Override
   public void notifyOnCancel(RpcCallback<Object> callback) {
     throw new UnsupportedOperationException("Not implemented.");
+  }
+
+  /**
+   * Assings a custom callback, which will be called once for:
+   * <ul>
+   *   <li> cancel event;
+   *   <li> dispose event.
+   * </ul>
+   *
+   * @param callback callback for notifying about cancel events
+   */
+  void runOnCancel(RpcCallback<Void> callback) {
+    if (isCanceled()) {
+      callback.run(null);
+      return;
+    }
+
+    synchronized (this) {
+      cancelCallback = Optional.of(callback);
+    }
+  }
+
+  private synchronized Optional<RpcCallback<Void>> getAndClearCallback() {
+    synchronized (this) {
+      if (!cancelCallback.isPresent()) {
+        return Optional.absent();
+      }
+      Optional<RpcCallback<Void>> callback = cancelCallback;
+      cancelCallback = Optional.absent();
+      return callback;
+    }
   }
 
   /**
