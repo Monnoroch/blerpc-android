@@ -24,9 +24,11 @@ public class MessageGenerator {
     private static final String PROTO_TYPE_INT32 = "TYPE_INT32";
     private static final String PROTO_TYPE_BYTES = "TYPE_BYTES";
     private static final String PROTO_TYPE_BOOL = "TYPE_BOOL";
+    private static final String PROTO_TYPE_FLOAT = "TYPE_FLOAT";
     private static final String SWIFT_TYPE_INT32 = "ProtoType.int32";
     private static final String SWIFT_TYPE_BYTES = "ProtoType.byte";
     private static final String SWIFT_TYPE_BOOL = "ProtoType.bool";
+    private static final String SWIFT_TYPE_FLOAT = "ProtoType.float";
     private static final String SWIFT_TYPE_UNKNOWN = "ProtoType.unknown";
 
     /**
@@ -84,6 +86,9 @@ public class MessageGenerator {
                 break;
             case  PROTO_TYPE_BOOL:
                 fieldContext.swiftType = SWIFT_TYPE_BOOL;
+                break;
+            case PROTO_TYPE_FLOAT:
+                fieldContext.swiftType = SWIFT_TYPE_FLOAT;
                 break;
             default:
                 fieldContext.swiftType = SWIFT_TYPE_UNKNOWN;

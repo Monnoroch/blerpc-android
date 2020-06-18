@@ -5,6 +5,7 @@ import Foundation
 public typealias TYPE_INT32 = Int32
 public typealias TYPE_BOOL = Bool
 public typealias TYPE_BYTES = Data
+public typealias TYPE_FLOAT = Float
 
 /// Type of proto field.
 public enum ProtoType: String, CaseIterable {
@@ -12,13 +13,14 @@ public enum ProtoType: String, CaseIterable {
     case int32 = "TYPE_INT32"
     case byte = "TYPE_BYTES"
     case bool = "TYPE_BOOL"
+    case float = "TYPE_FLOAT"
 }
 
 // TODO(#67): Add support little endian encoding/decoding.
 
 /// Describes errors appeared during encoding/decoding proto objects.
 public enum ProtoParserErrors: Error {
-    /// Called when client tryying to parse unsupported type.
+    /// Called when client trying to parse unsupported type.
     case notSupportedType
 
     /// Called when wrong data sended to parser.
@@ -75,10 +77,24 @@ public class ProtoDecoder {
         return ProtoDecoder.decodeUInt8(fromByte: fromByte, data: data) != 0
     }
 
+    /// Decode data to Float.
+    /// - parameter fromByte: starting byte.
+    /// - parameter data: data from which need to convert.
+    /// - returns: converted value Float.
+    private class func decodeFloat(fromByte: Int, data: Data) -> Float {
+        return Float(data.subdata(in: fromByte..<fromByte + 4).bytes.withUnsafeBufferPointer { pointer in
+            (
+                pointer.baseAddress!.withMemoryRebound(to: Int32.self, capacity: 1) { pointer in
+                    pointer
+                }
+            )
+        }.pointee)
+    }
+
     /// Decode data to output object.
     /// - parameter data: data which need to be converted.
     /// - parameter from: from byte inside data.
-    /// - parameter to: to byte (actually to calculate lenth).
+    /// - parameter to: to byte (actually to calculate length).
     /// - parameter type: the type of output's object data.
     /// - returns: converted object.
     public class func decode(data: Data, from: Int, to: Int, type: ProtoType?) throws -> Any {
@@ -106,6 +122,8 @@ public class ProtoDecoder {
                 throw ProtoParserErrors.wrongData
             }
             return ProtoDecoder.decodeBool(fromByte: from, data: data)
+        case .float:
+            return Float(ProtoDecoder.decodeFloat(fromByte: from, data: data))
         default:
             throw ProtoParserErrors.notSupportedType
         }
@@ -125,7 +143,7 @@ public class ProtoEncoder {
             throw ProtoParserErrors.notSupportedType
         }
         switch type {
-        case .int32:
+        case .int32, .float:
             if to - from > 4 {
                 throw ProtoParserErrors.wrongData
             }
