@@ -13,6 +13,9 @@ public enum BleServiceDriverErrors: Error {
 
     /// Called when disconnect read/write and not end operation
     case disconnected
+
+    /// Called when charecteristic not found
+    case notFoundCharecteristic
 }
 
 /// Class which holds all operation with data transfer between iOS and Ble Device.
@@ -186,8 +189,11 @@ open class BleServiceDriver {
                 Observable.from(services)
             }.flatMap { service in
                 service.discoverCharacteristics([CBUUID(string: characteristicUUID)])
-            }.flatMap { characteristics in
-                Observable.from(characteristics)
+            }.flatMap { characteristics -> Observable<Characteristic> in
+                guard !characteristics.isEmpty else {
+                    return .error(BleServiceDriverErrors.notFoundCharecteristic)
+                }
+                return Observable.from(characteristics)
             }
         }
     }
